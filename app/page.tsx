@@ -134,6 +134,8 @@ export default function AgenticPage() {
             loop
             muted
             playsInline
+            preload="none"
+            aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover z-0"
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4"
             style={{
@@ -248,6 +250,7 @@ export default function AgenticPage() {
         <img
           src="/images/footer.png"
           alt=""
+          loading="lazy"
           aria-hidden="true"
           className="absolute bottom-0 left-0 w-full object-cover object-bottom pointer-events-none select-none"
           style={{ opacity: 0.85 }}
@@ -296,6 +299,7 @@ export default function AgenticPage() {
             >
               <input
                 type="email"
+                aria-label="Correo electrónico de contacto"
                 placeholder={t.cta.inputPlaceholder}
                 value={email}
                 onChange={e => setEmail(e.target.value)}

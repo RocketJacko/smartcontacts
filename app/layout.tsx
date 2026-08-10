@@ -6,10 +6,10 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"] });
-const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"] });
+const _geist = Geist({ subsets: ["latin"], display: "swap" });
+const _geistMono = Geist_Mono({ subsets: ["latin"], display: "swap" });
+const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"], display: "swap" });
+const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: 'SmartContacts — Unidad de Crecimiento & Inteligencia Comercial',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: 'SmartContacts — Unidad de Crecimiento & Inteligencia Comercial',
     description: 'Convertimos la tecnología en ventas reales. Amplificamos tu capacidad comercial con IA y automatizaciones sobre datos segmentados por departamento.',
     type: 'website',
-    url: 'https://smartcontacts.vercel.app',
+    url: 'https://smartcontacts.cloud',
     siteName: 'SmartContacts',
   },
   twitter: {
@@ -61,7 +61,9 @@ export default function RootLayout({
     <html lang="es">
       <body className={`font-sans antialiased`}>
         <LanguageProvider>
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
           <Analytics />
           <SpeedInsights />
         </LanguageProvider>

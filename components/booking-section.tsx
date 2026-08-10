@@ -431,6 +431,7 @@ export function BookingSection() {
                     <input
                       type="text"
                       required
+                      aria-label={t.booking.nameLabel}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder={t.booking.namePlaceholder}
@@ -449,6 +450,7 @@ export function BookingSection() {
                     <input
                       type="tel"
                       required
+                      aria-label={t.booking.phoneLabel}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder={t.booking.phonePlaceholder}
@@ -467,6 +469,7 @@ export function BookingSection() {
                     <input
                       type="email"
                       required
+                      aria-label={t.booking.emailLabel}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={t.booking.emailPlaceholder}
@@ -484,6 +487,7 @@ export function BookingSection() {
                     <Building className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
                     <input
                       type="text"
+                      aria-label={t.booking.companyLabel}
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
                       placeholder={t.booking.companyPlaceholder}
@@ -498,6 +502,7 @@ export function BookingSection() {
                 <input
                   type="checkbox"
                   id="isCompanyToggle"
+                  aria-label={t.booking.isCompanyLabel}
                   checked={isCompany}
                   onChange={(e) => setIsCompany(e.target.checked)}
                   className="w-4 h-4 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
@@ -516,6 +521,7 @@ export function BookingSection() {
                   <FileText className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
                   <textarea
                     rows={3}
+                    aria-label={t.booking.descLabel}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder={t.booking.descPlaceholder}
