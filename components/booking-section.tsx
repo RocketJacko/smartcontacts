@@ -169,33 +169,32 @@ export function BookingSection() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Kage Minimalist Topic List */}
+              <div className="divide-y divide-black/[0.06] border-y border-black/[0.06]">
                 {t.booking.topics.map((item, idx) => {
                   const isSelected = selectedTopic === item.id
                   return (
                     <div
                       key={item.id}
                       onClick={() => setSelectedTopic(item.id)}
-                      className={`p-5 rounded-xl border cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-3 ${
-                        isSelected
-                          ? "bg-black/[0.03] border-black text-[#111] shadow-xs"
-                          : "bg-white border-black/[0.08] hover:border-black/30 text-black/80"
+                      className={`py-3.5 px-3 sm:px-4 rounded-xl cursor-pointer transition-all flex items-center justify-between group ${
+                        isSelected ? "bg-black/[0.04] text-[#111]" : "hover:bg-black/[0.02] text-black/80"
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <span className="text-[10px] font-mono text-black/40 font-semibold uppercase tracking-widest">
+                      <div className="flex items-center gap-4 min-w-0 pr-4">
+                        <span className="text-xs font-mono text-black/30 font-semibold min-w-[20px]">
                           0{idx + 1}
                         </span>
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${
-                          isSelected ? "bg-[#111] border-[#111] text-white" : "border-black/20 bg-transparent"
-                        }`}>
-                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-medium text-[#111] truncate">{item.title}</h4>
+                          <p className="text-xs text-black/50 font-normal truncate mt-0.5">{item.desc}</p>
                         </div>
                       </div>
 
-                      <div>
-                        <h4 className="text-sm font-medium text-[#111]">{item.title}</h4>
-                        <p className="text-xs text-black/60 font-normal mt-1 leading-relaxed">{item.desc}</p>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected ? "bg-[#111] border-[#111] text-white" : "border-black/20 bg-transparent group-hover:border-black/50"
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
                     </div>
                   )

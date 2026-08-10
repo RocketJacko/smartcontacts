@@ -13,7 +13,7 @@ import { BookingSection } from "@/components/booking-section"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
 import { MethodologySection } from "@/components/methodology-section"
 import { KageSalesIndicator } from "@/components/kage-sales-indicator"
-import { AboutSection } from "@/components/about-section"
+import { KageModalitiesSection } from "@/components/kage-modalities-section"
 import Link from "next/link"
 
 import { useLanguage } from "@/lib/language-context"
@@ -236,68 +236,16 @@ export default function AgenticPage() {
         </div>
       </section>
 
-      {/* ── MAPA DE COBERTURA COLOMBIA (CONSOLIDADO NACIONAL) ───────────── */}
-      <ColombiaMapSection />
+      {/* ── MODALIDADES DE TRABAJO (KAGE INTERACTIVE SWITCHER) ───────────── */}
+      <KageModalitiesSection />
 
       {/* ── METODOLOGÍA 4 FASES & VENTAJAS ESTRATÉGICAS ───────────────────── */}
       <MethodologySection />
 
-      {/* ── MODALIDADES DE TRABAJO ─────────────────────────────────────────── */}
-      <section id="modalidades" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10 flex flex-col items-center">
-            <PixelIcon type="pricing" size={40} />
-            <div className="mt-4"><Tag>{t.pricing.tag}</Tag></div>
-            <RevealText className="mt-5 text-4xl md:text-5xl font-normal text-[#111] tracking-tight leading-[1.05]">
-              {t.pricing.title}
-            </RevealText>
-          </div>
+      {/* ── MAPA DE COBERTURA COLOMBIA (CONSOLIDADO NACIONAL) ───────────── */}
+      <ColombiaMapSection />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch" onMouseMove={handleMouse}>
-            {t.pricing.plans.map((plan, idx) => (
-              <BentoCard
-                key={plan.name}
-                className={`p-8 sm:p-10 lg:p-12 flex flex-col justify-between hover:border-black/30 lg:hover:-translate-y-1 transition-all duration-300 ${idx === 1 ? "border-black/20 bg-[#F0EEE8]" : ""}`}
-                delay={idx * 100}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-pixel text-[11px] tracking-widest text-black/50 font-medium">{plan.name}</span>
-                  </div>
-
-                  <h3 className="text-2xl font-medium mb-1 tracking-tight text-[#111]">{plan.price}</h3>
-                  <p className="text-xs text-black/80 font-normal tracking-wide mb-6">{plan.sub}</p>
-
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map(f => (
-                      <li key={f} className="flex items-center gap-3 text-xs sm:text-sm text-black/85 font-normal">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <a
-                  href="#agendar"
-                  className={`w-full py-3.5 rounded-xl text-xs font-mono tracking-widest text-center uppercase block transition-all duration-200 ${
-                    idx === 1
-                      ? "bg-[#111] text-white hover:bg-[#333]"
-                      : "border border-black/15 text-black/80 hover:border-black/30 hover:text-black hover:bg-black/[0.04]"
-                  }`}
-                >
-                  {plan.cta}
-                </a>
-              </BentoCard>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SOBRE MÍ ─────────────────────────────────────────────────────── */}
-      <AboutSection />
-
-      {/* ── AGENDAR CITA (CALENDARIO & FORMULARIO) ───────────────────────── */}
+      {/* ── AGENDAR CITA (CALENDARIO & LISTA KAGE DE CONSULTAS) ──────────── */}
       <BookingSection />
 
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
