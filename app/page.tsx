@@ -14,7 +14,6 @@ import { ColombiaMapSection } from "@/components/colombia-map-section"
 import { MethodologySection } from "@/components/methodology-section"
 import { KageSalesIndicator } from "@/components/kage-sales-indicator"
 import { KageModalitiesSection } from "@/components/kage-modalities-section"
-import { GlobalGrowthHUD } from "@/components/global-growth-hud"
 import Link from "next/link"
 
 import { useLanguage } from "@/lib/language-context"
@@ -122,9 +121,8 @@ export default function AgenticPage() {
       {/* ── INTRO ANIMATION ───────────────────────────────────────────────── */}
       <IntroAnimation onDone={handleIntroDone} />
 
-      {/* ── STICKY NAV & GLOBAL SCROLL HUD ──────────────────────────────── */}
+      {/* ── STICKY NAV ────────────────────────────────────────────────────── */}
       <MobileNav />
-      <GlobalGrowthHUD />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden">
