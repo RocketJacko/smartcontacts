@@ -213,8 +213,8 @@ export default function AgenticPage() {
       </section>
 
       {/* ── PROPUESTA DE VALOR & MANIFIESTO (Sticky Stacking Cards) ──────── */}
-      <section id="platform" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-6xl mx-auto">
+      <section id="platform" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20 border-t border-black/[0.06]">
+        <div className="max-w-5xl mx-auto">
           {/* Section header */}
           <div className="mb-10">
             <PixelIcon type="platform" size={40} />

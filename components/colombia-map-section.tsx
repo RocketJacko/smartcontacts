@@ -56,8 +56,8 @@ export function ColombiaMapSection() {
   const juridicaPercent = 100 - naturalPercent
 
   return (
-    <section id="cobertura" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06] bg-[#FAF9F6]">
-      <div className="max-w-6xl mx-auto">
+    <section id="cobertura" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20 border-t border-black/[0.06] bg-[#FAF9F6]">
+      <div className="max-w-5xl mx-auto">
         
         {/* Section Header */}
         <div className="mb-8 text-center flex flex-col items-center">

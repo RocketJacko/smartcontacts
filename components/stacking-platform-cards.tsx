@@ -48,7 +48,7 @@ export function StackingPlatformCards() {
   }, [cardsCount])
 
   return (
-    <div className="flex flex-col space-y-6" style={{ perspective: "1400px", perspectiveOrigin: "50% 0%" }}>
+    <div className="max-w-5xl mx-auto flex flex-col space-y-6" style={{ perspective: "1400px", perspectiveOrigin: "50% 0%" }}>
       {/* ── CARD 1: SISTEMA AUTÓNOMO ────────────────────────────────────── */}
       {(() => {
         const i = 0

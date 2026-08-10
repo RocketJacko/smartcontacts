@@ -67,7 +67,7 @@ export function StackingAgentCards() {
   }, [agents.length])
 
   return (
-    <div className="flex flex-col" style={{ perspective: "1400px", perspectiveOrigin: "50% 0%" }}>
+    <div className="max-w-5xl mx-auto flex flex-col" style={{ perspective: "1400px", perspectiveOrigin: "50% 0%" }}>
       {agents.map((agent, i) => {
         const d         = depth[i]
         const scale     = 1 - d * SCALE_STEP

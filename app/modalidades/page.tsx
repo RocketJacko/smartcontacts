@@ -35,7 +35,7 @@ export default function ModalidadesPage() {
       </section>
 
       {/* Pricing / Modalities Comparison */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 xl:gap-12 items-stretch">
           
           {/* Card 1: Delegado / Canal Externo */}
