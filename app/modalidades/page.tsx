@@ -2,10 +2,12 @@
 
 import React from "react"
 import { MobileNav } from "@/components/mobile-nav"
+import { Footer } from "@/components/footer"
+import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { Check, ArrowRight, Layers, Settings2, UserCheck } from "lucide-react"
+import { Check, ArrowRight } from "lucide-react"
 
 export default function ModalidadesPage() {
   const { language, t } = useLanguage()
@@ -15,9 +17,9 @@ export default function ModalidadesPage() {
       <MobileNav />
 
       {/* Hero Header */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-12 sm:mb-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-12 sm:mb-16 flex flex-col items-center">
+        <PixelIcon type="pricing" size={40} />
         <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-          <Layers className="w-3.5 h-3.5 text-black/70" />
           {language === "es" ? "MODALIDADES DE TRABAJO & IMPLEMENTACIÓN" : "WORKING MODALITIES & DEPLOYMENT"}
         </span>
         
@@ -43,7 +45,7 @@ export default function ModalidadesPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <span className="w-10 h-10 rounded-xl bg-black/[0.04] border border-black/10 flex items-center justify-center text-black/80">
-                  <UserCheck className="w-5 h-5" />
+                  <PixelIcon type="agents" size={24} />
                 </span>
                 <span className="text-[10px] font-mono tracking-widest uppercase px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60 font-semibold">
                   {language === "es" ? "RECOMENDADO" : "RECOMMENDED"}
@@ -102,7 +104,7 @@ export default function ModalidadesPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <span className="w-10 h-10 rounded-xl bg-white border border-black/10 flex items-center justify-center text-black/80">
-                  <Settings2 className="w-5 h-5" />
+                  <PixelIcon type="workflow" size={24} />
                 </span>
                 <span className="text-[10px] font-mono tracking-widest uppercase px-3 py-1 rounded-full bg-black/[0.04] text-black/70 border border-black/10 font-semibold">
                   IN-HOUSE
@@ -158,6 +160,8 @@ export default function ModalidadesPage() {
 
         </div>
       </section>
+
+      <Footer />
     </main>
   )
 }

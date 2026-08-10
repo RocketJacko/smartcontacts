@@ -2,11 +2,13 @@
 
 import React from "react"
 import { MobileNav } from "@/components/mobile-nav"
+import { Footer } from "@/components/footer"
 import { AboutSection } from "@/components/about-section"
+import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { User, ArrowRight, Award, Briefcase, Code } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export default function SobreMiPage() {
   const { language } = useLanguage()
@@ -16,9 +18,9 @@ export default function SobreMiPage() {
       <MobileNav />
 
       {/* Hero Header */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-8 sm:mb-12">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-8 sm:mb-12 flex flex-col items-center">
+        <PixelIcon type="agents" size={40} />
         <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-          <User className="w-3.5 h-3.5 text-black/70" />
           {language === "es" ? "LIDERAZGO Y EXPERIENCIA COMERCIAL" : "LEADERSHIP & COMMERCIAL EXPERIENCE"}
         </span>
         
@@ -42,7 +44,7 @@ export default function SobreMiPage() {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-2">
-            <Briefcase className="w-6 h-6 text-black/70 mb-1" />
+            <PixelIcon type="platform" size={24} />
             <h3 className="text-sm font-medium text-[#111]">
               {language === "es" ? "Sector Financiero & Libranzas" : "Financial & Payroll Loans"}
             </h3>
@@ -54,7 +56,7 @@ export default function SobreMiPage() {
           </div>
 
           <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-2">
-            <Award className="w-6 h-6 text-black/70 mb-1" />
+            <PixelIcon type="integrations" size={24} />
             <h3 className="text-sm font-medium text-[#111]">
               {language === "es" ? "Sector Salud & Asistencias" : "Healthcare & Assistance Services"}
             </h3>
@@ -66,7 +68,7 @@ export default function SobreMiPage() {
           </div>
 
           <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-2">
-            <Code className="w-6 h-6 text-black/70 mb-1" />
+            <PixelIcon type="workflow" size={24} />
             <h3 className="text-sm font-medium text-[#111]">
               {language === "es" ? "Desarrollo Agéntico & IA" : "Agentic Software Engineering"}
             </h3>
@@ -80,8 +82,9 @@ export default function SobreMiPage() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center">
-        <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-4">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 text-center">
+        <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-4 flex flex-col items-center">
+          <PixelIcon type="agents" size={36} />
           <h2 className="text-xl sm:text-2xl font-medium text-[#111]">
             {language === "es" ? "¿Hablamos de cómo automatizar tu canal comercial?" : "Let's discuss automating your sales channel"}
           </h2>
@@ -96,6 +99,8 @@ export default function SobreMiPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </main>
   )
 }

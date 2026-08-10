@@ -2,25 +2,27 @@
 
 import React from "react"
 import { MobileNav } from "@/components/mobile-nav"
+import { Footer } from "@/components/footer"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
-import { RevealText } from "@/components/reveal-text"
+import { PixelIcon } from "@/components/pixel-icon"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { MapPin, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export default function CoberturaPage() {
   const { language } = useLanguage()
 
   return (
-    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white pt-20 pb-16">
+    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white pt-20 pb-0">
       <MobileNav />
 
       {/* Clean Interactive Vector Map Section */}
       <ColombiaMapSection />
 
       {/* Bottom Action CTA */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center">
-        <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-4">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-16 text-center">
+        <div className="p-8 rounded-2xl border border-black/[0.08] bg-white shadow-xs space-y-4 flex flex-col items-center">
+          <PixelIcon type="platform" size={36} />
           <h2 className="text-xl sm:text-2xl font-medium text-[#111]">
             {language === "es" ? "¿Quieres prospectar sobre tu departamento objetivo?" : "Want to prospect in your target region?"}
           </h2>
@@ -40,6 +42,8 @@ export default function CoberturaPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </main>
   )
 }

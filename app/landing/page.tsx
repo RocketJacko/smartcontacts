@@ -2,8 +2,10 @@
 
 import React, { useState } from "react"
 import { RevealText } from "@/components/reveal-text"
+import { Footer } from "@/components/footer"
+import { PixelIcon } from "@/components/pixel-icon"
 import { useLanguage } from "@/lib/language-context"
-import { Sparkles, ArrowRight, CheckCircle2, ShieldCheck, Database, FileText, Cpu, Phone, Building, User, Mail, Loader2 } from "lucide-react"
+import { Sparkles, ArrowRight, CheckCircle2, Phone, Building, User, Mail, Loader2 } from "lucide-react"
 
 export default function DirectLandingPage() {
   const { language } = useLanguage()
@@ -50,7 +52,7 @@ export default function DirectLandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white pt-8 pb-0 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-10 sm:space-y-16">
 
         {/* Brand Header */}
@@ -88,8 +90,8 @@ export default function DirectLandingPage() {
             {/* 3 Core Value Cards */}
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-black/[0.06] shadow-xs">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5">
-                  <Database className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-black/[0.03] border border-black/10 flex items-center justify-center text-black/80 shrink-0 mt-0.5">
+                  <PixelIcon type="integrations" size={20} />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#111] uppercase tracking-wide font-mono">
@@ -104,8 +106,8 @@ export default function DirectLandingPage() {
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-black/[0.06] shadow-xs">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-700 shrink-0 mt-0.5">
-                  <FileText className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-black/[0.03] border border-black/10 flex items-center justify-center text-black/80 shrink-0 mt-0.5">
+                  <PixelIcon type="workflow" size={20} />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#111] uppercase tracking-wide font-mono">
@@ -120,8 +122,8 @@ export default function DirectLandingPage() {
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-black/[0.06] shadow-xs">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-700 shrink-0 mt-0.5">
-                  <Cpu className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-black/[0.03] border border-black/10 flex items-center justify-center text-black/80 shrink-0 mt-0.5">
+                  <PixelIcon type="agents" size={20} />
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#111] uppercase tracking-wide font-mono">
@@ -273,11 +275,10 @@ export default function DirectLandingPage() {
           </div>
 
         </div>
+      </div>
 
-        {/* Simple Footer */}
-        <footer className="text-center pt-8 border-t border-black/[0.06] text-xs text-black/40 font-mono">
-          © 2026 SmartContacts. {language === "es" ? "Todos los derechos reservados." : "All rights reserved."}
-        </footer>
+      <div className="mt-16">
+        <Footer />
       </div>
     </main>
   )

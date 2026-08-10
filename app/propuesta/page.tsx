@@ -2,12 +2,14 @@
 
 import React from "react"
 import { MobileNav } from "@/components/mobile-nav"
+import { Footer } from "@/components/footer"
 import { StackingPlatformCards } from "@/components/stacking-platform-cards"
 import { StackingAgentCards } from "@/components/stacking-agent-cards"
+import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { Sparkles, ArrowRight, ShieldCheck, Cpu, Database } from "lucide-react"
+import { Sparkles, ArrowRight } from "lucide-react"
 
 export default function PropuestaPage() {
   const { language } = useLanguage()
@@ -66,7 +68,7 @@ export default function PropuestaPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
               <div className="w-10 h-10 rounded-xl bg-white border border-black/10 flex items-center justify-center text-black/80">
-                <Database className="w-5 h-5" />
+                <PixelIcon type="integrations" size={24} />
               </div>
               <h3 className="text-sm font-medium text-[#111]">
                 {language === "es" ? "Datos & Cartera Propia" : "Data & Proprietary Database"}
@@ -80,7 +82,7 @@ export default function PropuestaPage() {
 
             <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
               <div className="w-10 h-10 rounded-xl bg-white border border-black/10 flex items-center justify-center text-black/80">
-                <Cpu className="w-5 h-5" />
+                <PixelIcon type="workflow" size={24} />
               </div>
               <h3 className="text-sm font-medium text-[#111]">
                 {language === "es" ? "Procesos Documentales" : "Documental Workflows"}
@@ -94,7 +96,7 @@ export default function PropuestaPage() {
 
             <div className="p-6 rounded-2xl bg-[#FAF9F6] border border-black/[0.06] space-y-3">
               <div className="w-10 h-10 rounded-xl bg-white border border-black/10 flex items-center justify-center text-black/80">
-                <ShieldCheck className="w-5 h-5" />
+                <PixelIcon type="agents" size={24} />
               </div>
               <h3 className="text-sm font-medium text-[#111]">
                 {language === "es" ? "Seguridad & Cierre" : "Security & Conversion"}
@@ -118,6 +120,8 @@ export default function PropuestaPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </main>
   )
 }
