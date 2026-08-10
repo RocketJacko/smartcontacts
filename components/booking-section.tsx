@@ -3,13 +3,14 @@
 import React, { useState, useMemo } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { RevealText } from "@/components/reveal-text"
-import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check } from "lucide-react"
+import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown } from "lucide-react"
 
 export function BookingSection() {
   const { t, language } = useLanguage()
 
   // Step State: 1 = Topic, 2 = Date & Time, 3 = Contact & Company Details, 4 = Success
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  const [isListboxOpen, setIsListboxOpen] = useState(false)
 
   // Form Fields State
   const [selectedTopic, setSelectedTopic] = useState<string>("automation-no-ai")
@@ -169,36 +170,67 @@ export function BookingSection() {
                 </p>
               </div>
 
-              {/* Kage Minimalist Topic List */}
-              <div className="divide-y divide-black/[0.06] border-y border-black/[0.06]">
-                {t.booking.topics.map((item, idx) => {
-                  const isSelected = selectedTopic === item.id
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => setSelectedTopic(item.id)}
-                      className={`py-3.5 px-3 sm:px-4 rounded-xl cursor-pointer transition-all flex items-center justify-between group ${
-                        isSelected ? "bg-black/[0.04] text-[#111]" : "hover:bg-black/[0.02] text-black/80"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 min-w-0 pr-4">
-                        <span className="text-xs font-mono text-black/30 font-semibold min-w-[20px]">
-                          0{idx + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-medium text-[#111] truncate">{item.title}</h4>
-                          <p className="text-xs text-black/50 font-normal truncate mt-0.5">{item.desc}</p>
-                        </div>
-                      </div>
-
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                        isSelected ? "bg-[#111] border-[#111] text-white" : "border-black/20 bg-transparent group-hover:border-black/50"
-                      }`}>
-                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+              {/* Kage Minimalist List Box Select UI */}
+              <div className="relative">
+                {/* Active Selected Input Box */}
+                <button
+                  type="button"
+                  onClick={() => setIsListboxOpen(!isListboxOpen)}
+                  className="w-full bg-white border border-black/15 rounded-2xl p-4 sm:p-5 flex items-center justify-between text-left hover:border-black/30 transition-all shadow-xs group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4 min-w-0 pr-2">
+                    <span className="text-xs font-mono font-bold text-black/50 bg-black/[0.04] px-2.5 py-1 rounded-md border border-black/10 shrink-0">
+                      0{t.booking.topics.findIndex(t => t.id === selectedTopic) + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-semibold">ÁREA SELECCIONADA</div>
+                      <div className="text-sm sm:text-base font-medium text-[#111] truncate mt-0.5">
+                        {t.booking.topics.find(t => t.id === selectedTopic)?.title}
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+
+                  <div className="w-8 h-8 rounded-xl bg-black/[0.04] flex items-center justify-center text-black/60 group-hover:text-black group-hover:bg-black/[0.08] transition-colors shrink-0">
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isListboxOpen ? "rotate-180" : ""}`} />
+                  </div>
+                </button>
+
+                {/* Dropdown Options Listbox */}
+                {isListboxOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-30 bg-white border border-black/15 rounded-2xl shadow-xl overflow-hidden divide-y divide-black/[0.06] animate-in fade-in zoom-in-95 duration-150">
+                    {t.booking.topics.map((item, idx) => {
+                      const isSelected = selectedTopic === item.id
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            setSelectedTopic(item.id)
+                            setIsListboxOpen(false)
+                          }}
+                          className={`p-4 cursor-pointer transition-all flex items-center justify-between group ${
+                            isSelected ? "bg-black/[0.04] text-[#111]" : "hover:bg-black/[0.02] text-black/80"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4 min-w-0 pr-4">
+                            <span className="text-xs font-mono text-black/30 font-semibold min-w-[20px]">
+                              0{idx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-medium text-[#111] truncate">{item.title}</h4>
+                              <p className="text-xs text-black/50 font-normal truncate mt-0.5">{item.desc}</p>
+                            </div>
+                          </div>
+
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? "bg-[#111] border-[#111] text-white" : "border-black/20 bg-transparent group-hover:border-black/50"
+                          }`}>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex justify-end">
