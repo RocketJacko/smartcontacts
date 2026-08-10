@@ -5,9 +5,12 @@ const bookingSchema = z.object({
   type: z.enum(['lead', 'booking']).default('booking'),
   name: z.string().min(2, 'Name is required').optional(),
   phone: z.string().min(5, 'Phone is required').optional(),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').or(z.string()),
   date: z.string().optional(),
   time: z.string().optional(),
+  timeSlot: z.string().optional(),
+  company: z.string().optional(),
+  service: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -15,17 +18,33 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validatedData = bookingSchema.parse(body)
 
-    // Log the validated lead/booking for Vercel Logs / Console
-    console.log('[SMARTCONTACTS LEAD RECEIVED]', {
+    const payload = {
       timestamp: new Date().toISOString(),
       ...validatedData,
-    })
+      source: 'smartcontacts.vercel.app',
+    }
+
+    // Log for Vercel Serverless Logs
+    console.log('[SMARTCONTACTS LEAD RECEIVED]', payload)
+
+    // Forward to n8n Webhook on ventus server if N8N_WEBHOOK_URL is configured
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'http://31.97.150.100:5678/webhook/smartcontacts-booking'
+    
+    try {
+      await fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+    } catch (n8nErr) {
+      console.warn('[SMARTCONTACTS N8N DISPATCH WARNING]', n8nErr)
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Solicitud recibida exitosamente. Nuestro equipo comercial te contactará pronto.',
-        data: validatedData,
+        message: 'Solicitud recibida exitosamente. Se ha procesado en la agenda comercial.',
+        data: payload,
       },
       { status: 200 }
     )
