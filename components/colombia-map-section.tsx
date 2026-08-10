@@ -164,20 +164,18 @@ export function ColombiaMapSection() {
               </div>
             </div>
 
-            {/* Data Rows complying with AGENTS.md row pattern */}
+            {/* Data Rows */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">01</span>
-                <span className="text-[11px] text-black/50 font-light flex-1">Personas Naturales</span>
-                <span className="font-mono text-xs font-semibold text-[#111] mr-1">{displayDept.personas_naturales.toLocaleString()}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+                <span className="text-[10px] text-black/30 font-mono min-w-[16px]">01</span>
+                <span className="text-xs text-black/70 font-normal flex-1">Personas Naturales</span>
+                <span className="font-mono text-xs font-semibold text-[#111]">{displayDept.personas_naturales.toLocaleString()}</span>
               </div>
 
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">02</span>
-                <span className="text-[11px] text-black/50 font-light flex-1">Personas Jurídicas</span>
-                <span className="font-mono text-xs font-semibold text-[#111] mr-1">{displayDept.personas_juridicas.toLocaleString()}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
+              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+                <span className="text-[10px] text-black/30 font-mono min-w-[16px]">02</span>
+                <span className="text-xs text-black/70 font-normal flex-1">Personas Jurídicas</span>
+                <span className="font-mono text-xs font-semibold text-[#111]">{displayDept.personas_juridicas.toLocaleString()}</span>
               </div>
             </div>
           </div>

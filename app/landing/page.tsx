@@ -71,7 +71,6 @@ export default function DirectLandingPage() {
           {/* Left Column: High Impact Value Proposition */}
           <div className="lg:col-span-7 space-y-6 sm:space-y-8">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono text-black/60 bg-white border border-black/10 uppercase tracking-widest font-medium shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-black/70" />
               {language === "es" ? "AUTOMATIZACIÓN COMERCIAL & DOCUMENTAL" : "SALES & DOCUMENT AUTOMATION"}
             </span>
 

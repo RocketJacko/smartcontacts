@@ -96,7 +96,6 @@ export function FinancialSection() {
                     <div className="text-[11px] text-[#111] font-semibold">{row.label}</div>
                     <div className="text-[10px] text-black/60 font-normal mt-0.5">{row.detail}</div>
                   </div>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-500 transition-colors" />
                 </div>
               ))}
             </div>
@@ -106,7 +105,6 @@ export function FinancialSection() {
         {/* ── HIGH-IMPACT COMMERCIAL FORCE CALLOUT ─────────────────────────── */}
         <div className="p-8 sm:p-10 rounded-2xl border border-black/15 bg-white shadow-sm mb-12 space-y-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[11px] font-mono tracking-widest text-black/50 uppercase font-medium">
               FUERZA COMERCIAL Y RESULTADOS REALES
             </span>

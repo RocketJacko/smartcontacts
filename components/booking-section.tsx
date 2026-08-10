@@ -261,14 +261,10 @@ export function BookingSection() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 
                 {/* Form Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
+                <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] mb-4">
                   <span className="text-xs font-mono uppercase tracking-widest text-black/40">
                     DATOS DE CONTACTO
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-mono text-green-700/80 uppercase">Agenda en Vivo</span>
-                  </div>
                 </div>
 
                 {/* Selected Slot Preview Row */}
@@ -278,7 +274,6 @@ export function BookingSection() {
                     <span className="text-xs text-[#111] font-light flex-1">
                       {formattedDate} — <strong>{selectedSlot}</strong>
                     </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
                   </div>
                 )}
 
@@ -380,22 +375,19 @@ export function BookingSection() {
                     {t.booking.summaryTitle}
                   </div>
 
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.04]">
                     <span className="text-[10px] text-black/30 font-mono min-w-[65px]">CLIENTE</span>
-                    <span className="text-[11px] text-[#111] font-medium flex-1">{name}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
+                    <span className="text-xs text-[#111] font-medium flex-1">{name}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.04]">
                     <span className="text-[10px] text-black/30 font-mono min-w-[65px]">CONTACTO</span>
-                    <span className="text-[11px] text-black/60 font-light flex-1">{phone} &bull; {email}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
+                    <span className="text-xs text-black/70 font-normal flex-1">{phone} &bull; {email}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-black/[0.04]">
                     <span className="text-[10px] text-black/30 font-mono min-w-[65px]">CITACIÓN</span>
-                    <span className="text-[11px] text-black/60 font-light flex-1">{formattedDate} ({selectedSlot})</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
+                    <span className="text-xs text-black/70 font-normal flex-1">{formattedDate} ({selectedSlot})</span>
                   </div>
                 </div>
 

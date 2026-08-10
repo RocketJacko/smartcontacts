@@ -172,7 +172,6 @@ export function DevExSection() {
           <div className="lg:col-span-7 rounded-2xl border border-black/[0.08] bg-[#FAF9F6] p-6 sm:p-8 flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between mb-6 border-b border-black/[0.06] pb-4">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span
                   className="font-mono text-xs text-black/60 tracking-wider uppercase font-medium"
                   style={{

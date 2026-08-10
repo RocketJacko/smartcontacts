@@ -10,7 +10,7 @@ import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { Sparkles, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export default function PropuestaPage() {
   const { language } = useLanguage()
@@ -22,7 +22,6 @@ export default function PropuestaPage() {
       {/* Hero Header */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-12 sm:mb-16">
         <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-          <Sparkles className="w-3.5 h-3.5 text-black/70" />
           {language === "es" ? "PROPUESTA DE VALOR & TECNOLOGÍA AGÉNTICA" : "VALUE PROPOSITION & AGENTIC TECH"}
         </span>
         
