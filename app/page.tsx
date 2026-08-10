@@ -160,7 +160,7 @@ export default function AgenticPage() {
           </h1>
 
           <p
-            className="text-sm sm:text-base text-black/60 font-light leading-relaxed max-w-xl mb-6"
+            className="text-sm sm:text-base text-black/75 font-normal leading-relaxed max-w-xl mb-6"
             style={{
               opacity: heroReady ? 1 : 0,
               filter: heroReady ? "blur(0px)" : "blur(16px)",
@@ -206,7 +206,7 @@ export default function AgenticPage() {
                 }}
               >
                 <div className="text-3xl sm:text-4xl text-[#111] font-light tracking-tight" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.value}</div>
-                <div className="text-xs text-black/40 tracking-widest uppercase mt-1" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.label}</div>
+                <div className="text-xs text-black/75 font-medium tracking-widest uppercase mt-1" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.label}</div>
               </div>
             ))}
           </div>
@@ -219,24 +219,14 @@ export default function AgenticPage() {
       </section>
 
       {/* ── PROPUESTA DE VALOR & MANIFIESTO (Sticky Stacking Cards) ──────── */}
-      <section id="platform" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-16 xl:px-20 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto">
-          {/* Section header */}
-          <div className="mb-10">
-            <PixelIcon type="platform" size={40} />
-            <div className="mt-4"><Tag>{t.platform.tag}</Tag></div>
-            <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-normal text-[#111] tracking-tight leading-[1.05]">
-              {t.platform.title}
-            </RevealText>
-          </div>
-
-          {/* Sticky Stacking Cards Effect */}
-          <StackingPlatformCards />
-        </div>
+      <section id="propuesta" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-black/[0.06] bg-[#F5F4F0]">
+        <StackingPlatformCards />
       </section>
 
       {/* ── MODALIDADES DE TRABAJO (KAGE INTERACTIVE SWITCHER) ───────────── */}
-      <KageModalitiesSection />
+      <section id="modalidades" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-black/[0.06] bg-[#F5F4F0]">
+        <KageModalitiesSection />
+      </section>
 
       {/* ── AGENDAR CITA (CALENDARIO & LISTA KAGE DE CONSULTAS) ──────────── */}
       <BookingSection />
@@ -273,7 +263,7 @@ export default function AgenticPage() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6">
             {t.cta.title}
           </h2>
-          <p className="text-sm text-black/45 leading-relaxed mb-10">
+          <p className="text-sm text-black/75 font-medium leading-relaxed mb-10">
             {t.cta.desc}
           </p>
           {!submitted ? (
@@ -301,11 +291,11 @@ export default function AgenticPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="flex-1 bg-white border border-black/10 rounded-xl px-4 py-3 text-sm text-[#111] placeholder:text-black/25 focus:outline-none focus:border-black/25 transition-colors"
+                className="flex-1 bg-white border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111] placeholder:text-black/50 focus:outline-none focus:border-black/40 transition-colors"
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#111] text-white text-xs sm:text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium shrink-0"
+                className="px-6 py-3 bg-[#111] text-white text-xs sm:text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium shrink-0 cursor-pointer"
               >
                 {t.cta.btn}
               </button>
@@ -323,7 +313,7 @@ export default function AgenticPage() {
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <footer className="py-6 sm:py-8 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <span className="font-pixel text-xs tracking-[0.25em] text-black/50">SMARTCONTACTS</span>
+          <span className="font-pixel text-xs tracking-[0.25em] text-black/75 font-semibold">SMARTCONTACTS</span>
 
           {/* Nav sections */}
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -335,7 +325,7 @@ export default function AgenticPage() {
               { label: t.nav.schedule,   href: "/agendar" },
               { label: "Landing",        href: "/landing" },
             ].map(l => (
-              <Link key={l.label} href={l.href} className="text-xs text-black/50 hover:text-black transition-colors font-mono tracking-wider">{l.label}</Link>
+              <Link key={l.label} href={l.href} className="text-xs text-black/75 hover:text-black transition-colors font-mono tracking-wider font-medium">{l.label}</Link>
             ))}
           </div>
 
@@ -352,7 +342,7 @@ export default function AgenticPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">{t.footer.rights}</span>
+          <span className="text-xs text-black/75 font-medium">{t.footer.rights}</span>
         </div>
       </footer>
     </div>

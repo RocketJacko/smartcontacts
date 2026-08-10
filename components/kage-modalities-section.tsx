@@ -63,7 +63,7 @@ export function KageModalitiesSection() {
         <div className="text-center flex flex-col items-center max-w-3xl mx-auto space-y-3">
           <PixelIcon type="pricing" size={40} />
           <div className="mt-2"><Tag>{t.pricing.tag}</Tag></div>
-          <RevealText className="text-3xl sm:text-4xl lg:text-5xl font-medium text-[#111] tracking-tight leading-tight">
+          <RevealText as="h2" className="text-3xl sm:text-4xl lg:text-5xl font-medium text-[#111] tracking-tight leading-tight">
             {t.pricing.title}
           </RevealText>
         </div>
@@ -76,11 +76,12 @@ export function KageModalitiesSection() {
               <button
                 key={m.id}
                 type="button"
+                aria-label={`Seleccionar Modalidad ${m.id + 1}`}
                 onClick={() => setActiveModality(m.id as 0 | 1)}
                 className={`flex-1 py-3 px-4 rounded-xl text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
                   isActive
                     ? "bg-[#111] text-white shadow-xs"
-                    : "text-black/60 hover:text-black hover:bg-black/[0.03]"
+                    : "text-black/70 hover:text-black hover:bg-black/[0.03]"
                 }`}
               >
                 <span>MODALIDAD {m.id + 1}</span>
@@ -95,28 +96,28 @@ export function KageModalitiesSection() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.06]">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-mono font-bold text-black/40">MODALIDAD {current.code}</span>
-                <span className="text-[10px] font-mono text-black/60 bg-black/[0.04] px-2.5 py-0.5 rounded border border-black/10 uppercase">
+                <span className="text-xs font-mono font-bold text-black/70">MODALIDAD {current.code}</span>
+                <span className="text-[10px] font-mono text-black/75 bg-black/[0.04] px-2.5 py-0.5 rounded border border-black/10 uppercase">
                   {current.badge}
                 </span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-medium text-[#111] tracking-tight">
                 {current.name}
               </h3>
-              <p className="text-xs sm:text-sm text-black/60 font-normal mt-1">
+              <p className="text-xs sm:text-sm text-black/75 font-normal mt-1">
                 {current.subtitle}
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.04] shrink-0">
-              <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest block">IMPACTO PROBADO</span>
+              <span className="text-[10px] font-mono text-black/70 uppercase tracking-widest block font-medium">IMPACTO PROBADO</span>
               <span className="text-xs font-mono font-semibold text-[#111] mt-0.5 block">{current.impact}</span>
             </div>
           </div>
 
           {/* Minimalist Kage Feature List */}
           <div className="space-y-3">
-            <span className="text-[11px] font-mono text-black/40 uppercase tracking-widest block font-medium">
+            <span className="text-[11px] font-mono text-black/70 uppercase tracking-widest block font-medium">
               {language === "es" ? "ALCANCE Y ENTREGABLES INCLUIDOS" : "SCOPE & DELIVERABLES INCLUDED"}
             </span>
 

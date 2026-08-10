@@ -41,14 +41,14 @@ export function KageSalesIndicator() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-[#111]" />
-            <span className="text-[11px] font-mono text-black/50 uppercase tracking-widest font-medium">
+            <span className="text-[11px] font-mono text-black/75 uppercase tracking-widest font-semibold">
               {language === "es" ? "INDICADOR DE INCREMENTO DE VENTAS" : "SALES INCREMENT INDICATOR"}
             </span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-medium text-[#111] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-medium text-[#111] tracking-tight">
             {language === "es" ? "Capacidad Comercial & Escala Agéntica" : "Sales Capacity & Agentic Scale"}
-          </h3>
+          </h2>
         </div>
 
         {/* Dynamic Metric Display */}
@@ -56,7 +56,7 @@ export function KageSalesIndicator() {
           <span className="text-4xl sm:text-5xl font-medium text-[#111] tracking-tight">
             +{salesIncrease}%
           </span>
-          <span className="text-xs text-black/50 uppercase tracking-wider font-sans">
+          <span className="text-xs text-black/75 uppercase tracking-wider font-sans font-medium">
             {language === "es" ? "Ventas Estimadas" : "Estimated Sales"}
           </span>
         </div>
@@ -65,7 +65,7 @@ export function KageSalesIndicator() {
       {/* ── DYNAMIC METRIC STRIP ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.04]">
-          <span className="text-[10px] font-mono text-black/40 uppercase tracking-wider block">
+          <span className="text-[10px] font-mono text-black/70 uppercase tracking-wider block font-medium">
             {language === "es" ? "PROSPECCIÓN NACIONAL" : "NATIONAL PROSPECTING"}
           </span>
           <span className="text-lg font-mono font-medium text-[#111] mt-1 block">
@@ -74,7 +74,7 @@ export function KageSalesIndicator() {
         </div>
 
         <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.04]">
-          <span className="text-[10px] font-mono text-black/40 uppercase tracking-wider block">
+          <span className="text-[10px] font-mono text-black/70 uppercase tracking-wider block font-medium">
             {language === "es" ? "INCREMENTO COMERCIAL" : "SALES GROWTH"}
           </span>
           <span className="text-lg font-mono font-medium text-[#111] mt-1 block">
@@ -83,7 +83,7 @@ export function KageSalesIndicator() {
         </div>
 
         <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.04]">
-          <span className="text-[10px] font-mono text-black/40 uppercase tracking-wider block">
+          <span className="text-[10px] font-mono text-black/70 uppercase tracking-wider block font-medium">
             {language === "es" ? "REDUCCIÓN COSTOS NÓMINA" : "PAYROLL SAVINGS"}
           </span>
           <span className="text-lg font-mono font-medium text-[#111] mt-1 block">
@@ -94,7 +94,7 @@ export function KageSalesIndicator() {
 
       {/* ── KAGE STYLE SLIDER & TICK HEAD INDICATOR ─────────────────────── */}
       <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between text-xs font-mono text-black/60 font-medium">
+        <div className="flex items-center justify-between text-xs font-mono text-black/75 font-medium">
           <span>{language === "es" ? "MÍNIMO: Prospección Tradicional" : "MIN: Traditional Sales"}</span>
           <span>{language === "es" ? "MÁXIMO: Canal Agéntico 24/7" : "MAX: 24/7 Agentic Channel"}</span>
         </div>
@@ -105,6 +105,7 @@ export function KageSalesIndicator() {
             type="range"
             min="0"
             max="100"
+            aria-label="Indicador de Proyección de Crecimiento en Ventas"
             value={progress}
             onMouseDown={() => setIsAuto(false)}
             onChange={(e) => {

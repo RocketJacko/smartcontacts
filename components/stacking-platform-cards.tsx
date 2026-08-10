@@ -11,7 +11,7 @@ const OFFSET_STEP = 8
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest font-sans text-black/50 bg-black/[0.05] font-medium uppercase">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest font-sans text-black/75 bg-black/[0.05] font-semibold uppercase">
       {children}
     </span>
   )
@@ -84,7 +84,7 @@ export function StackingPlatformCards() {
                     </p>
                   </div>
                   <div className="p-6 rounded-2xl border border-black/[0.06] bg-black/[0.02] w-full lg:w-80 shrink-0 space-y-3">
-                    <div className="text-[10px] font-mono text-black/50 tracking-widest uppercase font-medium">
+                    <div className="text-[10px] font-mono text-black/75 tracking-widest uppercase font-semibold">
                       PROMESA DE VALOR
                     </div>
                     {[
@@ -94,7 +94,7 @@ export function StackingPlatformCards() {
                     ].map((item, idx) => (
                       <div key={idx} className="p-3 rounded-xl bg-white border border-black/[0.04]">
                         <div className="text-[11px] font-semibold text-[#111]">{item.label}</div>
-                        <div className="text-[10px] text-black/60 font-normal">{item.desc}</div>
+                        <div className="text-[10px] text-black/75 font-normal">{item.desc}</div>
                       </div>
                     ))}
                   </div>

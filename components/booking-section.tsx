@@ -131,7 +131,7 @@ export function BookingSection() {
             {t.booking.tag}
           </span>
 
-          <RevealText className="text-3xl sm:text-4xl md:text-5xl font-medium text-[#111] tracking-tight leading-tight">
+          <RevealText as="h2" className="text-3xl sm:text-4xl md:text-5xl font-medium text-[#111] tracking-tight leading-tight">
             {t.booking.title}
           </RevealText>
           <RevealText as="p" className="text-xs sm:text-sm md:text-base text-black/75 font-normal leading-relaxed">
@@ -142,7 +142,7 @@ export function BookingSection() {
         {/* ── PROGRESS INDICATOR (STEP 1 OF 3) ─────────────────────────────── */}
         {step < 4 && (
           <div className="max-w-xl mx-auto space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono text-black/60 font-medium">
+            <div className="flex items-center justify-between text-xs font-mono text-black/75 font-medium">
               <span>{step === 1 ? t.booking.step1Title : step === 2 ? t.booking.step2Title : t.booking.step3Title}</span>
               <span>PASO {step} DE 3</span>
             </div>
@@ -165,7 +165,7 @@ export function BookingSection() {
                 <h3 className="text-xl font-medium text-[#111]">
                   {language === "es" ? "¿En qué área deseas enfocar tu asesoría?" : "What area do you want to focus your session on?"}
                 </h3>
-                <p className="text-xs sm:text-sm text-black/60 font-normal">
+                <p className="text-xs sm:text-sm text-black/75 font-normal">
                   {language === "es" ? "Selecciona la opción principal para asignar al especialista de nuestra unidad." : "Select the main topic to assign our Growth Unit specialist."}
                 </p>
               </div>
@@ -175,6 +175,7 @@ export function BookingSection() {
                 {/* Active Selected Input Box */}
                 <button
                   type="button"
+                  aria-label="Abrir selección de área de asesoría"
                   onClick={() => setIsListboxOpen(!isListboxOpen)}
                   className="w-full bg-white border border-black/15 rounded-2xl p-4 sm:p-5 flex items-center justify-between text-left hover:border-black/30 transition-all shadow-xs group cursor-pointer"
                 >
