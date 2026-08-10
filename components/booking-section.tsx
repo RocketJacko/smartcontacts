@@ -280,7 +280,7 @@ export function BookingSection() {
             </div>
           )}
 
-          {/* ──────────────── STEP 2: REAL CALENDAR (FULL MONTH WITH 60% OCCUPANCY) ───── */}
+          {/* ──────────────── STEP 2: CALENDAR & HORARIOS ───── */}
           {step === 2 && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -288,9 +288,6 @@ export function BookingSection() {
                   <h3 className="text-xl font-medium text-[#111]">
                     {t.booking.dateLabel}
                   </h3>
-                  <p className="text-xs text-black/75 font-normal mt-0.5">
-                    {language === "es" ? "Calendario del mes en curso (Franjas de 1 hora de 8:00 AM a 2:00 PM)." : "Current month calendar (1-hour slots from 8:00 AM to 2:00 PM)."}
-                  </p>
                 </div>
 
                 <button
@@ -303,19 +300,6 @@ export function BookingSection() {
                 </button>
               </div>
 
-              {/* 60% Occupancy High Demand Banner */}
-              <div className="p-3.5 rounded-xl bg-black/[0.03] border border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  <span className="font-semibold text-[#111]">
-                    {language === "es" ? "CAPACIDAD OPERATIVA: 60% AGENDADO" : "OPERATIONAL CAPACITY: 60% RESERVED"}
-                  </span>
-                </div>
-                <span className="text-[10px] text-black/70 font-medium">
-                  {language === "es" ? "DISPONIBILIDAD LIMITADA ESTA SEMANA" : "LIMITED SLOTS THIS WEEK"}
-                </span>
-              </div>
-
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Real Calendar Grid */}
@@ -323,9 +307,6 @@ export function BookingSection() {
                   <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
                     <span className="text-sm font-mono font-medium text-[#111] tracking-wider uppercase">
                       {t.booking.months[currentMonth]} {currentYear}
-                    </span>
-                    <span className="text-[10px] font-mono text-black/75 bg-black/[0.04] px-2.5 py-1 rounded border border-black/10 font-medium">
-                      {language === "es" ? "AGENDA ABIERTA" : "OPEN SCHEDULE"}
                     </span>
                   </div>
 
@@ -374,20 +355,19 @@ export function BookingSection() {
                   </div>
                 </div>
 
-                {/* Time Slot Picker (8 AM - 2 PM with 60% Occupancy Badges) */}
+                {/* Time Slot Picker */}
                 <div className="lg:col-span-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-black/50" />
                     <span className="text-xs font-mono uppercase tracking-widest text-black/75 font-semibold">
-                      {t.booking.timeLabel} (8 AM - 2 PM)
+                      {t.booking.timeLabel}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    {availableSlotsForDay.map(({ slot, status, label }) => {
+                    {availableSlotsForDay.map(({ slot, status }) => {
                       const isSelected = selectedSlot === slot
                       const isReserved = status === "reserved"
-                      const isLimited = status === "limited"
 
                       return (
                         <button
@@ -397,29 +377,14 @@ export function BookingSection() {
                           onClick={() => setSelectedSlot(slot)}
                           className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
                             isReserved
-                              ? "bg-black/[0.02] text-black/40 border-black/[0.05] cursor-not-allowed"
+                              ? "bg-black/[0.02] text-black/30 border-black/[0.04] cursor-not-allowed line-through"
                               : isSelected
                               ? "bg-[#111] text-white border-[#111] shadow-xs"
                               : "bg-white text-black/80 border-black/15 hover:border-black/40 cursor-pointer"
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span>{slot}</span>
-                            <span className="text-[9px] font-sans text-black/40 font-normal">(1h)</span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <span className={`text-[9px] font-mono px-2 py-0.5 rounded border uppercase font-medium ${
-                              isReserved
-                                ? "bg-black/[0.04] text-black/40 border-black/10"
-                                : isLimited
-                                ? "bg-amber-500/10 text-amber-700 border-amber-500/20 font-bold"
-                                : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
-                            }`}>
-                              {label}
-                            </span>
-                            {isSelected && <Check className="w-3.5 h-3.5 ml-1" />}
-                          </div>
+                          <span>{slot}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 ml-1" />}
                         </button>
                       )
                     })}
