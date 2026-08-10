@@ -12,30 +12,10 @@ export default function CoberturaPage() {
   const { language } = useLanguage()
 
   return (
-    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white pt-24 pb-16">
+    <main className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased selection:bg-black selection:text-white pt-20 pb-16">
       <MobileNav />
 
-      {/* Hero Header */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-8 sm:mb-12">
-        <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-          <MapPin className="w-3.5 h-3.5 text-black/70" />
-          {language === "es" ? "INTELIGENCIA DE DATOS NACIONAL" : "NATIONAL DATA INTELLIGENCE"}
-        </span>
-        
-        <RevealText className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-[#111] leading-tight">
-          {language === "es" 
-            ? "Base de Datos Propia de Cobertura Nacional" 
-            : "Proprietary Database with National Coverage"}
-        </RevealText>
-
-        <p className="text-sm sm:text-base md:text-lg text-black/70 max-w-3xl mx-auto leading-relaxed">
-          {language === "es"
-            ? "Explora nuestra segmentación por departamentos. Prospectamos activamente sobre personas naturales y jurídicas con capacidad comercial y perfilamiento especializado."
-            : "Explore our departmental segmentation. We actively prospect natural and legal entities with commercial capacity."}
-        </p>
-      </section>
-
-      {/* Interactive Vector Map Section */}
+      {/* Clean Interactive Vector Map Section */}
       <ColombiaMapSection />
 
       {/* Bottom Action CTA */}

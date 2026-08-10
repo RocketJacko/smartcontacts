@@ -61,19 +61,16 @@ export function ColombiaMapSection() {
         
         {/* Section Header */}
         <div className="mb-8 text-center flex flex-col items-center">
-          <PixelIcon type="platform" size={40} />
-          <div className="mt-4">
-            <Tag>{language === "es" ? "CONSOLIDADO NACIONAL DE PERSONAS" : "NATIONAL CONSOLIDATED PERSONS"}</Tag>
-          </div>
-          <RevealText className="mt-5 text-3xl sm:text-4xl md:text-5xl font-normal text-[#111] tracking-tight leading-[1.05] max-w-3xl">
+          <Tag>{language === "es" ? "COBERTURA NACIONAL DE DATOS" : "NATIONAL DATA COVERAGE"}</Tag>
+          <RevealText className="mt-4 text-3xl sm:text-4xl md:text-5xl font-medium text-[#111] tracking-tight leading-[1.05] max-w-3xl">
             {language === "es"
-              ? "Base de Personas Naturales y Jurídicas en Colombia"
-              : "Natural & Legal Persons Database in Colombia"}
+              ? "Segmentación por Departamentos en Colombia"
+              : "Departmental Segmentation in Colombia"}
           </RevealText>
-          <p className="mt-4 text-sm sm:text-base text-black/70 font-normal leading-relaxed max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-black/70 font-normal leading-relaxed max-w-2xl">
             {language === "es"
-              ? "Interactúa o toca sobre cualquier departamento en el mapa vectorial para consultar el desglose exacto de personas naturales y jurídicas."
-              : "Hover or tap any department on the vector map to inspect exact natural and legal person counts."}
+              ? "Explora el desglose en tiempo real de personas naturales y jurídicas seleccionando cualquier departamento en el mapa."
+              : "Explore real-time counts of natural and legal entities by selecting any department on the map."}
           </p>
         </div>
 
