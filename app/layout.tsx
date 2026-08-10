@@ -11,6 +11,12 @@ const _geistMono = Geist_Mono({ subsets: ["latin"], display: "swap" });
 const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"], display: "swap" });
 const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"], display: "swap" });
 
+export const viewport = {
+  themeColor: '#F5F4F0',
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata: Metadata = {
   title: 'SmartContacts — Unidad de Crecimiento & Inteligencia Comercial',
   description: 'Convertimos la tecnología en ventas reales. Amplificamos tu capacidad comercial mediante estrategia, Agentes de IA, automatización y una infraestructura propia de contactos segmentados.',

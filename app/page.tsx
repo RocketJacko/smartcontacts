@@ -1,21 +1,18 @@
 "use client"
 
 import React, { useRef, useEffect, useState, useCallback } from "react"
-import { IntroAnimation, INTRO_DURATION_MS, HERO_REVEAL_MS } from "@/components/intro-animation"
-import { AgentInterface } from "@/components/agent-interface"
-import { PixelIcon } from "@/components/pixel-icon"
-import { LiveAgentFeed, LiveAgentCounter } from "@/components/live-agent-feed"
-import { RevealText } from "@/components/reveal-text"
-import { StackingAgentCards } from "@/components/stacking-agent-cards"
-import { StackingPlatformCards } from "@/components/stacking-platform-cards"
-import { MobileNav } from "@/components/mobile-nav"
-import { BookingSection } from "@/components/booking-section"
-import { ColombiaMapSection } from "@/components/colombia-map-section"
-import { MethodologySection } from "@/components/methodology-section"
-import { KageSalesIndicator } from "@/components/kage-sales-indicator"
-import { KageModalitiesSection } from "@/components/kage-modalities-section"
-import Link from "next/link"
+import dynamic from "next/dynamic"
 
+const IntroAnimation = dynamic(() => import("@/components/intro-animation").then(m => m.IntroAnimation), { ssr: false })
+const StackingPlatformCards = dynamic(() => import("@/components/stacking-platform-cards").then(m => m.StackingPlatformCards))
+const KageSalesIndicator = dynamic(() => import("@/components/kage-sales-indicator").then(m => m.KageSalesIndicator))
+const KageModalitiesSection = dynamic(() => import("@/components/kage-modalities-section").then(m => m.KageModalitiesSection))
+const BookingSection = dynamic(() => import("@/components/booking-section").then(m => m.BookingSection))
+
+import { PixelIcon } from "@/components/pixel-icon"
+import { RevealText } from "@/components/reveal-text"
+import { MobileNav } from "@/components/mobile-nav"
+import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
 // ─── Intersection Observer hook ──────────────────────────────────────────────
@@ -127,8 +124,8 @@ export default function AgenticPage() {
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden">
 
-        {/* Hero Background Video */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
+        {/* Hero Background Video (Desktop Only for Mobile 100 Performance) */}
+        <div className="hidden sm:block absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
           <video
             autoPlay
             loop
