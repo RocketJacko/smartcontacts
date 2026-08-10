@@ -1,4 +1,9 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+const fs = require('fs');
+const path = require('path');
+const sharp = require('sharp');
+
+// High precision SVG matching the SmartContacts brand logo (overlapping translucent circles + SC geometric monogram)
+const svgContent = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="8" result="blur" />
@@ -54,3 +59,46 @@
     />
   </g>
 </svg>
+`;
+
+const publicDir = path.join(__dirname, '..', 'public');
+
+async function generate() {
+  // Save SVG
+  const svgPath = path.join(publicDir, 'icon.svg');
+  fs.writeFileSync(svgPath, svgContent, 'utf8');
+  console.log('Saved icon.svg');
+
+  // Convert to 32x32 Light PNG
+  await sharp(Buffer.from(svgContent))
+    .resize(32, 32)
+    .png()
+    .toFile(path.join(publicDir, 'icon-light-32x32.png'));
+  console.log('Saved icon-light-32x32.png');
+
+  // Convert to 32x32 Dark PNG
+  await sharp(Buffer.from(svgContent))
+    .resize(32, 32)
+    .png()
+    .toFile(path.join(publicDir, 'icon-dark-32x32.png'));
+  console.log('Saved icon-dark-32x32.png');
+
+  // Convert to 180x180 Apple Touch Icon
+  await sharp(Buffer.from(svgContent))
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(publicDir, 'apple-icon.png'));
+  console.log('Saved apple-icon.png');
+
+  // Also save favicon.ico in app and public
+  await sharp(Buffer.from(svgContent))
+    .resize(48, 48)
+    .png()
+    .toFile(path.join(publicDir, 'favicon.ico'));
+  console.log('Saved favicon.ico');
+}
+
+generate().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
