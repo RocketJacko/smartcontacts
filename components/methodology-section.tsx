@@ -73,7 +73,6 @@ export function MethodologySection() {
                     <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-semibold">
                       0{idx + 1}
                     </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
                   </div>
                   <h3 className="text-base font-medium text-[#111] tracking-tight">
                     {adv.title}
@@ -108,9 +107,6 @@ export function MethodologySection() {
                     <span className="px-3 py-1 rounded-full text-xs font-mono text-black/80 bg-black/[0.04] border border-black/10 font-bold">
                       FASE {phase.num}
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-800 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200/60 font-semibold">
-                      ● ACTIVO
-                    </span>
                   </div>
 
                   <h3 className="text-xl sm:text-2xl font-medium text-[#111] tracking-tight">
@@ -120,17 +116,6 @@ export function MethodologySection() {
                   <p className="text-xs sm:text-sm text-black/75 leading-relaxed font-normal">
                     {phase.desc}
                   </p>
-                </div>
-
-                {/* AGENTS.md Standard Row Pattern */}
-                <div className="mt-6 pt-4 border-t border-black/[0.06]">
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                    <span className="text-[10px] text-black/25 font-mono min-w-[16px]">{phase.num}</span>
-                    <span className="text-[11px] text-black/60 font-light flex-1">
-                      {language === "es" ? "Estado de fase controlado por SLA" : "Phase status controlled by SLA"}
-                    </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-500 transition-colors" />
-                  </div>
                 </div>
               </div>
             ))}
