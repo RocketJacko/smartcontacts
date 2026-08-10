@@ -10,7 +10,10 @@ const bookingSchema = z.object({
   time: z.string().optional(),
   timeSlot: z.string().optional(),
   company: z.string().optional(),
+  isCompany: z.boolean().optional(),
   service: z.string().optional(),
+  topic: z.string().optional(),
+  description: z.string().optional(),
 })
 
 export async function POST(request: Request) {
