@@ -255,6 +255,45 @@ export const translations = {
         supportCode3: "✓ 98.6% de tickets resueltos en tiempo real sin intervención.",
       }
     },
+    advantages: {
+      tag: "VENTAJAS ESTRATÉGICAS DE VALOR MEDIBLE",
+      title: "Generamos impacto directo en la eficiencia y conversión comercial.",
+      items: [
+        { title: "Mayor Eficiencia Operativa", desc: "Automatiza tareas repetitivas y complejas, reduciendo el margen de error a cero." },
+        { title: "Mejora en Decisiones", desc: "Accede a insights basados en datos reales e indicadores de prospección." },
+        { title: "Reducción de Costos", desc: "Optimiza recursos sin inflar la nómina fija ni asumir cargas prestacionales." },
+        { title: "Experiencia 24/7", desc: "Respuestas inmediatas y atención continua sin importar el horario." },
+        { title: "Escalabilidad & Crecimiento", desc: "Expande la capacidad comercial fácilmente según el volumen." },
+        { title: "Ventaja Competitiva", desc: "Posiciónate por delante de tus competidores con tecnología agéntica." },
+      ]
+    },
+    methodology: {
+      tag: "METODOLOGÍA EN 4 FASES",
+      title: "¿Cómo Implementamos Inteligencia Artificial en tu Empresa?",
+      subtitle: "Un proceso estructurado de ingeniería agéntica diseñado para mitigar riesgos y maximizar el ROI comercial.",
+      phases: [
+        {
+          num: "01",
+          title: "Diagnóstico y Entendimiento de Requerimientos",
+          desc: "Entendemos tus retos, objetivos y flujos comerciales. Analizamos datos clave, creamos la hoja de ruta y co-diseñamos el plan de implementación con casos de uso, tecnologías y reglas definidas."
+        },
+        {
+          num: "02",
+          title: "Desarrollo, Implementación e Integración",
+          desc: "Ajustamos prompts, modelos agénticos, pipelines de datos y APIs. Integramos con seguridad y permisos. Garantizamos calidad con pruebas A/B y control de costos, liberando por fases."
+        },
+        {
+          num: "03",
+          title: "Entrenamiento, Optimización y Despliegue",
+          desc: "Entrenamos con datos y políticas exactas de tu marca. Optimizamos precisión, latencia y costos. Aplicamos feedback humano y desplegamos con monitoreo en tiempo real."
+        },
+        {
+          num: "04",
+          title: "Validación, Ajustes y Acompañamiento Continuo",
+          desc: "Evaluamos métricas de conversión y tiempos de ciclo. Aplicamos mejoras continuas en el conocimiento de los agentes y acompañamos la evolución operativa para asegurar el máximo ROI."
+        }
+      ]
+    },
     pricing: {
       tag: "MODALIDADES DE TRABAJO",
       title: "Dos formas de potenciar su capacidad comercial.",

@@ -11,6 +11,7 @@ import { StackingPlatformCards } from "@/components/stacking-platform-cards"
 import { MobileNav } from "@/components/mobile-nav"
 import { BookingSection } from "@/components/booking-section"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
+import { MethodologySection } from "@/components/methodology-section"
 import { AboutSection } from "@/components/about-section"
 import Link from "next/link"
 
@@ -231,6 +232,9 @@ export default function AgenticPage() {
 
       {/* ── MAPA DE COBERTURA COLOMBIA (CONSOLIDADO NACIONAL) ───────────── */}
       <ColombiaMapSection />
+
+      {/* ── METODOLOGÍA 4 FASES & VENTAJAS ESTRATÉGICAS ───────────────────── */}
+      <MethodologySection />
 
       {/* ── MODALIDADES DE TRABAJO ─────────────────────────────────────────── */}
       <section id="modalidades" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">

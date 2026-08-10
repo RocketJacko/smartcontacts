@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { Footer } from "@/components/footer"
 import { StackingPlatformCards } from "@/components/stacking-platform-cards"
 import { StackingAgentCards } from "@/components/stacking-agent-cards"
+import { MethodologySection } from "@/components/methodology-section"
 import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
@@ -120,6 +121,9 @@ export default function PropuestaPage() {
           </div>
         </div>
       </section>
+
+      {/* Methodology Section */}
+      <MethodologySection />
 
       <Footer />
     </main>
