@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { BookingSection } from "@/components/booking-section"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
 import { MethodologySection } from "@/components/methodology-section"
+import { KageSalesIndicator } from "@/components/kage-sales-indicator"
 import { AboutSection } from "@/components/about-section"
 import Link from "next/link"
 
@@ -211,6 +212,11 @@ export default function AgenticPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── INDICADOR KAGE DE INCREMENTO EN VENTAS (SLIDER MÍNIMO A MÁXIMO) ── */}
+      <section className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 border-b border-black/[0.06] bg-[#F5F4F0]">
+        <KageSalesIndicator />
       </section>
 
       {/* ── PROPUESTA DE VALOR & MANIFIESTO (Sticky Stacking Cards) ──────── */}
