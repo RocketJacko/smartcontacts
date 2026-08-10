@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     // Log for Vercel Serverless Logs
     console.log('[SMARTCONTACTS LEAD RECEIVED]', payload)
 
-    // Forward to n8n Webhook on ventus server if N8N_WEBHOOK_URL is configured
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'http://31.97.150.100:5678/webhook/smartcontacts-booking'
+    // Forward to n8n Webhook on ventus server (ventusn8n.smartcontacts.cloud)
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'https://ventusn8n.smartcontacts.cloud/webhook/smartcontacts-booking'
     
     try {
       await fetch(n8nWebhookUrl, {
