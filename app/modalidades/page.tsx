@@ -36,10 +36,10 @@ export default function ModalidadesPage() {
 
       {/* Pricing / Modalities Comparison */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 xl:gap-12 items-stretch">
           
           {/* Card 1: Delegado / Canal Externo */}
-          <div className="group relative rounded-3xl border border-black/[0.08] bg-white p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:border-black/20 transition-all">
+          <div className="group relative rounded-3xl border border-black/[0.08] bg-white p-8 sm:p-10 lg:p-12 shadow-sm flex flex-col justify-between hover:border-black/30 lg:hover:-translate-y-1 transition-all duration-300">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <span className="w-10 h-10 rounded-xl bg-black/[0.04] border border-black/10 flex items-center justify-center text-black/80">
@@ -98,7 +98,7 @@ export default function ModalidadesPage() {
           </div>
 
           {/* Card 2: In-House / Instalación */}
-          <div className="group relative rounded-3xl border border-black/[0.08] bg-[#FAF9F6] p-8 sm:p-10 shadow-sm flex flex-col justify-between hover:border-black/20 transition-all">
+          <div className="group relative rounded-3xl border border-black/[0.08] bg-[#FAF9F6] p-8 sm:p-10 lg:p-12 shadow-sm flex flex-col justify-between hover:border-black/30 lg:hover:-translate-y-1 transition-all duration-300">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <span className="w-10 h-10 rounded-xl bg-white border border-black/10 flex items-center justify-center text-black/80">

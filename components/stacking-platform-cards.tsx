@@ -18,113 +18,169 @@ function Tag({ children }: { children: React.ReactNode }) {
 }
 
 export function StackingPlatformCards() {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
+
+  const cardsCount = 3
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [depth, setDepth] = useState<number[]>(Array(cardsCount).fill(0))
+
+  useEffect(() => {
+    function onScroll() {
+      const nextDepth = Array(cardsCount)
+        .fill(0)
+        .map((_, i) => {
+          let count = 0
+          for (let j = i + 1; j < cardsCount; j++) {
+            const el = cardRefs.current[j]
+            if (!el) continue
+            const rect = el.getBoundingClientRect()
+            const stickyTopJ = STICKY_TOP + j * STICKY_STEP
+            if (rect.top <= stickyTopJ + 2) count++
+          }
+          return count
+        })
+      setDepth(nextDepth)
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [cardsCount])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      
+    <div className="flex flex-col space-y-6" style={{ perspective: "1400px", perspectiveOrigin: "50% 0%" }}>
       {/* ── CARD 1: SISTEMA AUTÓNOMO ────────────────────────────────────── */}
-      <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-6 sm:p-8 shadow-sm transition-all hover:border-black/[0.15] hover:shadow-md flex flex-col justify-between">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
-              <PixelIcon type="platform" size={20} />
+      {(() => {
+        const i = 0
+        const d = depth[i]
+        const scale = 1 - d * SCALE_STEP
+        const translateY = d * OFFSET_STEP
+        return (
+          <div
+            ref={el => { cardRefs.current[i] = el }}
+            className="sticky"
+            style={{ top: `${STICKY_TOP + i * STICKY_STEP}px`, zIndex: 10 + i }}
+          >
+            <div
+              style={{
+                transform: `scale(${scale}) translateY(${translateY}px)`,
+                transformOrigin: "top center",
+                transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+                willChange: "transform",
+              }}
+            >
+              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-8 sm:p-10 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
+                <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
+                  <div className="max-w-xl space-y-4">
+                    <div className="w-10 h-10 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
+                      <PixelIcon type="platform" size={24} />
+                    </div>
+                    <Tag>{t.platform.autonomousTag}</Tag>
+                    <h3 className="text-2xl sm:text-3xl font-medium text-[#111] tracking-tight">
+                      {t.platform.autonomousTitle}
+                    </h3>
+                    <p className="text-sm text-black/80 font-normal leading-relaxed">
+                      {t.platform.autonomousDesc}
+                    </p>
+                  </div>
+                  <div className="p-6 rounded-2xl border border-black/[0.06] bg-black/[0.02] w-full lg:w-80 shrink-0 space-y-3">
+                    <div className="text-[10px] font-mono text-black/50 tracking-widest uppercase font-medium">
+                      PROMESA DE VALOR
+                    </div>
+                    {[
+                      { label: "Enfoque Consultivo", desc: "Venta directa de alto valor" },
+                      { label: "Control de Marca", desc: "Alineado a tus políticas" },
+                      { label: "Escala Comercial", desc: "Sin inflar nómina fija" },
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-white border border-black/[0.04]">
+                        <div className="text-[11px] font-semibold text-[#111]">{item.label}</div>
+                        <div className="text-[10px] text-black/60 font-normal">{item.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <Tag>{t.platform.autonomousTag}</Tag>
           </div>
+        )
+      })()}
 
-          <h3 className="text-xl sm:text-2xl font-medium text-[#111] tracking-tight">
-            {t.platform.autonomousTitle}
-          </h3>
-
-          <p className="text-xs sm:text-sm text-black/75 font-normal leading-relaxed">
-            {t.platform.autonomousDesc}
-          </p>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-black/[0.06] space-y-2">
-          {[
-            { id: "01", label: language === "es" ? "Enfoque Consultivo" : "Consultative Approach", desc: "Venta directa de alto valor" },
-            { id: "02", label: language === "es" ? "Control de Marca" : "Brand Guidelines", desc: "Alineado a tus políticas" },
-            { id: "03", label: language === "es" ? "Escala Comercial" : "Sales Scaling", desc: "Sin inflar nómina fija" },
-          ].map((item) => (
-            <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-              <span className="text-[10px] text-black/25 font-mono min-w-[16px]">{item.id}</span>
-              <span className="text-[11px] text-black/70 font-medium flex-1">{item.label}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-500 transition-colors" />
+      {/* ── CARD 2: DATOS PROPIOS (+4M SEGMENTADOS) ───────────────────── */}
+      {(() => {
+        const i = 1
+        const d = depth[i]
+        const scale = 1 - d * SCALE_STEP
+        const translateY = d * OFFSET_STEP
+        return (
+          <div
+            ref={el => { cardRefs.current[i] = el }}
+            className="sticky"
+            style={{ top: `${STICKY_TOP + i * STICKY_STEP}px`, zIndex: 10 + i }}
+          >
+            <div
+              style={{
+                transform: `scale(${scale}) translateY(${translateY}px)`,
+                transformOrigin: "top center",
+                transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+                willChange: "transform",
+              }}
+            >
+              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-8 sm:p-10 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
+                <div className="max-w-2xl space-y-4">
+                  <div className="w-10 h-10 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
+                    <PixelIcon type="integrations" size={24} />
+                  </div>
+                  <Tag>{t.platform.memoryTag}</Tag>
+                  <h3 className="text-2xl sm:text-3xl font-medium text-[#111] tracking-tight">
+                    {t.platform.memoryTitle}
+                  </h3>
+                  <p className="text-sm text-black/80 font-normal leading-relaxed">
+                    {t.platform.memoryDesc}
+                  </p>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── CARD 2: INTELIGENCIA DE DATOS ───────────────────────────────── */}
-      <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-6 sm:p-8 shadow-sm transition-all hover:border-black/[0.15] hover:shadow-md flex flex-col justify-between">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
-              <PixelIcon type="integrations" size={20} />
-            </div>
-            <Tag>{t.platform.memoryTag}</Tag>
           </div>
+        )
+      })()}
 
-          <h3 className="text-xl sm:text-2xl font-medium text-[#111] tracking-tight">
-            {t.platform.memoryTitle}
-          </h3>
+      {/* ── CARD 3: MANIFIESTO (LO QUE SÍ SOMOS VS LO QUE NO SOMOS) ───── */}
+      {(() => {
+        const i = 2
+        const d = depth[i]
+        const scale = 1 - d * SCALE_STEP
+        const translateY = d * OFFSET_STEP
+        return (
+          <div
+            ref={el => { cardRefs.current[i] = el }}
+            className="sticky"
+            style={{ top: `${STICKY_TOP + i * STICKY_STEP}px`, zIndex: 10 + i }}
+          >
+            <div
+              style={{
+                transform: `scale(${scale}) translateY(${translateY}px)`,
+                transformOrigin: "top center",
+                transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+                willChange: "transform",
+              }}
+            >
+              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-6 sm:p-8 md:p-12 shadow-md transition-all hover:border-black/[0.15]">
+                {/* Intro Header */}
+                <div className="max-w-3xl mb-8 space-y-3">
+                  <Tag>{t.platform.manifesto.tagline}</Tag>
+                  <h3 className="text-2xl md:text-3xl font-medium text-[#111] tracking-tight">
+                    {t.platform.manifesto.title}
+                  </h3>
+                  <p className="text-sm text-black/80 font-normal leading-relaxed">
+                    {t.platform.manifesto.desc}
+                  </p>
+                </div>
 
-          <p className="text-xs sm:text-sm text-black/75 font-normal leading-relaxed">
-            {t.platform.memoryDesc}
-          </p>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-black/[0.06] space-y-2">
-          {[
-            { id: "01", label: language === "es" ? "Segmentación por Ubicación" : "Location Segmentation", desc: "Perfilamiento geográfico" },
-            { id: "02", label: language === "es" ? "Leyes & Capacidad" : "Regulations & Capacity", desc: "Cálculo Ley 1527" },
-            { id: "03", label: language === "es" ? "Cartera Propia o In-House" : "Proprietary or In-House", desc: "Integración directa" },
-          ].map((item) => (
-            <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-              <span className="text-[10px] text-black/25 font-mono min-w-[16px]">{item.id}</span>
-              <span className="text-[11px] text-black/70 font-medium flex-1">{item.label}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500/60 group-hover:bg-blue-500 transition-colors" />
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── CARD 3: MANIFIESTO Y FLUJOS DOCUMENTALES ───────────────────── */}
-      <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-6 sm:p-8 shadow-sm transition-all hover:border-black/[0.15] hover:shadow-md flex flex-col justify-between">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="w-9 h-9 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
-              <PixelIcon type="security" size={20} />
-            </div>
-            <Tag>{t.platform.manifesto.tagline}</Tag>
           </div>
-
-          <h3 className="text-xl sm:text-2xl font-medium text-[#111] tracking-tight">
-            {t.platform.manifesto.title}
-          </h3>
-
-          <p className="text-xs sm:text-sm text-black/75 font-normal leading-relaxed">
-            {t.platform.manifesto.desc}
-          </p>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-black/[0.06] space-y-2">
-          {[
-            { id: "01", label: language === "es" ? "Validación Documental" : "Document Validation", desc: "Lectura OCR automática" },
-            { id: "02", label: language === "es" ? "Orquestación n8n / APIs" : "n8n / API Orchestration", desc: "Flujos sincronizados" },
-            { id: "03", label: language === "es" ? "Cero Tareas Repetitivas" : "Zero Repetitive Work", desc: "Operación eficiente" },
-          ].map((item) => (
-            <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-              <span className="text-[10px] text-black/25 font-mono min-w-[16px]">{item.id}</span>
-              <span className="text-[11px] text-black/70 font-medium flex-1">{item.label}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500/60 group-hover:bg-purple-500 transition-colors" />
-            </div>
-          ))}
-        </div>
-      </div>
-
+        )
+      })()}
     </div>
   )
 }

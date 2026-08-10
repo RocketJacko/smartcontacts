@@ -243,11 +243,11 @@ export default function AgenticPage() {
             </RevealText>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6" onMouseMove={handleMouse}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch" onMouseMove={handleMouse}>
             {t.pricing.plans.map((plan, idx) => (
               <BentoCard
                 key={plan.name}
-                className={`p-8 sm:p-10 flex flex-col justify-between ${idx === 1 ? "border-black/20 bg-[#F0EEE8]" : ""}`}
+                className={`p-8 sm:p-10 lg:p-12 flex flex-col justify-between hover:border-black/30 lg:hover:-translate-y-1 transition-all duration-300 ${idx === 1 ? "border-black/20 bg-[#F0EEE8]" : ""}`}
                 delay={idx * 100}
               >
                 <div>
