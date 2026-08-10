@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   description: 'Convertimos la tecnología en ventas reales. Amplificamos tu capacidad comercial mediante estrategia, Agentes de IA, automatización y una infraestructura propia de contactos segmentados.',
   keywords: ['SmartContacts', 'unidades de crecimiento', 'agentes IA', 'inteligencia comercial', 'prospección automatizada'],
   authors: [{ name: 'SmartContacts' }],
+  verification: {
+    google: 'googlea8c27253a63b1bd5',
+  },
   openGraph: {
     title: 'SmartContacts — Unidad de Crecimiento & Inteligencia Comercial',
     description: 'Convertimos la tecnología en ventas reales. Amplificamos tu capacidad comercial con IA y automatizaciones sobre datos segmentados por departamento.',
