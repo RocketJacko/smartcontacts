@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
 const NAV_STYLE = {
@@ -17,11 +18,11 @@ export function MobileNav() {
   const close = () => setOpen(false)
 
   const navLinks = [
-    { label: t.nav.platform,   href: "#platform" },
-    { label: t.nav.coverage,   href: "#cobertura" },
-    { label: t.nav.modalities, href: "#modalidades" },
-    { label: t.nav.about,      href: "#sobre-mi" },
-    { label: t.nav.schedule,   href: "#agendar" },
+    { label: t.nav.platform,   href: "/propuesta" },
+    { label: t.nav.coverage,   href: "/cobertura" },
+    { label: t.nav.modalities, href: "/modalidades" },
+    { label: t.nav.about,      href: "/sobre-mi" },
+    { label: t.nav.schedule,   href: "/agendar" },
   ]
 
   return (
@@ -34,20 +35,20 @@ export function MobileNav() {
           style={NAV_STYLE}
         >
           {/* Logo */}
-          <a href="#" className="font-pixel text-[11px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] text-black/80 mr-2 lg:mr-6 shrink-0 select-none hover:opacity-80 transition-opacity">
+          <Link href="/" className="font-pixel text-[11px] sm:text-xs tracking-[0.2em] sm:tracking-[0.25em] text-black/80 mr-2 lg:mr-6 shrink-0 select-none hover:opacity-80 transition-opacity">
             SMARTCONTACTS
-          </a>
+          </Link>
 
           {/* Desktop links */}
           <div className="hidden lg:flex items-center gap-4 xl:gap-6 shrink" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
             {navLinks.map(l => (
-              <a
+              <Link
                 key={l.label}
                 href={l.href}
                 className="text-[11px] text-black/60 hover:text-black transition-colors duration-200 tracking-wide whitespace-nowrap"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -135,7 +136,7 @@ export function MobileNav() {
             style={NAV_STYLE}
           >
             {navLinks.map(l => (
-              <a
+              <Link
                 key={l.label}
                 href={l.href}
                 onClick={close}
@@ -143,7 +144,7 @@ export function MobileNav() {
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
             <div className="pt-1 px-2 pb-1">
               <a

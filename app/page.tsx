@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { BookingSection } from "@/components/booking-section"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
 import { AboutSection } from "@/components/about-section"
+import Link from "next/link"
 
 import { useLanguage } from "@/lib/language-context"
 
@@ -372,15 +373,16 @@ export default function AgenticPage() {
           <span className="font-pixel text-xs tracking-[0.25em] text-black/50">SMARTCONTACTS</span>
 
           {/* Nav sections */}
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {[
-              { label: t.nav.platform,   href: "#platform" },
-              { label: t.nav.coverage,   href: "#cobertura" },
-              { label: t.nav.modalities, href: "#modalidades" },
-              { label: t.nav.about,      href: "#sobre-mi" },
-              { label: t.nav.schedule,   href: "#agendar" },
+              { label: t.nav.platform,   href: "/propuesta" },
+              { label: t.nav.coverage,   href: "/cobertura" },
+              { label: t.nav.modalities, href: "/modalidades" },
+              { label: t.nav.about,      href: "/sobre-mi" },
+              { label: t.nav.schedule,   href: "/agendar" },
+              { label: "Landing",        href: "/landing" },
             ].map(l => (
-              <a key={l.label} href={l.href} className="text-xs text-black/40 hover:text-black transition-colors font-mono tracking-wider">{l.label}</a>
+              <Link key={l.label} href={l.href} className="text-xs text-black/50 hover:text-black transition-colors font-mono tracking-wider">{l.label}</Link>
             ))}
           </div>
 
