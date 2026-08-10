@@ -5,7 +5,7 @@ export const translations = {
     nav: {
       platform: "Propuesta de Valor",
       coverage: "Cobertura Nacional",
-      sectors: "Financiero & Salud",
+      about: "Sobre Mí",
       modalities: "Formas de Trabajar",
       schedule: "Agendar Cita",
       agents: "Agentes & IA",
@@ -264,7 +264,7 @@ export const translations = {
           price: "Comercialización Directa",
           period: "",
           sub: "Comercializamos sus servicios con nuestro sistema",
-          features: ["Contacto directo sobre datos propios (+4M)", "Presentación de oferta y manejo de objeciones", "Ejecución del ciclo comercial hasta cierre", "Despacho automatizado cuando es posible", "Sin apropiarnos del proceso de su empresa"],
+          features: ["Contacto directo sobre datos propios", "Presentación de oferta y manejo de objeciones", "Ejecución del ciclo comercial hasta cierre", "Despacho automatizado cuando es posible", "Sin apropiarnos del proceso de su empresa"],
           cta: "SOLICITAR COMERCIALIZACIÓN",
         },
         {
@@ -350,7 +350,7 @@ export const translations = {
     nav: {
       platform: "Value Proposition",
       coverage: "National Coverage",
-      sectors: "Finance & Health",
+      about: "About Me",
       modalities: "Working Modalities",
       schedule: "Schedule Call",
       agents: "Agents & AI",

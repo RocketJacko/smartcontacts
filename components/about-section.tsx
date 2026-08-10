@@ -8,10 +8,10 @@ export function AboutSection() {
   const { language } = useLanguage()
 
   return (
-    <section id="sobre-mi" className="py-16 sm:py-24 lg:py-32 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+    <section id="sobre-mi" className="py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06] bg-[#FAF9F6]">
       <div className="max-w-5xl mx-auto">
         <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-8 sm:p-12 shadow-sm transition-all hover:border-black/[0.15]">
-          <div className="flex flex-col md:flex-row items-center justify-center md:items-center gap-8 lg:gap-12">
+          <div className="flex flex-col md:flex-row items-center justify-center md:items-start gap-8 lg:gap-12">
             
             {/* Real Executive Photograph */}
             <div className="relative shrink-0 flex flex-col items-center justify-center my-auto">
@@ -31,24 +31,29 @@ export function AboutSection() {
                   {language === "es" ? "SOBRE MÍ" : "ABOUT ME"}
                 </span>
                 <RevealText className="text-2xl sm:text-3xl lg:text-4xl font-medium text-[#111] tracking-tight leading-snug">
-                  {language === "es" ? "La persona detrás de SmartContacts" : "The Person Behind SmartContacts"}
+                  {language === "es" ? "Jesús Carmona" : "Jesús Carmona"}
                 </RevealText>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <p className="text-base sm:text-lg text-[#111] font-normal leading-relaxed">
+              <div className="space-y-3 pt-1">
+                <p className="text-sm sm:text-base text-[#111] font-normal leading-relaxed">
                   {language === "es"
-                    ? "Soy Jesús Carmona, ingeniero de software en formación con más de 10 años de experiencia comercial dirigiendo equipos de ventas en servicios financieros y de salud."
-                    : "I'm Jesús Carmona, a software engineer in training with 10+ years of commercial experience leading sales teams in financial and health services."}
+                    ? "Soy Jesús Carmona. Lideré equipos comerciales por más de 10 años en el sector crédito, en productos de libranza, y en el sector salud, comercializando servicios de asistencia médica y planes complementarios."
+                    : "I'm Jesús Carmona. I led sales teams for over 10 years in the credit sector, in payroll loans, and in the health sector, commercializing medical assistance and complementary plans."}
                 </p>
                 <p className="text-xs sm:text-sm text-black/80 font-normal leading-relaxed">
                   {language === "es"
-                    ? "Comprendí que es posible obtener mejores resultados con la estrategia correcta. Por ello me enfoqué en el desarrollo de software: lograr un mayor impacto comercial manteniendo o reduciendo la mano de obra, optimizando al máximo los recursos actuales de cada empresa."
-                    : "I understood that it is possible to achieve better results with the right strategy. That's why I focused on software development: achieving higher commercial impact while maintaining or reducing labor costs, optimizing existing resources to the fullest."}
+                    ? "Con esa experiencia decidí dedicarme a crear sistemas agénticos que apoyan a las empresas en la comercialización de sus servicios. Automatizo procesos comerciales y desarrollo sistemas de soporte inteligente para tu negocio, implementados sin que tengas que preocuparte por temas técnicos."
+                    : "With that experience, I decided to dedicate myself to building agentic systems that empower companies to market their services. I automate sales workflows and build intelligent support systems for your business, deployed seamlessly without technical friction."}
+                </p>
+                <p className="text-xs sm:text-sm text-black/80 font-normal leading-relaxed">
+                  {language === "es"
+                    ? "Hoy soy un canal de ventas adicional para las empresas: traigo mi propia base de datos, mi sistema y mi experiencia comercial, sin que tengas que aumentar tu nómina. Ya lo validé en libranzas, donde es un caso de éxito real, y lo estoy replicando a otros sectores."
+                    : "Today I am an additional sales channel for companies: bringing my own database, AI system, and commercial experience without expanding your payroll. I've validated it in payroll loans as a real success case, and I'm scaling it across other sectors."}
                 </p>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-3">
                 <a
                   href="https://www.linkedin.com/in/jesus-carmona-automatization/"
                   target="_blank"

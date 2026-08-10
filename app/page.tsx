@@ -11,6 +11,7 @@ import { StackingPlatformCards } from "@/components/stacking-platform-cards"
 import { MobileNav } from "@/components/mobile-nav"
 import { BookingSection } from "@/components/booking-section"
 import { ColombiaMapSection } from "@/components/colombia-map-section"
+import { AboutSection } from "@/components/about-section"
 
 import { useLanguage } from "@/lib/language-context"
 
@@ -282,6 +283,9 @@ export default function AgenticPage() {
         </div>
       </section>
 
+      {/* ── SOBRE MÍ ─────────────────────────────────────────────────────── */}
+      <AboutSection />
+
       {/* ── AGENDAR CITA (CALENDARIO & FORMULARIO) ───────────────────────── */}
       <BookingSection />
 
@@ -373,6 +377,7 @@ export default function AgenticPage() {
               { label: t.nav.platform,   href: "#platform" },
               { label: t.nav.coverage,   href: "#cobertura" },
               { label: t.nav.modalities, href: "#modalidades" },
+              { label: t.nav.about,      href: "#sobre-mi" },
               { label: t.nav.schedule,   href: "#agendar" },
             ].map(l => (
               <a key={l.label} href={l.href} className="text-xs text-black/40 hover:text-black transition-colors font-mono tracking-wider">{l.label}</a>

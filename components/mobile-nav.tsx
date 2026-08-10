@@ -20,6 +20,7 @@ export function MobileNav() {
     { label: t.nav.platform,   href: "#platform" },
     { label: t.nav.coverage,   href: "#cobertura" },
     { label: t.nav.modalities, href: "#modalidades" },
+    { label: t.nav.about,      href: "#sobre-mi" },
     { label: t.nav.schedule,   href: "#agendar" },
   ]
 
