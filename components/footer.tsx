@@ -48,7 +48,6 @@ export function Footer() {
             { label: t.nav.modalities, href: "/modalidades" },
             { label: t.nav.about,      href: "/sobre-mi" },
             { label: t.nav.schedule,   href: "/agendar" },
-            { label: "Landing",        href: "/landing" },
           ].map(l => (
             <Link key={l.label} href={l.href} className="text-xs text-black/60 hover:text-black transition-colors font-mono tracking-wider">
               {l.label}
