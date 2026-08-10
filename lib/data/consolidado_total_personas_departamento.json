@@ -1,0 +1,357 @@
+{
+  "fuente": "Consolidado personas naturales y juridicas Colombia",
+  "fecha": "03-08-2026",
+  "descripcion": "Suma de personas naturales (camaras de comercio + libranza FOPEP/CREMIL/Fiduprevisora) y personas juridicas (camaras de comercio)",
+  "totales": {
+    "personas_naturales": 1530800,
+    "personas_juridicas": 586778,
+    "total_personas": 2117578,
+    "detalle": {
+      "naturales_camaras": 1131081,
+      "naturales_libranza": 399719,
+      "juridicas_camaras": 586778
+    }
+  },
+  "departamentos": [
+    {
+      "departamento": "BOGOTA D.C.",
+      "personas_naturales": 310739,
+      "personas_juridicas": 212284,
+      "total": 523023,
+      "detalle": {
+        "naturales_camaras": 228047,
+        "naturales_libranza": 82692
+      }
+    },
+    {
+      "departamento": "ANTIOQUIA",
+      "personas_naturales": 189926,
+      "personas_juridicas": 105280,
+      "total": 295206,
+      "detalle": {
+        "naturales_camaras": 144530,
+        "naturales_libranza": 45396
+      }
+    },
+    {
+      "departamento": "VALLE DEL CAUCA",
+      "personas_naturales": 134878,
+      "personas_juridicas": 49751,
+      "total": 184629,
+      "detalle": {
+        "naturales_camaras": 102549,
+        "naturales_libranza": 32329
+      }
+    },
+    {
+      "departamento": "SANTANDER",
+      "personas_naturales": 100282,
+      "personas_juridicas": 25188,
+      "total": 125470,
+      "detalle": {
+        "naturales_camaras": 78417,
+        "naturales_libranza": 21865
+      }
+    },
+    {
+      "departamento": "CUNDINAMARCA",
+      "personas_naturales": 96947,
+      "personas_juridicas": 26658,
+      "total": 123605,
+      "detalle": {
+        "naturales_camaras": 77395,
+        "naturales_libranza": 19552
+      }
+    },
+    {
+      "departamento": "ATLANTICO",
+      "personas_naturales": 55725,
+      "personas_juridicas": 39445,
+      "total": 95170,
+      "detalle": {
+        "naturales_camaras": 35412,
+        "naturales_libranza": 20313
+      }
+    },
+    {
+      "departamento": "TOLIMA",
+      "personas_naturales": 61481,
+      "personas_juridicas": 9606,
+      "total": 71087,
+      "detalle": {
+        "naturales_camaras": 45660,
+        "naturales_libranza": 15821
+      }
+    },
+    {
+      "departamento": "NORTE DE SANTANDER",
+      "personas_naturales": 57390,
+      "personas_juridicas": 10005,
+      "total": 67395,
+      "detalle": {
+        "naturales_camaras": 47699,
+        "naturales_libranza": 9691
+      }
+    },
+    {
+      "departamento": "BOLIVAR",
+      "personas_naturales": 44075,
+      "personas_juridicas": 20253,
+      "total": 64328,
+      "detalle": {
+        "naturales_camaras": 28552,
+        "naturales_libranza": 15523
+      }
+    },
+    {
+      "departamento": "BOYACA",
+      "personas_naturales": 50913,
+      "personas_juridicas": 6552,
+      "total": 57465,
+      "detalle": {
+        "naturales_camaras": 36340,
+        "naturales_libranza": 14573
+      }
+    },
+    {
+      "departamento": "RISARALDA",
+      "personas_naturales": 40708,
+      "personas_juridicas": 10555,
+      "total": 51263,
+      "detalle": {
+        "naturales_camaras": 32041,
+        "naturales_libranza": 8667
+      }
+    },
+    {
+      "departamento": "NARINO",
+      "personas_naturales": 44797,
+      "personas_juridicas": 5339,
+      "total": 50136,
+      "detalle": {
+        "naturales_camaras": 31915,
+        "naturales_libranza": 12882
+      }
+    },
+    {
+      "departamento": "HUILA",
+      "personas_naturales": 41146,
+      "personas_juridicas": 7651,
+      "total": 48797,
+      "detalle": {
+        "naturales_camaras": 31093,
+        "naturales_libranza": 10053
+      }
+    },
+    {
+      "departamento": "CALDAS",
+      "personas_naturales": 37498,
+      "personas_juridicas": 7554,
+      "total": 45052,
+      "detalle": {
+        "naturales_camaras": 25915,
+        "naturales_libranza": 11583
+      }
+    },
+    {
+      "departamento": "CAUCA",
+      "personas_naturales": 36786,
+      "personas_juridicas": 4248,
+      "total": 41034,
+      "detalle": {
+        "naturales_camaras": 22774,
+        "naturales_libranza": 14012
+      }
+    },
+    {
+      "departamento": "MAGDALENA",
+      "personas_naturales": 31863,
+      "personas_juridicas": 8763,
+      "total": 40626,
+      "detalle": {
+        "naturales_camaras": 21232,
+        "naturales_libranza": 10631
+      }
+    },
+    {
+      "departamento": "CORDOBA",
+      "personas_naturales": 26223,
+      "personas_juridicas": 7558,
+      "total": 33781,
+      "detalle": {
+        "naturales_camaras": 16243,
+        "naturales_libranza": 9980
+      }
+    },
+    {
+      "departamento": "QUINDIO",
+      "personas_naturales": 27533,
+      "personas_juridicas": 4966,
+      "total": 32499,
+      "detalle": {
+        "naturales_camaras": 20799,
+        "naturales_libranza": 6734
+      }
+    },
+    {
+      "departamento": "META",
+      "personas_naturales": 26783,
+      "personas_juridicas": 4495,
+      "total": 31278,
+      "detalle": {
+        "naturales_camaras": 19163,
+        "naturales_libranza": 7620
+      }
+    },
+    {
+      "departamento": "SUCRE",
+      "personas_naturales": 17338,
+      "personas_juridicas": 3709,
+      "total": 21047,
+      "detalle": {
+        "naturales_camaras": 11576,
+        "naturales_libranza": 5762
+      }
+    },
+    {
+      "departamento": "CESAR",
+      "personas_naturales": 17863,
+      "personas_juridicas": 2521,
+      "total": 20384,
+      "detalle": {
+        "naturales_camaras": 11470,
+        "naturales_libranza": 6393
+      }
+    },
+    {
+      "departamento": "LA GUAJIRA",
+      "personas_naturales": 13273,
+      "personas_juridicas": 2992,
+      "total": 16265,
+      "detalle": {
+        "naturales_camaras": 9928,
+        "naturales_libranza": 3345
+      }
+    },
+    {
+      "departamento": "CAQUETA",
+      "personas_naturales": 13623,
+      "personas_juridicas": 2015,
+      "total": 15638,
+      "detalle": {
+        "naturales_camaras": 10855,
+        "naturales_libranza": 2768
+      }
+    },
+    {
+      "departamento": "CHOCO",
+      "personas_naturales": 11612,
+      "personas_juridicas": 2032,
+      "total": 13644,
+      "detalle": {
+        "naturales_camaras": 7353,
+        "naturales_libranza": 4259
+      }
+    },
+    {
+      "departamento": "PUTUMAYO",
+      "personas_naturales": 10584,
+      "personas_juridicas": 1562,
+      "total": 12146,
+      "detalle": {
+        "naturales_camaras": 8897,
+        "naturales_libranza": 1687
+      }
+    },
+    {
+      "departamento": "ARAUCA",
+      "personas_naturales": 7624,
+      "personas_juridicas": 1277,
+      "total": 8901,
+      "detalle": {
+        "naturales_camaras": 6324,
+        "naturales_libranza": 1300
+      }
+    },
+    {
+      "departamento": "CASANARE",
+      "personas_naturales": 7522,
+      "personas_juridicas": 1300,
+      "total": 8822,
+      "detalle": {
+        "naturales_camaras": 5610,
+        "naturales_libranza": 1912
+      }
+    },
+    {
+      "departamento": "SAN ANDRES Y PROVIDENCIA",
+      "personas_naturales": 4559,
+      "personas_juridicas": 1312,
+      "total": 5871,
+      "detalle": {
+        "naturales_camaras": 3840,
+        "naturales_libranza": 719
+      }
+    },
+    {
+      "departamento": "GUAVIARE",
+      "personas_naturales": 4001,
+      "personas_juridicas": 745,
+      "total": 4746,
+      "detalle": {
+        "naturales_camaras": 3749,
+        "naturales_libranza": 252
+      }
+    },
+    {
+      "departamento": "AMAZONAS",
+      "personas_naturales": 2596,
+      "personas_juridicas": 475,
+      "total": 3071,
+      "detalle": {
+        "naturales_camaras": 2197,
+        "naturales_libranza": 399
+      }
+    },
+    {
+      "departamento": "VICHADA",
+      "personas_naturales": 1847,
+      "personas_juridicas": 362,
+      "total": 2209,
+      "detalle": {
+        "naturales_camaras": 1669,
+        "naturales_libranza": 178
+      }
+    },
+    {
+      "departamento": "GUAINIA",
+      "personas_naturales": 1420,
+      "personas_juridicas": 187,
+      "total": 1607,
+      "detalle": {
+        "naturales_camaras": 1332,
+        "naturales_libranza": 88
+      }
+    },
+    {
+      "departamento": "OTRO/EXTRANJERO",
+      "personas_naturales": 692,
+      "personas_juridicas": 0,
+      "total": 692,
+      "detalle": {
+        "naturales_camaras": 0,
+        "naturales_libranza": 692
+      }
+    },
+    {
+      "departamento": "VAUPES",
+      "personas_naturales": 553,
+      "personas_juridicas": 138,
+      "total": 691,
+      "detalle": {
+        "naturales_camaras": 505,
+        "naturales_libranza": 48
+      }
+    }
+  ]
+}
