@@ -81,9 +81,9 @@ export function ColombiaMapSection() {
           <div
             ref={containerRef}
             onMouseMove={handleMouseMove}
-            className="lg:col-span-7 group relative rounded-2xl border border-black/[0.08] bg-white p-4 sm:p-8 lg:p-10 shadow-sm overflow-hidden flex items-center justify-center select-none min-h-[420px] lg:min-h-[480px] hover:border-black/[0.15] transition-all"
+            className="lg:col-span-7 group relative rounded-2xl border border-black/[0.08] bg-white p-4 sm:p-8 lg:p-10 shadow-sm overflow-hidden flex flex-col items-center justify-center select-none min-h-[380px] sm:min-h-[420px] lg:min-h-[480px] hover:border-black/[0.15] transition-all"
           >
-            <div className="relative w-full max-w-md lg:max-w-lg aspect-[3/4] flex items-center justify-center">
+            <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-lg aspect-[3/4] flex items-center justify-center">
               <svg
                 viewBox="0 0 600 800"
                 className="w-full h-full filter drop-shadow-sm transition-all"
@@ -113,15 +113,32 @@ export function ColombiaMapSection() {
                 })}
               </svg>
             </div>
+
+            {/* Mobile Centered Indicator Pill (Hidden on Desktop) */}
+            <div className="lg:hidden mt-4 w-full text-center flex items-center justify-center">
+              <div className="inline-flex flex-col items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-black/[0.08] shadow-xs text-center w-full max-w-xs">
+                <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-medium">
+                  {displayDept.departamento}
+                </span>
+                <span className="text-2xl font-light font-mono text-[#111] tracking-tight my-0.5">
+                  {displayDept.total.toLocaleString()}
+                </span>
+                <div className="flex items-center gap-3 text-[10px] font-mono text-black/60 pt-1 border-t border-black/[0.06] w-full justify-center">
+                  <span>Natural: {displayDept.personas_naturales.toLocaleString()} ({naturalPercent}%)</span>
+                  <span className="text-black/20">•</span>
+                  <span>Jurídica: {displayDept.personas_juridicas.toLocaleString()} ({juridicaPercent}%)</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Executive Data Inspection Panel */}
-          <div className="lg:col-span-5 space-y-5 p-6 sm:p-8 lg:p-10 rounded-2xl border border-black/[0.08] bg-white shadow-sm flex flex-col justify-between hover:border-black/[0.15] transition-all">
+          {/* Desktop Executive Data Inspection Panel (Hidden on Mobile) */}
+          <div className="hidden lg:flex lg:col-span-5 space-y-5 p-8 lg:p-10 rounded-2xl border border-black/[0.08] bg-white shadow-sm flex-col justify-between hover:border-black/[0.15] transition-all">
             <div className="space-y-4">
               {/* Header */}
               <div className="border-b border-black/[0.08] pb-4">
                 <div className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-medium">DEPARTAMENTO SELECCIONADO</div>
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-medium text-[#111] font-mono tracking-tight mt-1 uppercase">
+                <h3 className="text-2xl lg:text-3xl font-medium text-[#111] font-mono tracking-tight mt-1 uppercase">
                   {displayDept.departamento}
                 </h3>
               </div>
@@ -147,18 +164,20 @@ export function ColombiaMapSection() {
               </div>
             </div>
 
-            {/* Data Rows */}
+            {/* Data Rows complying with AGENTS.md row pattern */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
                 <span className="text-[10px] text-black/25 font-mono min-w-[16px]">01</span>
-                <span className="text-[11px] sm:text-xs text-black/60 font-light flex-1">Personas Naturales</span>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-[#111]">{displayDept.personas_naturales.toLocaleString()}</span>
+                <span className="text-[11px] text-black/50 font-light flex-1">Personas Naturales</span>
+                <span className="font-mono text-xs font-semibold text-[#111] mr-1">{displayDept.personas_naturales.toLocaleString()}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
               </div>
 
-              <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
                 <span className="text-[10px] text-black/25 font-mono min-w-[16px]">02</span>
-                <span className="text-[11px] sm:text-xs text-black/60 font-light flex-1">Personas Jurídicas</span>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-[#111]">{displayDept.personas_juridicas.toLocaleString()}</span>
+                <span className="text-[11px] text-black/50 font-light flex-1">Personas Jurídicas</span>
+                <span className="font-mono text-xs font-semibold text-[#111] mr-1">{displayDept.personas_juridicas.toLocaleString()}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
               </div>
             </div>
           </div>
