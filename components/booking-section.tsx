@@ -21,46 +21,79 @@ export function BookingSection() {
   const [company, setCompany] = useState("")
   const [description, setDescription] = useState("")
 
-  // Real Calendar State (Strictly current month and max 7 available days)
+  // Real Calendar State (Full Month with 60% Occupancy)
   const today = useMemo(() => new Date(), [])
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
 
-  // Calculate the next 7 available days within the current month
-  const availableDates = useMemo(() => {
-    const list: Date[] = []
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    
-    for (let i = 0; i < 20 && list.length < 7; i++) {
-      const d = new Date(start)
-      d.setDate(start.getDate() + i)
-      // Lock strictly to the current month & year
-      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-        list.push(d)
-      }
-    }
-    return list
-  }, [today, currentMonth, currentYear])
+  // Fixed 1-Hour Time Slots from 8:00 AM to 2:00 PM
+  const allTimeSlots = useMemo(() => [
+    "08:00 AM",
+    "09:00 AM",
+    "10:00 AM",
+    "11:00 AM",
+    "12:00 PM",
+    "01:00 PM",
+    "02:00 PM",
+  ], [])
 
-  // Default selected day: first available day
+  // Helper to determine deterministic 60% occupancy status for a given day and slot
+  const getSlotOccupancy = (dayNum: number, slotIndex: number) => {
+    // Deterministic pseudo-hash based on day and slot index to ensure consistent ~60% occupancy
+    const hash = (dayNum * 7 + slotIndex * 13 + 5) % 10
+    // If hash < 6 -> 60% are reserved ("AGENDADO")
+    if (hash < 6) {
+      return { status: "reserved", label: language === "es" ? "AGENDADO" : "RESERVED" }
+    } else if (hash === 6 || hash === 7) {
+      return { status: "limited", label: language === "es" ? "ÚLTIMO CUPO" : "LAST SLOT" }
+    } else {
+      return { status: "available", label: language === "es" ? "DISPONIBLE" : "AVAILABLE" }
+    }
+  }
+
+  // Days in month calculation
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
+
+  // Calculate available days (workdays with at least 1 open slot)
+  const isAvailableDay = (dayNum: number) => {
+    const dateObj = new Date(currentYear, currentMonth, dayNum)
+    const dayOfWeek = dateObj.getDay()
+    // Weekend days are full
+    if (dayOfWeek === 0 || dayOfWeek === 6) return false
+    // Days in past are full
+    if (dayNum < today.getDate() && currentMonth === today.getMonth()) return false
+    // Check if at least 1 slot is open
+    return allTimeSlots.some((_, idx) => getSlotOccupancy(dayNum, idx).status !== "reserved")
+  }
+
+  // Default selected day: first available day from today onwards
   const [selectedDay, setSelectedDay] = useState<number | null>(() => {
-    return availableDates.length > 0 ? availableDates[0].getDate() : null
+    for (let d = today.getDate(); d <= daysInMonth; d++) {
+      const dateObj = new Date(currentYear, currentMonth, d)
+      const dayOfWeek = dateObj.getDay()
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) return d
+    }
+    return today.getDate()
   })
 
-  // Selected time slot
-  const [selectedSlot, setSelectedSlot] = useState<string>("10:30 AM")
+  // Selected time slot (defaults to first available slot on selected day)
+  const availableSlotsForDay = useMemo(() => {
+    if (!selectedDay) return []
+    return allTimeSlots.map((slot, idx) => ({
+      slot,
+      ...getSlotOccupancy(selectedDay, idx),
+    }))
+  }, [selectedDay, allTimeSlots, language])
+
+  const [selectedSlot, setSelectedSlot] = useState<string>(() => {
+    const firstOpen = availableSlotsForDay.find(s => s.status !== "reserved")
+    return firstOpen ? firstOpen.slot : "10:00 AM"
+  })
 
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
-
-  // Calendar render math
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
-  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
-
-  const isAvailableDay = (dayNum: number) => {
-    return availableDates.some(d => d.getDate() === dayNum)
-  }
 
   const selectedTopicData = useMemo(() => {
     return t.booking.topics.find(top => top.id === selectedTopic) || t.booking.topics[0]
@@ -247,7 +280,7 @@ export function BookingSection() {
             </div>
           )}
 
-          {/* ──────────────── STEP 2: REAL CALENDAR (MAX 7 DAYS IN MONTH) ───── */}
+          {/* ──────────────── STEP 2: REAL CALENDAR (FULL MONTH WITH 60% OCCUPANCY) ───── */}
           {step === 2 && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -255,19 +288,32 @@ export function BookingSection() {
                   <h3 className="text-xl font-medium text-[#111]">
                     {t.booking.dateLabel}
                   </h3>
-                  <p className="text-xs text-black/60 font-normal mt-0.5">
-                    {language === "es" ? "Mes en curso con máximo 7 días hábiles habilitados para coordinar." : "Current month with maximum 7 available days."}
+                  <p className="text-xs text-black/75 font-normal mt-0.5">
+                    {language === "es" ? "Calendario del mes en curso (Franjas de 1 hora de 8:00 AM a 2:00 PM)." : "Current month calendar (1-hour slots from 8:00 AM to 2:00 PM)."}
                   </p>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-1 text-xs font-mono text-black/60 hover:text-black transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-mono text-black/70 hover:text-black transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>{language === "es" ? "CAMBIAR TEMA" : "CHANGE TOPIC"}</span>
                 </button>
+              </div>
+
+              {/* 60% Occupancy High Demand Banner */}
+              <div className="p-3.5 rounded-xl bg-black/[0.03] border border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="font-semibold text-[#111]">
+                    {language === "es" ? "CAPACIDAD OPERATIVA: 60% AGENDADO" : "OPERATIONAL CAPACITY: 60% RESERVED"}
+                  </span>
+                </div>
+                <span className="text-[10px] text-black/70 font-medium">
+                  {language === "es" ? "DISPONIBILIDAD LIMITADA ESTA SEMANA" : "LIMITED SLOTS THIS WEEK"}
+                </span>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -278,13 +324,13 @@ export function BookingSection() {
                     <span className="text-sm font-mono font-medium text-[#111] tracking-wider uppercase">
                       {t.booking.months[currentMonth]} {currentYear}
                     </span>
-                    <span className="text-[10px] font-mono text-black/50 bg-black/[0.04] px-2.5 py-1 rounded border border-black/10">
-                      {availableDates.length} {language === "es" ? "DÍAS HÁBILES" : "DAYS AVAILABLE"}
+                    <span className="text-[10px] font-mono text-black/75 bg-black/[0.04] px-2.5 py-1 rounded border border-black/10 font-medium">
+                      {language === "es" ? "AGENDA ABIERTA" : "OPEN SCHEDULE"}
                     </span>
                   </div>
 
                   {/* Day Names */}
-                  <div className="grid grid-cols-7 gap-1 text-center font-mono text-[10px] text-black/50 uppercase tracking-wider py-1 font-semibold">
+                  <div className="grid grid-cols-7 gap-1 text-center font-mono text-[10px] text-black/60 uppercase tracking-wider py-1 font-semibold">
                     {t.booking.weekDays.map(d => (
                       <div key={d}>{d}</div>
                     ))}
@@ -306,13 +352,19 @@ export function BookingSection() {
                           key={dayNum}
                           type="button"
                           disabled={!available}
-                          onClick={() => setSelectedDay(dayNum)}
+                          onClick={() => {
+                            setSelectedDay(dayNum)
+                            // Auto select first open slot on new day
+                            const daySlots = allTimeSlots.map((slot, idx) => ({ slot, ...getSlotOccupancy(dayNum, idx) }))
+                            const openSlot = daySlots.find(s => s.status !== "reserved")
+                            if (openSlot) setSelectedSlot(openSlot.slot)
+                          }}
                           className={`py-2.5 rounded-lg text-xs font-mono font-medium transition-all ${
                             isSelected
                               ? "bg-[#111] text-white shadow-xs"
                               : available
                               ? "bg-white border border-black/15 text-[#111] hover:border-black cursor-pointer shadow-2xs"
-                              : "text-black/25 bg-black/[0.02] cursor-not-allowed border border-transparent"
+                              : "text-black/30 bg-black/[0.02] cursor-not-allowed border border-transparent line-through"
                           }`}
                         >
                           {dayNum}
@@ -322,31 +374,52 @@ export function BookingSection() {
                   </div>
                 </div>
 
-                {/* Time Slot Picker */}
+                {/* Time Slot Picker (8 AM - 2 PM with 60% Occupancy Badges) */}
                 <div className="lg:col-span-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-black/50" />
-                    <span className="text-xs font-mono uppercase tracking-widest text-black/60 font-medium">
-                      {t.booking.timeLabel}
+                    <span className="text-xs font-mono uppercase tracking-widest text-black/75 font-semibold">
+                      {t.booking.timeLabel} (8 AM - 2 PM)
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {t.booking.slots.map(slot => {
+                  <div className="grid grid-cols-1 gap-2">
+                    {availableSlotsForDay.map(({ slot, status, label }) => {
                       const isSelected = selectedSlot === slot
+                      const isReserved = status === "reserved"
+                      const isLimited = status === "limited"
+
                       return (
                         <button
                           key={slot}
                           type="button"
+                          disabled={isReserved}
                           onClick={() => setSelectedSlot(slot)}
-                          className={`w-full py-3 px-4 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
-                            isSelected
+                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
+                            isReserved
+                              ? "bg-black/[0.02] text-black/40 border-black/[0.05] cursor-not-allowed"
+                              : isSelected
                               ? "bg-[#111] text-white border-[#111] shadow-xs"
-                              : "bg-white text-black/80 border-black/10 hover:border-black/30"
+                              : "bg-white text-black/80 border-black/15 hover:border-black/40 cursor-pointer"
                           }`}
                         >
-                          <span>{slot}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                          <div className="flex items-center gap-2">
+                            <span>{slot}</span>
+                            <span className="text-[9px] font-sans text-black/40 font-normal">(1h)</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[9px] font-mono px-2 py-0.5 rounded border uppercase font-medium ${
+                              isReserved
+                                ? "bg-black/[0.04] text-black/40 border-black/10"
+                                : isLimited
+                                ? "bg-amber-500/10 text-amber-700 border-amber-500/20 font-bold"
+                                : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+                            }`}>
+                              {label}
+                            </span>
+                            {isSelected && <Check className="w-3.5 h-3.5 ml-1" />}
+                          </div>
                         </button>
                       )
                     })}
@@ -354,7 +427,7 @@ export function BookingSection() {
 
                   {selectedDay && (
                     <div className="p-3.5 rounded-xl bg-black/[0.03] border border-black/[0.06] text-xs space-y-1">
-                      <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest block">CITACIÓN SELECCIONADA</span>
+                      <span className="text-[10px] font-mono text-black/70 uppercase tracking-widest block font-medium">CITACIÓN SELECCIONADA</span>
                       <p className="font-medium text-[#111]">{formattedDate} — {selectedSlot}</p>
                     </div>
                   )}
