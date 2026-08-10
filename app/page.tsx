@@ -239,12 +239,6 @@ export default function AgenticPage() {
       {/* ── MODALIDADES DE TRABAJO (KAGE INTERACTIVE SWITCHER) ───────────── */}
       <KageModalitiesSection />
 
-      {/* ── METODOLOGÍA 4 FASES & VENTAJAS ESTRATÉGICAS ───────────────────── */}
-      <MethodologySection />
-
-      {/* ── MAPA DE COBERTURA COLOMBIA (CONSOLIDADO NACIONAL) ───────────── */}
-      <ColombiaMapSection />
-
       {/* ── AGENDAR CITA (CALENDARIO & LISTA KAGE DE CONSULTAS) ──────────── */}
       <BookingSection />
 

@@ -69,7 +69,7 @@ export function KageModalitiesSection() {
         </div>
 
         {/* Kage Style Interactive Switcher Track */}
-        <div className="max-w-xl mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1 select-none">
+        <div className="max-w-md mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1.5 select-none">
           {modalities.map(m => {
             const isActive = activeModality === m.id
             return (
@@ -77,14 +77,13 @@ export function KageModalitiesSection() {
                 key={m.id}
                 type="button"
                 onClick={() => setActiveModality(m.id as 0 | 1)}
-                className={`flex-1 py-3 px-4 rounded-xl text-xs font-mono transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
                   isActive
-                    ? "bg-[#111] text-white shadow-xs font-semibold"
+                    ? "bg-[#111] text-white shadow-xs"
                     : "text-black/60 hover:text-black hover:bg-black/[0.03]"
                 }`}
               >
-                <span className="opacity-50">MODALIDAD {m.code}</span>
-                <span className="truncate">{m.name}</span>
+                <span>MODALIDAD {m.id + 1}</span>
               </button>
             )
           })}
