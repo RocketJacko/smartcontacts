@@ -1,13 +1,11 @@
 "use client"
 
 import React, { useRef, useEffect, useState, useCallback } from "react"
-import dynamic from "next/dynamic"
-
-const IntroAnimation = dynamic(() => import("@/components/intro-animation").then(m => m.IntroAnimation), { ssr: false })
-const StackingPlatformCards = dynamic(() => import("@/components/stacking-platform-cards").then(m => m.StackingPlatformCards))
-const KageSalesIndicator = dynamic(() => import("@/components/kage-sales-indicator").then(m => m.KageSalesIndicator))
-const KageModalitiesSection = dynamic(() => import("@/components/kage-modalities-section").then(m => m.KageModalitiesSection))
-const BookingSection = dynamic(() => import("@/components/booking-section").then(m => m.BookingSection))
+import { IntroAnimation, INTRO_DURATION_MS, HERO_REVEAL_MS } from "@/components/intro-animation"
+import { StackingPlatformCards } from "@/components/stacking-platform-cards"
+import { KageSalesIndicator } from "@/components/kage-sales-indicator"
+import { KageModalitiesSection } from "@/components/kage-modalities-section"
+import { BookingSection } from "@/components/booking-section"
 
 import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
@@ -74,7 +72,7 @@ function BentoCard({ children, className = "", delay = 0 }: { children: React.Re
 // ─── Pill tag ─────────────────────────────────────────────────────────────────
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] tracking-widest font-sans text-black/40 bg-black/[0.04]">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono text-black/75 bg-black/[0.04] border border-black/10 uppercase tracking-widest font-semibold">
       {children}
     </span>
   )
@@ -87,14 +85,6 @@ export default function AgenticPage() {
   const [submitted, setSubmitted] = useState(false)
   const [heroReady, setHeroReady] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
-
-  useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 640)
-    checkDesktop()
-    window.addEventListener("resize", checkDesktop)
-    return () => window.removeEventListener("resize", checkDesktop)
-  }, [])
 
   const handleIntroDone = useCallback(() => {
     setHeroReady(true)
@@ -114,13 +104,6 @@ export default function AgenticPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleMouse = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = e.currentTarget
-    const rect = el.getBoundingClientRect()
-    el.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`)
-    el.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`)
-  }
-
   return (
     <div className="bg-[#F5F4F0] text-[#111] min-h-screen font-sans antialiased">
 
@@ -133,26 +116,24 @@ export default function AgenticPage() {
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden">
 
-        {/* Hero Background Video (Desktop Only - Completely unmounted on mobile to prevent 3.2MB download) */}
-        {isDesktop && (
-          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="none"
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover z-0"
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4"
-              style={{
-                transform: videoReady ? "scale(1)" : "scale(1.05)",
-                transition: "transform 2s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#F5F4F0] via-transparent to-[#F5F4F0]/70" />
-          </div>
-        )}
+        {/* Hero Background Video (Desktop Only) */}
+        <div className="hidden sm:block absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover z-0"
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4"
+            style={{
+              transform: videoReady ? "scale(1)" : "scale(1.05)",
+              transition: "transform 2s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#F5F4F0] via-transparent to-[#F5F4F0]/70" />
+        </div>
 
         {/* Title + metrics — positioned with safe top padding */}
         <div className="relative z-30 flex flex-col px-6 md:px-12 max-w-4xl">
