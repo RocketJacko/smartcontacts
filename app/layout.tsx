@@ -191,10 +191,6 @@ const jsonLd = {
   ],
 }
 
-import dynamic from "next/dynamic"
-
-const CookieBanner = dynamic(() => import("@/components/cookie-banner").then((mod) => mod.CookieBanner))
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -217,7 +213,6 @@ export default function RootLayout({
           <main id="main-content">
             {children}
           </main>
-          <CookieBanner />
         </LanguageProvider>
       </body>
     </html>
