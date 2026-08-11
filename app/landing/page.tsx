@@ -27,7 +27,7 @@ export default function DirectLandingPage() {
       return true
     }
     try {
-      const res = await fetch("https://fxhemyrjetpwtmjxmftk.supabase.co/functions/v1/check-domain", {
+      const res = await fetch("/api/check-domain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inputEmail }),
