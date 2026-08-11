@@ -88,15 +88,16 @@ function parseDateTimeISO(dateStr: string, timeStr: string): { startISO: string;
   // Construct Colombia time string (UTC-5)
   const startISO = `${cleanDate}T${hoursStr}:${minutesStr}:00-05:00`
 
-  // End time 45 minutes later
-  const startObj = new Date(startISO)
-  const endObj = new Date(startObj.getTime() + 45 * 60 * 1000)
-  
-  // Format endObj back to Colombia ISO string
-  const endHours = String(endObj.getHours()).padStart(2, '0')
-  const endMinutes = String(endObj.getMinutes()).padStart(2, '0')
-  const endDateStr = endObj.toISOString().split('T')[0]
-  const endISO = `${endDateStr}T${endHours}:${endMinutes}:00-05:00`
+  // End time 45 minutes later using pure integer math (Colombia Time)
+  let endHours = hours
+  let endMinutes = minutes + 45
+  if (endMinutes >= 60) {
+    endHours += Math.floor(endMinutes / 60)
+    endMinutes = endMinutes % 60
+  }
+  const endHoursStr = String(endHours).padStart(2, '0')
+  const endMinutesStr = String(endMinutes).padStart(2, '0')
+  const endISO = `${cleanDate}T${endHoursStr}:${endMinutesStr}:00-05:00`
 
   return { startISO, endISO }
 }
