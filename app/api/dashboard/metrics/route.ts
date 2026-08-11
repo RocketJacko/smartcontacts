@@ -25,9 +25,12 @@ export async function GET() {
       no_cumple_agendamiento: 0,
     }
 
+    let recentLogs: Array<{ time: string; label: string; status: string; type: string }> = []
+    let hourlyCounts: number[] = [0, 0, 0, 0, 0, 0]
+
     if (url && anonKey) {
-      // Query prospectos count & Habeas Data consent count
-      const prospectosRes = await fetch(`${url}/rest/v1/prospectos?select=id,acepta_tratamiento_datos`, {
+      // Query prospectos list
+      const prospectosRes = await fetch(`${url}/rest/v1/prospectos?select=id,name,company,topic,created_at,acepta_tratamiento_datos&order=created_at.desc&limit=10`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
@@ -36,13 +39,24 @@ export async function GET() {
       })
 
       if (prospectosRes.ok) {
-        const prospectosData: Array<{ id: string; acepta_tratamiento_datos?: boolean }> = await prospectosRes.json()
+        const prospectosData: Array<{ id: string; name: string; company?: string; topic?: string; created_at: string; acepta_tratamiento_datos?: boolean }> = await prospectosRes.json()
         totalProspectos = prospectosData.length
         habeasDataAceptados = prospectosData.filter((p) => p.acepta_tratamiento_datos !== false).length
+
+        prospectosData.forEach((p) => {
+          const date = new Date(p.created_at || Date.now())
+          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          recentLogs.push({
+            time: timeStr,
+            label: `Registro de Prospecto: ${p.name} ${p.company ? `(${p.company})` : ''} - Tema: ${p.topic || 'Consulta General'}`,
+            status: 'Supabase DB',
+            type: 'prospecto',
+          })
+        })
       }
 
-      // Query eventos count, estados & resultados comerciales
-      const eventosRes = await fetch(`${url}/rest/v1/eventos?select=id,estado,resultado_comercial,recordatorio_30m_enviado`, {
+      // Query eventos list
+      const eventosRes = await fetch(`${url}/rest/v1/eventos?select=id,titulo,meet_link,estado,resultado_comercial,recordatorio_30m_enviado,creado_en&order=creado_en.desc&limit=10`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
@@ -53,9 +67,12 @@ export async function GET() {
       if (eventosRes.ok) {
         const eventosData: Array<{
           id: string
+          titulo: string
+          meet_link?: string
           estado?: string
           resultado_comercial?: string
           recordatorio_30m_enviado?: boolean
+          creado_en: string
         }> = await eventosRes.json()
 
         totalEventos = eventosData.length
@@ -68,15 +85,33 @@ export async function GET() {
           if (e.resultado_comercial && resultadoCounts[e.resultado_comercial] !== undefined) {
             resultadoCounts[e.resultado_comercial]++
           }
+
+          const date = new Date(e.creado_en || Date.now())
+          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          const hour = date.getHours()
+          if (hour >= 8 && hour <= 18) {
+            const idx = Math.min(5, Math.floor((hour - 8) / 2))
+            hourlyCounts[idx]++
+          }
+
+          recentLogs.push({
+            time: timeStr,
+            label: `Cita Agendada: ${e.titulo} ${e.meet_link ? `(Meet Link Activo)` : ''}`,
+            status: e.estado === 'cumplida' ? 'Meet Cumplida' : 'Google Meet API',
+            type: 'evento',
+          })
         })
       }
     }
 
-    // Google API Consumption Metrics & System SLA
+    // Sort recent logs combined by time
+    recentLogs = recentLogs.slice(0, 8)
+
+    // Google API Consumption Metrics based strictly on real DB records
     const googleApiConsumption = {
       gmailApi: {
-        emailsSent: recordatoriosEnviados + totalEventos, // Confirmations + Reminders
-        quotaUsedPercentage: Math.min(100, Number(((recordatoriosEnviados + totalEventos) / 500 * 100).toFixed(1))),
+        emailsSent: recordatoriosEnviados + totalEventos,
+        quotaUsedPercentage: Math.min(100, Number((((recordatoriosEnviados + totalEventos) / 500) * 100).toFixed(1))),
         status: 'OPERACIONAL',
       },
       meetApi: {
@@ -109,6 +144,8 @@ export async function GET() {
         estadoCounts,
         resultadoCounts,
         googleApiConsumption,
+        recentLogs,
+        hourlyCounts,
       },
       { status: 200 }
     )

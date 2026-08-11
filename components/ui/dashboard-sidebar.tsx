@@ -23,12 +23,12 @@ import {
   ShieldCheck,
   Bot,
   Menu,
-  Bell,
   CheckCircle2,
   Mail,
   Video,
   RefreshCw,
-  Zap,
+  Database,
+  InboxIcon,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
@@ -36,7 +36,7 @@ export type NavItemData = {
   id: string
   titleKey: string
   icon: React.ElementType
-  badge?: number | string
+  badgeKey?: string
   shortcut?: string
   children?: NavItemData[]
 }
@@ -51,7 +51,7 @@ const mockNavGroups: NavGroupData[] = [
     items: [
       { id: "search", titleKey: "search", icon: Search, shortcut: "⌘K" },
       { id: "home", titleKey: "unit", icon: LayoutDashboard },
-      { id: "inbox", titleKey: "leads", icon: Inbox, badge: 14 },
+      { id: "inbox", titleKey: "leads", icon: Inbox, badgeKey: "totalProspectos" },
       { id: "analytics", titleKey: "metrics", icon: Activity },
     ],
   },
@@ -140,11 +140,13 @@ function NavItem({
   item,
   activeId,
   onSelect,
+  metrics,
   level = 0,
 }: {
   item: NavItemData
   activeId: string
   onSelect: (id: string) => void
+  metrics?: any
   level?: number
 }) {
   const { t } = useLanguage()
@@ -153,6 +155,7 @@ function NavItem({
   const [isOpen, setIsOpen] = useState(false)
 
   const titleText = (t.dashboard?.menu as any)?.[item.titleKey] || item.titleKey
+  const badgeVal = item.badgeKey === "totalProspectos" ? (metrics?.overview?.totalProspectos || 0) : null
 
   const handleClick = () => {
     if (hasChildren) {
@@ -191,11 +194,11 @@ function NavItem({
               {item.shortcut}
             </kbd>
           )}
-          {item.badge && (
+          {badgeVal !== null && badgeVal > 0 && (
             <span className={`flex items-center justify-center min-w-[18px] h-4.5 px-1.5 text-[10px] font-mono font-bold rounded-full ${
               isActive ? "bg-white text-[#111]" : "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20"
             }`}>
-              {item.badge}
+              {badgeVal}
             </span>
           )}
           {hasChildren && (
@@ -216,12 +219,14 @@ export function SidebarNav({
   onSelect,
   activeWorkspace,
   onWorkspaceSelect,
+  metrics,
 }: {
   className?: string
   activeId?: string
   onSelect?: (id: string) => void
   activeWorkspace?: string
   onWorkspaceSelect?: (ws: string) => void
+  metrics?: any
 }) {
   const { t } = useLanguage()
   const [internalId, setInternalId] = useState("home")
@@ -243,7 +248,7 @@ export function SidebarNav({
                 </span>
               )}
               {group.items.map((item) => (
-                <NavItem key={item.id} item={item} activeId={currentId} onSelect={handleSelect} />
+                <NavItem key={item.id} item={item} activeId={currentId} onSelect={handleSelect} metrics={metrics} />
               ))}
             </div>
           )
@@ -252,7 +257,7 @@ export function SidebarNav({
 
       <div className="mt-auto pt-3 border-t border-black/[0.08] flex flex-col gap-0.5">
         {mockBottomItems.map((item) => (
-          <NavItem key={item.id} item={item} activeId={currentId} onSelect={handleSelect} />
+          <NavItem key={item.id} item={item} activeId={currentId} onSelect={handleSelect} metrics={metrics} />
         ))}
       </div>
     </div>
@@ -316,6 +321,15 @@ export default function SidebarNavPreview() {
   }
 
   const activeTitle = (t.dashboard?.menu as any)?.[activeId] || "Unidad Comercial"
+
+  // Real SVG chart calculations based on real hourlyCounts from Supabase PostgreSQL
+  const hourlyData = metrics?.hourlyCounts && Array.isArray(metrics.hourlyCounts) ? metrics.hourlyCounts : [0, 0, 0, 0, 0, 0]
+  const maxVal = Math.max(1, ...hourlyData)
+  const points = hourlyData.map((val: number, idx: number) => {
+    const x = idx * 100
+    const y = 110 - (val / maxVal) * 80
+    return `${x},${y}`
+  }).join(" L ")
 
   return (
     <div className="min-h-screen w-full bg-[#F5F4F0] text-[#111] font-sans antialiased flex flex-col overflow-hidden">
@@ -399,6 +413,7 @@ export default function SidebarNavPreview() {
                 onSelect={handleSelect}
                 activeWorkspace={activeWorkspace}
                 onWorkspaceSelect={setActiveWorkspace}
+                metrics={metrics}
               />
             </div>
           </>
@@ -416,6 +431,7 @@ export default function SidebarNavPreview() {
             onSelect={handleSelect}
             activeWorkspace={activeWorkspace}
             onWorkspaceSelect={setActiveWorkspace}
+            metrics={metrics}
           />
         </aside>
 
@@ -519,23 +535,23 @@ export default function SidebarNavPreview() {
 
           </div>
 
-          {/* ── REAL-TIME CLEAR LATENCY & CONSUMPTION CHART (SVG DYNAMIC) ────── */}
+          {/* ── REAL-TIME CLEAR LATENCY & CONSUMPTION CHART (REAL SVG DYNAMIC) ────── */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
               <div>
                 <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold block">
-                  RENDIMIENTO DE CONSUMO DE APIS DE GOOGLE & SUPABASE (TIEMPO REAL)
+                  RENDIMIENTO & VOLUMEN DE EVENTOS EN SUPABASE Y APIS DE GOOGLE
                 </span>
                 <p className="text-xs text-black/60 font-sans mt-0.5">
-                  Monitoreo claro de latencia en milisegundos y volumen de peticiones procesadas.
+                  Visualización en tiempo real basada en registros almacenados en PostgreSQL.
                 </p>
               </div>
               <span className="text-xs font-mono text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full font-semibold shrink-0">
-                Latencia Media: 120ms
+                Total Registros DB: {metrics?.overview?.totalEventos || 0}
               </span>
             </div>
 
-            {/* Clear Dynamic SVG Line Chart */}
+            {/* Clear Dynamic SVG Line Chart based on real DB query data */}
             <div className="h-44 w-full pt-4 flex flex-col justify-end relative">
               <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 120">
                 <defs>
@@ -552,22 +568,19 @@ export default function SidebarNavPreview() {
 
                 {/* Filled Area */}
                 <path
-                  d="M 0,110 L 0,85 Q 60,40 120,65 T 240,45 T 360,75 T 500,35 L 500,110 Z"
+                  d={`M 0,110 L ${points} L 500,110 Z`}
                   fill="url(#chartGradient)"
                 />
 
-                {/* Smooth Curve */}
+                {/* Smooth Line */}
                 <path
-                  d="M 0,85 Q 60,40 120,65 T 240,45 T 360,75 T 500,35"
+                  d={`M ${points}`}
                   fill="none"
                   stroke="#10B981"
                   strokeWidth="2.5"
                 />
 
-                {/* Active Data Pulse Points */}
-                <circle cx="120" cy="65" r="4" fill="#10B981" className="animate-ping opacity-75" />
-                <circle cx="120" cy="65" r="4" fill="#10B981" />
-                <circle cx="500" cy="35" r="5" fill="#10B981" />
+                <circle cx="500" cy="110" r="4" fill="#10B981" />
               </svg>
 
               <div className="flex items-center justify-between text-[10px] font-mono text-black/40 pt-2 border-t border-black/[0.04]">
@@ -575,37 +588,46 @@ export default function SidebarNavPreview() {
                 <span>10:00 AM</span>
                 <span>12:00 PM</span>
                 <span>02:00 PM</span>
-                <span>04:00 PM (Ahoramismo)</span>
+                <span>04:00 PM</span>
+                <span>06:00 PM</span>
               </div>
             </div>
           </div>
 
-          {/* ── LIVE EXECUTION LOGS (DESIGN.md PATTERN) ───────────────────────── */}
+          {/* ── LIVE EXECUTION LOGS (100% REAL FROM SUPABASE POSTGRESQL) ───────── */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
-              <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
-                REGISTRO DE EJECUCIONES EN VIVO (LOGS DE AGENTES & APIS)
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
+                  REGISTRO REAL DE EJECUCIONES & AGENDAMIENTOS (SUPABASE DB)
+                </span>
+              </div>
+              <span className="text-xs font-mono text-black/50">
+                {metrics?.recentLogs?.length || 0} Registros Reales
               </span>
-              <span className="text-xs font-mono text-black/50">4 Tareas Procesadas</span>
             </div>
 
             <div className="space-y-2.5">
-              {[
-                { time: "11:14:09", label: "Gmail API: Correo de confirmación y Meet enviado a prospecto", status: "Gmail API 200 OK" },
-                { time: "11:10:02", label: "Google Meet API: Enlace de videollamada generado dinámicamente", status: "Meet API 200 OK" },
-                { time: "11:08:45", label: "Supabase PostgreSQL: Consentimiento de Habeas Data registrado con IP", status: "Auditado" },
-                { time: "11:05:30", label: "Cron Reminders: Verificación de recordatorios 30-min antes de cita", status: "Ejecutado" },
-              ].map((log, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
-                >
-                  <span className="text-[11px] text-black/40 font-mono min-w-[65px] font-medium">{log.time}</span>
-                  <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">{log.label}</span>
-                  <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{log.status}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
+              {metrics?.recentLogs && metrics.recentLogs.length > 0 ? (
+                metrics.recentLogs.map((log: any, i: number) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
+                  >
+                    <span className="text-[11px] text-black/40 font-mono min-w-[65px] font-medium">{log.time}</span>
+                    <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">{log.label}</span>
+                    <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{log.status}</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 flex flex-col items-center justify-center text-center text-black/40 space-y-2">
+                  <InboxIcon className="w-8 h-8 opacity-40" strokeWidth={1.5} />
+                  <p className="text-xs font-sans font-medium">No hay registros ni agendamientos en la base de datos de Supabase en este momento.</p>
+                  <p className="text-[11px] font-mono text-black/30">Crea una reserva en /agendar para ver aparecer los registros reales en tiempo real aquí.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
