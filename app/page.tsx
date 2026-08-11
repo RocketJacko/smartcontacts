@@ -1,20 +1,17 @@
 "use client"
 
 import React, { useRef, useEffect, useState, useCallback } from "react"
-import dynamic from "next/dynamic"
 import { IntroAnimation, INTRO_DURATION_MS, HERO_REVEAL_MS } from "@/components/intro-animation"
+import { StackingPlatformCards } from "@/components/stacking-platform-cards"
+import { KageSalesIndicator } from "@/components/kage-sales-indicator"
+import { KageModalitiesSection } from "@/components/kage-modalities-section"
+import { KageFaqSection } from "@/components/kage-faq-section"
+import { BookingSection } from "@/components/booking-section"
 import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { MobileNav } from "@/components/mobile-nav"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
-
-// Dynamic imports for below-the-fold components (Tree-shaking & Code-Splitting)
-const StackingPlatformCards = dynamic(() => import("@/components/stacking-platform-cards").then(m => m.StackingPlatformCards))
-const KageSalesIndicator = dynamic(() => import("@/components/kage-sales-indicator").then(m => m.KageSalesIndicator))
-const KageModalitiesSection = dynamic(() => import("@/components/kage-modalities-section").then(m => m.KageModalitiesSection))
-const KageFaqSection = dynamic(() => import("@/components/kage-faq-section").then(m => m.KageFaqSection))
-const BookingSection = dynamic(() => import("@/components/booking-section").then(m => m.BookingSection))
 
 // ─── Intersection Observer hook ──────────────────────────────────────────────
 function useInView(threshold = 0.15) {
@@ -88,7 +85,6 @@ export default function AgenticPage() {
   const [submitted, setSubmitted] = useState(false)
   const [heroReady, setHeroReady] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
-  const [videoSrc, setVideoSrc] = useState("")
 
   const handleIntroDone = useCallback(() => {
     setHeroReady(true)
@@ -102,15 +98,9 @@ export default function AgenticPage() {
     }
   }, [])
 
-  // Start video zoom slightly before hero content reveals & defer video src loading
+  // Start video zoom slightly before hero content reveals
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVideoReady(true)
-      // Defer video loading after LCP initial paint completes
-      if (window.innerWidth >= 640) {
-        setVideoSrc("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4")
-      }
-    }, HERO_REVEAL_MS + 500)
+    const timer = setTimeout(() => setVideoReady(true), HERO_REVEAL_MS)
     return () => clearTimeout(timer)
   }, [])
 
@@ -126,24 +116,22 @@ export default function AgenticPage() {
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden">
 
-        {/* Hero Background Video (Desktop Only - Deferred Source) */}
+        {/* Hero Background Video (Desktop Only) */}
         <div className="hidden sm:block absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
-          {videoSrc && (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="none"
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover z-0"
-              src={videoSrc}
-              style={{
-                transform: videoReady ? "scale(1)" : "scale(1.05)",
-                transition: "transform 2s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            />
-          )}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover z-0"
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/agentic-hero-9yW3wnTNMfn2U6lsVhTTZSJFEvAoSj.mp4"
+            style={{
+              transform: videoReady ? "scale(1)" : "scale(1.05)",
+              transition: "transform 2s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#F5F4F0] via-transparent to-[#F5F4F0]/70" />
         </div>
 
