@@ -28,7 +28,12 @@
 - **Formato Obligatorio**: Toda nueva tabla en PostgreSQL / Supabase debe pertenecer a su propio esquema correspondiente con la estructura `schema.nombre_de_tabla` (ejemplo: `calendario.prospectos`, `calendario.agendamientos`, `calendario.disponibilidad`).
 - **Estructura modular**: Antes de crear tablas, se debe asegurar o ejecutar `CREATE SCHEMA IF NOT EXISTS <nombre_esquema>;`.
 
-## 6. Prohibición Estricta de Credenciales y Secretos Hardcodeados
+## 6. Prohibición Estricta de Credenciales y Secretos Hardcodeados & Documentación en `.env.example`
 - **Zero Hardcoded Secrets**: Queda **estrictamente prohibido** escribir llaves de API (`anon_key`, `service_role_key`), contraseñas o tokens secretos como valores de respaldo hardcodeados (fallbacks) dentro del código fuente (ejemplo prohibido: `process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGci...'`).
 - **Uso Exclusivo de Variables de Entorno / Secretos de Supabase**: Todas las credenciales deben consumirse exclusivamente desde las variables de entorno de la plataforma (`process.env.NEXT_PUBLIC_SUPABASE_URL`, `process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY`, `process.env.CHECK_DOMAIN_SECRET`).
+- **Documentación Obligatoria en `.env.example`**: Toda variable de entorno nueva o existente DEBE registrarse en el archivo `.env.example` raíz con comentarios explicativos detallados indicando:
+  1. Dónde se utiliza en la arquitectura del proyecto (archivos/rutas).
+  2. Para qué sirve y por qué es requerida (propósito funcional).
+  3. Valores de ejemplo sintácticos sin exponer secretos reales en producción.
+
 
