@@ -21,5 +21,9 @@
 - **Alineación con la Propuesta de Valor**: Toda funcionalidad debe ser coherente con la promesa de la marca: *"No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."* y los pilares de la propuesta de valor (consultoría, prospección activa, inteligencia de datos con +200k contactos, agentes de IA/RAG, automatizaciones y software a medida).
 
 ## 4. Idioma Español Obligatorio
-- **Español Estricto**: Toda la interacción, respuestas, explicaciones técnicas, planes, documentación y comentarios de código DEBEN ser redactados estrictamente en idioma ESPAÑOL sin excepciones.
+- **Español Estricto**: Toda la interacción, respuestas, explicaciones técnicas, planes, documentación y comentarios de código DEBEN ser redactados strictly en idioma ESPAÑOL sin excepciones.
 
+## 5. Organización Estricta de Esquemas en Supabase (`schema.nombre_de_tabla`)
+- **Nomenclatura por Esquemas**: Queda estrictamente prohibido crear tablas sueltas en el esquema público por defecto (`public`) cuando correspondan a un sistema o módulo específico.
+- **Formato Obligatorio**: Toda nueva tabla en PostgreSQL / Supabase debe pertenecer a su propio esquema correspondiente con la estructura `schema.nombre_de_tabla` (ejemplo: `calendario.prospectos`, `calendario.agendamientos`, `calendario.disponibilidad`).
+- **Estructura modular**: Antes de crear tablas, se debe asegurar o ejecutar `CREATE SCHEMA IF NOT EXISTS <nombre_esquema>;`.
