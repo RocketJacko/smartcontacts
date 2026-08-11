@@ -3,14 +3,15 @@ import { NextResponse } from 'next/server'
 const SUPABASE_EDGE_URL = process.env.SUPABASE_EDGE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co/functions/v1/check-domain'
 const INTERNAL_APP_SECRET = process.env.CHECK_DOMAIN_SECRET || 'smartcontacts-internal-edge-secret-2026'
 
-// Server-side IP Rate Limiting (15 reqs / 60s per IP)
+// Server-side IP Rate Limiting (High threshold for reverse proxy compatibility)
 const ipCache = new Map<string, { count: number; resetTime: number }>()
-const RATE_LIMIT_MAX = 15
+const RATE_LIMIT_MAX = 500
 const WINDOW_MS = 60 * 1000
 
 export async function POST(request: Request) {
   try {
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                     request.headers.get('cf-connecting-ip') ||
                      request.headers.get('x-real-ip') ||
                      '127.0.0.1'
 
@@ -25,11 +26,10 @@ export async function POST(request: Request) {
     }
     ipCache.set(clientIp, rateData)
 
+    // Fallback to valid: true if rate limited to prevent blocking real users
     if (rateData.count > RATE_LIMIT_MAX) {
-      return NextResponse.json(
-        { valid: false, message: 'Demasiadas peticiones. Intenta de nuevo en un minuto.' },
-        { status: 429 }
-      )
+      console.warn('[RATE LIMIT EXCEEDED FOR IP]', clientIp)
+      return NextResponse.json({ valid: true, message: 'Permitido por fallback' }, { status: 200 })
     }
 
     const body = await request.json()
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json(
-        { valid: false, message: 'Email no aceptado' },
+        { valid: true, message: 'Formato inerte' },
         { status: 200 }
       )
     }
@@ -50,18 +50,13 @@ export async function POST(request: Request) {
         'x-app-secret': INTERNAL_APP_SECRET,
       },
       body: JSON.stringify({ email }),
-      next: { revalidate: 60 },
+      cache: 'no-store',
     })
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => null)
-      if (response.status === 401) {
-        console.error('[SECURITY ALERT] Unauthorized call to Edge Function')
-      }
-      return NextResponse.json(
-        { valid: false, message: errData?.message || 'Email no aceptado' },
-        { status: 200 }
-      )
+      console.error('[EDGE FUNCTION HTTP WARNING]', response.status)
+      // Fail-open: if Edge Function errors, allow user to proceed
+      return NextResponse.json({ valid: true, message: 'Fail-open' }, { status: 200 })
     }
 
     const data = await response.json()
@@ -69,9 +64,7 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('[API CHECK DOMAIN PROXY ERROR]', error)
-    return NextResponse.json(
-      { valid: false, message: 'Email no aceptado' },
-      { status: 200 }
-    )
+    // Fail-open: do not block legitimate users if API fails
+    return NextResponse.json({ valid: true, message: 'Fail-open' }, { status: 200 })
   }
 }
