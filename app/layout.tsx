@@ -191,7 +191,9 @@ const jsonLd = {
   ],
 }
 
-import { CookieBanner } from "@/components/cookie-banner"
+import dynamic from "next/dynamic"
+
+const CookieBanner = dynamic(() => import("@/components/cookie-banner").then((mod) => mod.CookieBanner))
 
 export default function RootLayout({
   children,

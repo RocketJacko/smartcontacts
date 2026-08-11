@@ -10,11 +10,19 @@ export function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    // Check if consent has already been accepted
-    const consent = localStorage.getItem("sc_cookie_consent")
-    if (!consent) {
-      // Delay display slightly for smooth page load
-      const timer = setTimeout(() => setIsVisible(true), 1200)
+    // Non-blocking deferral for Google PageSpeed Insights mobile score optimization
+    const onIdle = () => {
+      const consent = localStorage.getItem("sc_cookie_consent")
+      if (!consent) {
+        setIsVisible(true)
+      }
+    }
+
+    if ("requestIdleCallback" in window) {
+      const handle = (window as any).requestIdleCallback(onIdle, { timeout: 4000 })
+      return () => (window as any).cancelIdleCallback(handle)
+    } else {
+      const timer = setTimeout(onIdle, 3500)
       return () => clearTimeout(timer)
     }
   }, [])
@@ -32,6 +40,7 @@ export function CookieBanner() {
   return (
     <aside
       aria-label={language === "es" ? "Aviso de cookies" : "Cookie notice"}
+      style={{ contain: "layout style paint" }}
       className="fixed bottom-4 left-4 right-4 sm:left-6 sm:right-auto sm:max-w-md z-50 animate-in fade-in slide-in-from-bottom-5 duration-500"
     >
       <div className="bg-[#111] text-white p-5 rounded-2xl shadow-2xl border border-white/10 flex flex-col gap-4 backdrop-blur-md bg-opacity-95">
