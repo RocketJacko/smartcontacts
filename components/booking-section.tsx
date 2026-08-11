@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { RevealText } from "@/components/reveal-text"
-import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown, AlertCircle } from "lucide-react"
+import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown, AlertCircle, Loader2 } from "lucide-react"
 
 export function BookingSection() {
   const { t, language } = useLanguage()
@@ -21,53 +21,24 @@ export function BookingSection() {
   const [company, setCompany] = useState("")
   const [description, setDescription] = useState("")
 
-  // Real Calendar State (Full Month with 60% Occupancy)
+  // Real Calendar State (Full Month with Real Supabase PL/pgSQL Availability)
   const today = useMemo(() => new Date(), [])
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
-
-  // Fixed 1-Hour Time Slots from 8:00 AM to 2:00 PM
-  const allTimeSlots = useMemo(() => [
-    "08:00 AM",
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "01:00 PM",
-    "02:00 PM",
-  ], [])
-
-  // Helper to determine deterministic 60% occupancy status for a given day and slot
-  const getSlotOccupancy = (dayNum: number, slotIndex: number) => {
-    // Deterministic pseudo-hash based on day and slot index to ensure consistent ~60% occupancy
-    const hash = (dayNum * 7 + slotIndex * 13 + 5) % 10
-    // If hash < 6 -> 60% are reserved ("AGENDADO")
-    if (hash < 6) {
-      return { status: "reserved", label: language === "es" ? "AGENDADO" : "RESERVED" }
-    } else if (hash === 6 || hash === 7) {
-      return { status: "limited", label: language === "es" ? "ÚLTIMO CUPO" : "LAST SLOT" }
-    } else {
-      return { status: "available", label: language === "es" ? "DISPONIBLE" : "AVAILABLE" }
-    }
-  }
 
   // Days in month calculation
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay()
 
-  // Calculate available days (workdays with at least 1 open slot)
   const isAvailableDay = (dayNum: number) => {
     const dateObj = new Date(currentYear, currentMonth, dayNum)
     const dayOfWeek = dateObj.getDay()
-    // Weekend days are full
     if (dayOfWeek === 0 || dayOfWeek === 6) return false
-    // Days in past are full
     if (dayNum < today.getDate() && currentMonth === today.getMonth()) return false
-    // Check if at least 1 slot is open
-    return allTimeSlots.some((_, idx) => getSlotOccupancy(dayNum, idx).status !== "reserved")
+    return true
   }
 
-  // Default selected day: first available day from today onwards
+  // Selected Day State
   const [selectedDay, setSelectedDay] = useState<number | null>(() => {
     for (let d = today.getDate(); d <= daysInMonth; d++) {
       const dateObj = new Date(currentYear, currentMonth, d)
@@ -77,19 +48,42 @@ export function BookingSection() {
     return today.getDate()
   })
 
-  // Selected time slot (defaults to first available slot on selected day)
-  const availableSlotsForDay = useMemo(() => {
-    if (!selectedDay) return []
-    return allTimeSlots.map((slot, idx) => ({
-      slot,
-      ...getSlotOccupancy(selectedDay, idx),
-    }))
-  }, [selectedDay, allTimeSlots, language])
+  // Real Availability State from Supabase PL/pgSQL function
+  const [fetchedSlots, setFetchedSlots] = useState<Array<{ slot: string; status: string; label: string; bookingToken?: string }>>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const [selectedSlot, setSelectedSlot] = useState<string>("")
+  const [bookingToken, setBookingToken] = useState<string>("")
 
-  const [selectedSlot, setSelectedSlot] = useState<string>(() => {
-    const firstOpen = availableSlotsForDay.find(s => s.status !== "reserved")
-    return firstOpen ? firstOpen.slot : "10:00 AM"
-  })
+  // Fetch real availability from Supabase when selectedDay changes
+  useEffect(() => {
+    if (!selectedDay) return
+    const year = currentYear
+    const month = String(currentMonth + 1).padStart(2, "0")
+    const day = String(selectedDay).padStart(2, "0")
+    const formattedDateStr = `${year}-${month}-${day}`
+
+    setIsLoadingSlots(true)
+    fetch(`/api/calendar/availability?date=${formattedDateStr}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.slots)) {
+          setFetchedSlots(data.slots)
+          const firstOpen = data.slots.find((s: any) => s.status === "disponible")
+          if (firstOpen) {
+            setSelectedSlot(firstOpen.slot)
+            if (firstOpen.bookingToken) setBookingToken(firstOpen.bookingToken)
+          } else {
+            setSelectedSlot("")
+            setBookingToken("")
+          }
+        }
+        setIsLoadingSlots(false)
+      })
+      .catch((err) => {
+        console.warn("Error fetching availability:", err)
+        setIsLoadingSlots(false)
+      })
+  }, [selectedDay, currentMonth, currentYear])
 
   // Submission & Email Validation State
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -374,10 +368,6 @@ export function BookingSection() {
                           disabled={!available}
                           onClick={() => {
                             setSelectedDay(dayNum)
-                            // Auto select first open slot on new day
-                            const daySlots = allTimeSlots.map((slot, idx) => ({ slot, ...getSlotOccupancy(dayNum, idx) }))
-                            const openSlot = daySlots.find(s => s.status !== "reserved")
-                            if (openSlot) setSelectedSlot(openSlot.slot)
                           }}
                           className={`min-h-[44px] sm:min-h-[48px] flex items-center justify-center rounded-lg text-xs font-mono font-medium transition-all ${
                             isSelected
@@ -401,29 +391,40 @@ export function BookingSection() {
                     <span className="text-xs font-mono uppercase tracking-widest text-black/75 font-semibold">
                       {t.booking.timeLabel}
                     </span>
+                    {isLoadingSlots && <Loader2 className="w-3.5 h-3.5 animate-spin text-black/40 ml-auto" />}
                   </div>
 
                   <div className="grid grid-cols-1 gap-2">
-                    {availableSlotsForDay.map(({ slot, status }) => {
+                    {fetchedSlots.map(({ slot, status, label, bookingToken: token }) => {
                       const isSelected = selectedSlot === slot
-                      const isReserved = status === "reserved"
+                      const isOccupied = status === "ocupado"
 
                       return (
                         <button
                           key={slot}
                           type="button"
-                          disabled={isReserved}
-                          onClick={() => setSelectedSlot(slot)}
+                          disabled={isOccupied}
+                          onClick={() => {
+                            setSelectedSlot(slot)
+                            if (token) setBookingToken(token)
+                          }}
                           className={`w-full min-h-[48px] py-3 px-4 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
-                            isReserved
+                            isOccupied
                               ? "bg-black/[0.02] text-black/30 border-black/[0.04] cursor-not-allowed line-through"
                               : isSelected
                               ? "bg-[#111] text-white border-[#111] shadow-xs"
                               : "bg-white text-black/80 border-black/15 hover:border-black/40 cursor-pointer"
                           }`}
                         >
-                          <span>{slot}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 ml-1" />}
+                          <div className="flex items-center gap-2">
+                            <span>{slot}</span>
+                            <span className="text-[10px] opacity-60 font-sans font-normal">({label})</span>
+                          </div>
+                          {isOccupied ? (
+                            <span className="text-[10px] uppercase tracking-wider font-mono text-black/40 font-semibold">OCUPADO</span>
+                          ) : isSelected ? (
+                            <Check className="w-3.5 h-3.5 ml-1" />
+                          ) : null}
                         </button>
                       )
                     })}
