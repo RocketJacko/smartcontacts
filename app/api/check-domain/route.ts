@@ -42,12 +42,16 @@ export async function POST(request: Request) {
       )
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co'
+    const supabaseEdgeUrl = process.env.SUPABASE_EDGE_URL || `${supabaseUrl}/functions/v1/check-domain`
+    const internalAppSecret = process.env.CHECK_DOMAIN_SECRET || 'smartcontacts-internal-edge-secret-2026'
+
     // Call Supabase Edge Function with internal secret header
-    const response = await fetch(SUPABASE_EDGE_URL, {
+    const response = await fetch(supabaseEdgeUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-app-secret': INTERNAL_APP_SECRET,
+        'x-app-secret': internalAppSecret,
       },
       body: JSON.stringify({ email }),
       cache: 'no-store',
