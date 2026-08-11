@@ -54,8 +54,8 @@ export function MobileNav() {
 
           {/* Actions & Language Switcher */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Language Switcher with Slow Animated Sliding Toggle */}
-            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[10px] font-mono shrink-0 select-none overflow-hidden">
+            {/* Language Switcher with Touch-Friendly 48px Height */}
+            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[11px] font-mono shrink-0 select-none overflow-hidden min-h-[48px]">
               {/* Sliding Indicator Pill */}
               <div
                 className="absolute top-0.5 bottom-0.5 rounded-lg bg-white shadow-xs transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -67,7 +67,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('es')}
-                className={`relative z-10 px-2.5 py-1 text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-3.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'es' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -76,7 +76,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`relative z-10 px-2.5 py-1 text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-3.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'en' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -87,30 +87,30 @@ export function MobileNav() {
             {/* CTA Button — DESKTOP ONLY (hidden on mobile/tablet < lg) */}
             <a
               href="#agendar"
-              className="text-[11px] w-[210px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
+              className="text-[11px] w-[210px] min-h-[48px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
               {t.nav.startBuilding}
             </a>
 
-            {/* Burger — MOBILE & TABLET ONLY (hidden on desktop lg) */}
+            {/* Burger — MOBILE & TABLET ONLY (48px Touch Target) */}
             <button
               type="button"
               onClick={() => setOpen(v => !v)}
-              className="flex lg:hidden flex-col justify-center items-center w-8 h-8 gap-[5px] rounded-lg hover:bg-black/[0.04] transition-colors shrink-0"
+              className="flex lg:hidden flex-col justify-center items-center w-12 h-12 min-w-[48px] min-h-[48px] gap-[5px] rounded-xl hover:bg-black/[0.05] active:bg-black/10 transition-colors shrink-0 cursor-pointer"
               aria-label={open ? "Close menu" : "Open menu"}
             >
               <span
                 className="block h-px bg-black/70 transition-all duration-300 origin-center"
                 style={{
-                  width: "18px",
+                  width: "20px",
                   transform: open ? "translateY(6px) rotate(45deg)" : "none",
                 }}
               />
               <span
                 className="block h-px bg-black/70 transition-all duration-300"
                 style={{
-                  width: "18px",
+                  width: "20px",
                   opacity: open ? 0 : 1,
                   transform: open ? "scaleX(0)" : "none",
                 }}
@@ -118,7 +118,7 @@ export function MobileNav() {
               <span
                 className="block h-px bg-black/70 transition-all duration-300 origin-center"
                 style={{
-                  width: "18px",
+                  width: "20px",
                   transform: open ? "translateY(-6px) rotate(-45deg)" : "none",
                 }}
               />
@@ -132,7 +132,7 @@ export function MobileNav() {
           style={{ maxHeight: open ? "420px" : "0px", opacity: open ? 1 : 0 }}
         >
           <div
-            className="rounded-2xl border border-black/[0.06] px-2 py-2 flex flex-col space-y-0.5"
+            className="rounded-2xl border border-black/[0.06] px-2 py-2 flex flex-col space-y-1"
             style={NAV_STYLE}
           >
             {navLinks.map(l => (
@@ -140,7 +140,7 @@ export function MobileNav() {
                 key={l.label}
                 href={l.href}
                 onClick={close}
-                className="px-4 py-2.5 text-xs text-black/70 hover:text-black hover:bg-black/[0.04] rounded-xl transition-colors tracking-wide"
+                className="px-4 py-3 min-h-[48px] flex items-center text-xs text-black/80 hover:text-black hover:bg-black/[0.04] active:bg-black/10 rounded-xl transition-colors tracking-wide font-medium"
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
                 {l.label}
@@ -150,7 +150,7 @@ export function MobileNav() {
               <a
                 href="#agendar"
                 onClick={close}
-                className="block w-full text-center text-[11px] px-4 py-2.5 whitespace-nowrap rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide"
+                className="flex items-center justify-center w-full text-center text-xs min-h-[48px] px-4 py-3 whitespace-nowrap rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] active:bg-black/10 transition-all duration-200 tracking-wide"
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
                 {t.nav.startBuilding}

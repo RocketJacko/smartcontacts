@@ -69,7 +69,7 @@ export function KageModalitiesSection() {
         </div>
 
         {/* Kage Style Interactive Switcher Track */}
-        <div className="max-w-[#540px] mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1.5 select-none">
+        <div className="w-full max-w-[#540px] mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1.5 select-none">
           {modalities.map(m => {
             const isActive = activeModality === m.id
             return (
@@ -78,7 +78,7 @@ export function KageModalitiesSection() {
                 type="button"
                 aria-label={`Seleccionar ${m.name}`}
                 onClick={() => setActiveModality(m.id as 0 | 1)}
-                className={`flex-1 py-3 px-4 rounded-xl text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
+                className={`flex-1 min-h-[48px] py-3.5 px-4 rounded-xl text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
                   isActive
                     ? "bg-[#111] text-white shadow-xs"
                     : "text-black/70 hover:text-black hover:bg-black/[0.03]"

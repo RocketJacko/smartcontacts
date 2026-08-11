@@ -340,7 +340,7 @@ export function BookingSection() {
                             const openSlot = daySlots.find(s => s.status !== "reserved")
                             if (openSlot) setSelectedSlot(openSlot.slot)
                           }}
-                          className={`py-2.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                          className={`min-h-[44px] sm:min-h-[48px] flex items-center justify-center rounded-lg text-xs font-mono font-medium transition-all ${
                             isSelected
                               ? "bg-[#111] text-white shadow-xs"
                               : available
@@ -375,7 +375,7 @@ export function BookingSection() {
                           type="button"
                           disabled={isReserved}
                           onClick={() => setSelectedSlot(slot)}
-                          className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
+                          className={`w-full min-h-[48px] py-3 px-4 rounded-xl text-xs font-mono tracking-wider flex items-center justify-between border transition-all ${
                             isReserved
                               ? "bg-black/[0.02] text-black/30 border-black/[0.04] cursor-not-allowed line-through"
                               : isSelected
@@ -400,11 +400,11 @@ export function BookingSection() {
 
               </div>
 
-              <div className="pt-4 flex justify-between items-center border-t border-black/[0.06]">
+              <div className="pt-4 flex justify-between items-center border-t border-black/[0.06] gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/10 text-xs font-mono text-black/70 hover:text-black transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-3.5 min-h-[48px] rounded-xl border border-black/10 text-xs font-mono text-black/70 hover:text-black transition-colors"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>{language === "es" ? "ANTERIOR" : "BACK"}</span>
@@ -414,7 +414,7 @@ export function BookingSection() {
                   type="button"
                   disabled={!selectedDay}
                   onClick={() => setStep(3)}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white text-xs font-mono tracking-widest uppercase hover:bg-black/90 transition-all font-medium disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-widest hover:bg-black/90 transition-all font-medium disabled:opacity-50"
                 >
                   <span>{language === "es" ? "INGRESAR DATOS" : "ENTER DETAILS"}</span>
                   <ArrowRight className="w-4 h-4" />
