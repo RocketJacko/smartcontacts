@@ -5,11 +5,15 @@
  * Las credenciales se consumen exclusivamente desde variables de entorno.
  */
 
-const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID
-const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET
-const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN
-const GMAIL_SENDER_EMAIL = process.env.GMAIL_SENDER_EMAIL || 'jesus.carmona966@pascualbravo.edu.co'
-const GMAIL_SENDER_NAME = process.env.GMAIL_SENDER_NAME || 'Agendamiento Smartcontacts'
+function getGmailCredentials() {
+  const clientId = process.env.GMAIL_CLIENT_ID || 'your-google-client-id'
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET || 'your-google-client-secret'
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN || 'your-google-refresh-token'
+  const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'jesus.carmona966@pascualbravo.edu.co'
+  const senderName = process.env.GMAIL_SENDER_NAME || 'Agendamiento Smartcontacts'
+
+  return { clientId, clientSecret, refreshToken, senderEmail, senderName }
+}
 
 interface BookingEmailParams {
   toEmail: string
@@ -25,10 +29,7 @@ interface BookingEmailParams {
  * Obtiene un access_token fresco desde el servidor OAuth2 de Google usando el refresh_token.
  */
 async function getAccessToken(): Promise<string | null> {
-  if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET || !GMAIL_REFRESH_TOKEN) {
-    console.warn('[GMAIL OAUTH2 WARN] Faltan variables de entorno GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET o GMAIL_REFRESH_TOKEN.')
-    return null
-  }
+  const { clientId, clientSecret, refreshToken } = getGmailCredentials()
 
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -37,9 +38,9 @@ async function getAccessToken(): Promise<string | null> {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: GMAIL_CLIENT_ID,
-        client_secret: GMAIL_CLIENT_SECRET,
-        refresh_token: GMAIL_REFRESH_TOKEN,
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token',
       }),
       cache: 'no-store',
@@ -176,6 +177,7 @@ function createRawMimeMessage(
  * Envía el correo de confirmación usando la API REST v1 de Gmail.
  */
 export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const { senderEmail, senderName } = getGmailCredentials()
   const accessToken = await getAccessToken()
 
   if (!accessToken) {
@@ -187,8 +189,8 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
     const subject = `Confirmación de tu Agendamiento — Smartcontacts`
     const htmlBody = buildHtmlBody(params)
     const rawMessage = createRawMimeMessage(
-      GMAIL_SENDER_NAME,
-      GMAIL_SENDER_EMAIL,
+      senderName,
+      senderEmail,
       params.toEmail,
       subject,
       htmlBody

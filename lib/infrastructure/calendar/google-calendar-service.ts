@@ -29,6 +29,7 @@ async function getCalendarAccessToken(): Promise<string> {
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
+    cache: 'no-store',
   })
 
   if (!res.ok) {
@@ -41,8 +42,26 @@ async function getCalendarAccessToken(): Promise<string> {
 }
 
 function parseDateTimeISO(dateStr: string, timeStr: string): { startISO: string; endISO: string } {
-  // Normalize date
   let cleanDate = dateStr
+
+  // Parse Spanish date format (e.g. "Jue, 20 de Agosto 2026" or "20 de Agosto 2026")
+  if (cleanDate && !/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
+    const spanishMatch = cleanDate.match(/(\d{1,2})\s+de\s+([A-Za-z]+)\s+(\d{4})/)
+    if (spanishMatch) {
+      const day = String(spanishMatch[1]).padStart(2, '0')
+      const monthName = spanishMatch[2].toLowerCase()
+      const year = spanishMatch[3]
+
+      const monthsMap: Record<string, string> = {
+        enero: '01', febrero: '02', marzo: '03', abril: '04', mayo: '05', junio: '06',
+        julio: '07', agosto: '08', septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12'
+      }
+
+      const month = monthsMap[monthName] || '08'
+      cleanDate = `${year}-${month}-${day}`
+    }
+  }
+
   if (!cleanDate || !/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
     cleanDate = new Date().toISOString().split('T')[0]
   }
