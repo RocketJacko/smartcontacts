@@ -29,7 +29,13 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validatedData = bookingSchema.parse(body)
 
-    const result = await processBookingUseCase.execute(validatedData)
+    const userAgent = request.headers.get('user-agent') || 'desconocido'
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1'
+
+    const result = await processBookingUseCase.execute({
+      ...validatedData,
+      description: `${validatedData.description || ''} | IP Consent: ${ip} | Browser: ${userAgent.substring(0, 80)}`,
+    })
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 })
     }
