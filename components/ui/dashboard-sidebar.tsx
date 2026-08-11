@@ -463,28 +463,10 @@ export default function SidebarNavPreview() {
             </span>
           </div>
 
-          {/* 4 Bento KPI Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {/* 3 Bento KPI Metric Cards (Centrados en Agendamiento, Fuerza Agéntica & Habeas Data) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
             
-            {/* KPI 1: Base B2B */}
-            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">BASE B2B COLOMBIA</span>
-                  <Globe className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">208,450</div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Contactos Verificados en Colombia</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>33 DEPARTAMENTOS</span>
-                <span className="text-emerald-700 font-bold flex items-center gap-1">
-                  <ArrowUpRight className="w-3 h-3" /> 98.4%
-                </span>
-              </div>
-            </div>
-
-            {/* KPI 2: Agendamientos */}
+            {/* KPI 1: Agendamientos & Calendario */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -500,11 +482,11 @@ export default function SidebarNavPreview() {
               </div>
             </div>
 
-            {/* KPI 3: Fuerza Agéntica */}
+            {/* KPI 2: Fuerza Agéntica */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">FUERZA DE IA</span>
+                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">FUERZA AGÉNTICA IA</span>
                   <Bot className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">4 Agentes</div>
@@ -516,7 +498,7 @@ export default function SidebarNavPreview() {
               </div>
             </div>
 
-            {/* KPI 4: Habeas Data */}
+            {/* KPI 3: Habeas Data (Ley 1581) */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -550,7 +532,7 @@ export default function SidebarNavPreview() {
                 { time: "11:14:09", label: "Agendamiento 45m procesado & Meet generado (pqy-odwu-pwd)", status: "Completado" },
                 { time: "11:10:02", label: "Verificación de disponibilidad de horario comercial en Supabase", status: "Sincronizado" },
                 { time: "11:08:45", label: "Autorización de Tratamiento de Datos (Ley 1581) registrada con IP", status: "Auditado" },
-                { time: "11:05:30", label: "Actualización de Cobertura B2B Nacional (33 Departamentos)", status: "Activo" },
+                { time: "11:05:30", label: "Ejecución de flujo agéntico de prospección comercial en n8n", status: "Activo" },
               ].map((log, i) => (
                 <div
                   key={i}

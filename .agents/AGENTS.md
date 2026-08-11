@@ -36,4 +36,6 @@
   2. Para qué sirve y por qué es requerida (propósito funcional).
   3. Valores de ejemplo sintácticos sin exponer secretos reales en producción.
 
-
+## 7. Exclusión Estricta de Esquemas `cobertura` y `dominios` en Estadísticas y Dashboard
+- **Prohibido Incluir en Métricas/Estadísticas**: Queda estrictamente prohibido incluir los esquemas o referencias a `cobertura` y `dominios` dentro de los tableros de métricas, estadísticas, gráficos o cuadros de mando (dashboards) de la aplicación.
+- **Limpieza del Dashboard**: Los cuadros de mando deben centrarse exclusivamente en las métricas operativas de agendamiento (`calendario`), ejecuciones agénticas de IA, conversiones comerciales y trazabilidad legal de Habeas Data (`calendario.prospectos`).
