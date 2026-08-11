@@ -181,13 +181,6 @@ export default function AgenticPage() {
               <span>🚀 {t.hero.primaryCta || "AGENDAR ASESORÍA & CREAR UNIDAD DE CRECIMIENTO"}</span>
               <span className="text-emerald-400 font-bold">&rarr;</span>
             </a>
-
-            <a
-              href="#cobertura"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-black/15 bg-white/80 hover:bg-white text-[#111] text-xs font-mono uppercase tracking-wider transition-all shadow-2xs font-semibold cursor-pointer"
-            >
-              <span>📊 {t.hero.secondaryCta || "EXPLORAR BASE DE DATOS (+200K)"}</span>
-            </a>
           </div>
 
           {/* 4 Sales Metrics — staggered after title */}
