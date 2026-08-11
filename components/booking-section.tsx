@@ -91,9 +91,42 @@ export function BookingSection() {
     return firstOpen ? firstOpen.slot : "10:00 AM"
   })
 
-  // Submission State
+  // Submission & Email Validation State
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [isValidatingEmail, setIsValidatingEmail] = useState(false)
+
+  const validateEmailDomain = async (inputEmail: string) => {
+    if (!inputEmail || !inputEmail.includes("@")) {
+      setEmailError("")
+      return true
+    }
+
+    setIsValidatingEmail(true)
+    try {
+      const res = await fetch("https://fxhemyrjetpwtmjxmftk.supabase.co/functions/v1/check-domain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inputEmail }),
+      })
+      const data = await res.json()
+      if (data && data.valid === false) {
+        setEmailError("Email no aceptado")
+        setIsValidatingEmail(false)
+        return false
+      } else {
+        setEmailError("")
+        setIsValidatingEmail(false)
+        return true
+      }
+    } catch (err) {
+      console.warn("Edge function domain validation error:", err)
+      setEmailError("")
+      setIsValidatingEmail(false)
+      return true
+    }
+  }
 
   const selectedTopicData = useMemo(() => {
     return t.booking.topics.find(top => top.id === selectedTopic) || t.booking.topics[0]
@@ -115,6 +148,13 @@ export function BookingSection() {
     }
     if (!selectedDay) {
       setErrorMsg(language === "es" ? "Selecciona una fecha en el calendario." : "Select a date on the calendar.")
+      return
+    }
+
+    // Validar dominio antes de enviar
+    const isValidDomain = await validateEmailDomain(email)
+    if (!isValidDomain) {
+      setErrorMsg("Email no aceptado")
       return
     }
 
@@ -510,11 +550,23 @@ export function BookingSection() {
                       required
                       aria-label={t.booking.emailLabel}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        if (emailError) setEmailError("")
+                      }}
+                      onBlur={() => validateEmailDomain(email)}
                       placeholder={t.booking.emailPlaceholder}
-                      className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans"
+                      className={`w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans ${
+                        emailError ? "border-rose-500 bg-rose-500/5 focus:border-rose-600" : "border-black/10 focus:border-black"
+                      }`}
                     />
                   </div>
+                  {emailError && (
+                    <p className="text-[11px] font-mono text-rose-600 mt-1.5 flex items-center gap-1 font-semibold">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{emailError}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Company Name */}
