@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { isDomainBlocked } from '@/lib/blocked-domains'
 
 const bookingSchema = z.object({
   type: z.enum(['lead', 'booking']).default('booking'),
@@ -20,6 +21,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const validatedData = bookingSchema.parse(body)
+
+    // Validar si el dominio del correo está bloqueado en Supabase
+    const blocked = await isDomainBlocked(validatedData.email)
+    if (blocked) {
+      console.warn('[SMARTCONTACTS SPAM BLOCKED]', validatedData.email)
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'El dominio de correo electrónico no está permitido para agendamientos. Por favor ingresa un correo corporativo o personal válido.',
+        },
+        { status: 400 }
+      )
+    }
 
     const payload = {
       timestamp: new Date().toISOString(),

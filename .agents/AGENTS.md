@@ -20,3 +20,6 @@
 - **Validación Obligatoria de Negocio**: Antes de proponer, diseñar o crear cualquier nueva vista, componente, texto de UI, agente o flujo de trabajo, se DEBE validar estrictamente contra la Inteligencia de Negocio y definición empresarial documentada en [`CONTEXT.md`](file:///c:/Users/JesusAlexisCarmonaCa/Downloads/agentic-build-and-orchestrate-ai-agents-while-you-sleep/CONTEXT.md).
 - **Alineación con la Propuesta de Valor**: Toda funcionalidad debe ser coherente con la promesa de la marca: *"No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."* y los pilares de la propuesta de valor (consultoría, prospección activa, inteligencia de datos con +200k contactos, agentes de IA/RAG, automatizaciones y software a medida).
 
+## 4. Idioma Español Obligatorio
+- **Español Estricto**: Toda la interacción, respuestas, explicaciones técnicas, planes, documentación y comentarios de código DEBEN ser redactados estrictamente en idioma ESPAÑOL sin excepciones.
+
