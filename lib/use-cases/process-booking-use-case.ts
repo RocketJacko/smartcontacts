@@ -44,7 +44,7 @@ export function parseColombiaStartAndEndISO(dateStr?: string, timeStr?: string):
     }
   }
 
-  const durMinutes = (hours === 17 && minutes === 0) ? 30 : 60
+  const durMinutes = 45
   let endHours = hours
   let endMinutes = minutes + durMinutes
   if (endMinutes >= 60) {
