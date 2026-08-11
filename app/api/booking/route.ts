@@ -46,31 +46,33 @@ export async function POST(request: Request) {
 
     // Save lead to Supabase PostgreSQL table (calendario.prospectos)
     try {
-      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co'
-      const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4aGVteXJqZXRwd3RtanhtZnRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzIwNzMsImV4cCI6MjEwMTMwODA3M30.bxCsvD7m4-pVKSDM2JABs_-EAkXYcveQ4xMQG0xARhs'
+      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-      await fetch(`${SUPABASE_URL}/rest/v1/prospectos`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept-Profile': 'calendario',
-          'Content-Profile': 'calendario',
-          'Prefer': 'return=minimal',
-        },
-        body: JSON.stringify({
-          name: validatedData.name || 'Sin Nombre',
-          phone: validatedData.phone || 'Sin Teléfono',
-          email: validatedData.email,
-          company: validatedData.company || null,
-          is_company: validatedData.isCompany ?? true,
-          service: validatedData.service || null,
-          topic: validatedData.topic || null,
-          description: validatedData.description || null,
-          status: 'pendiente',
-        }),
-      })
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        await fetch(`${SUPABASE_URL}/rest/v1/prospectos`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Accept-Profile': 'calendario',
+            'Content-Profile': 'calendario',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            name: validatedData.name || 'Sin Nombre',
+            phone: validatedData.phone || 'Sin Teléfono',
+            email: validatedData.email,
+            company: validatedData.company || null,
+            is_company: validatedData.isCompany ?? true,
+            service: validatedData.service || null,
+            topic: validatedData.topic || null,
+            description: validatedData.description || null,
+            status: 'pendiente',
+          }),
+        })
+      }
     } catch (dbErr) {
       console.warn('[SUPABASE CALENDARIO.PROSPECTOS SAVE WARNING]', dbErr)
     }

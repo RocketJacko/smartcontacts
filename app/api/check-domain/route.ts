@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-const SUPABASE_EDGE_URL = process.env.SUPABASE_EDGE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co/functions/v1/check-domain'
-const INTERNAL_APP_SECRET = process.env.CHECK_DOMAIN_SECRET || 'smartcontacts-internal-edge-secret-2026'
+const SUPABASE_EDGE_URL = process.env.SUPABASE_EDGE_URL || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/check-domain`
+const INTERNAL_APP_SECRET = process.env.CHECK_DOMAIN_SECRET
 
 // Server-side IP Rate Limiting (High threshold for reverse proxy compatibility)
 const ipCache = new Map<string, { count: number; resetTime: number }>()
