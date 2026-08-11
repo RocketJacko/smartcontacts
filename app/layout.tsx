@@ -129,6 +129,67 @@ const jsonLd = {
       serviceType: ['Agentes de IA para Ventas', 'Prospección B2B', 'Inteligencia Comercial', 'Automatización CRM'],
       description: 'Infraestructura autónoma de prospección y agentes inteligentes para acelerar el embudo comercial B2B.',
     },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': 'https://smartcontacts.cloud/#software',
+      name: 'SmartContacts Commercial Growth Engine',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'All',
+      url: 'https://smartcontacts.cloud',
+      description: 'Motor agéntico autónomo de prospección B2B, calificación RAG y automatización comercial para empresas.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': 'https://smartcontacts.cloud/#faq',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: '¿Qué es una Unidad de Crecimiento Comercial con IA en SmartContacts?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Una Unidad de Crecimiento Comercial con IA es una infraestructura tecnológica autónoma que combina inteligencia de datos B2B (+200,000 contactos verificados en Colombia), Agentes de Inteligencia Artificial y automatización CRM para multiplicar tus ventas sin reemplazar a tu equipo comercial.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Cómo funcionan los Agentes de Inteligencia Artificial para ventas B2B?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Los Agentes de IA ejecutan la prospección activa las 24/7: identifican decisiones de compra, redactan interacción personalizada, califican el interés mediante tecnología RAG y agendan la reunión directamente en el calendario de tus ejecutivos.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Cuál es la cobertura de la base de datos empresarial en Colombia?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Contamos con una infraestructura propia de datos con más de 200,000 contactos comerciales verificados y segmentados por ejecutivos, empresas y cobertura en los 32 departamentos de Colombia.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Qué diferencia a SmartContacts de un CRM tradicional o una agencia?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Un CRM es solo una herramienta pasiva de registro y las agencias tradicionales cobran por impresiones. SmartContacts construye una unidad operativa agéntica que prospecta activamente y entrega reuniones calificadas en tu embudo.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Qué modalidades de implementación ofrecen?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Ofrecemos dos modalidades: Implementación In-House (configuración directa en tu propia infraestructura de software) o Unidad Delegada (gestión integral externa administrada por nuestros especialistas de crecimiento).',
+          },
+        },
+      ],
+    },
   ],
 }
 

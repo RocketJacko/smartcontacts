@@ -13,6 +13,7 @@ import { useLanguage } from "@/lib/language-context"
 const StackingPlatformCards = dynamic(() => import("@/components/stacking-platform-cards").then(m => m.StackingPlatformCards))
 const KageSalesIndicator = dynamic(() => import("@/components/kage-sales-indicator").then(m => m.KageSalesIndicator))
 const KageModalitiesSection = dynamic(() => import("@/components/kage-modalities-section").then(m => m.KageModalitiesSection))
+const KageFaqSection = dynamic(() => import("@/components/kage-faq-section").then(m => m.KageFaqSection))
 const BookingSection = dynamic(() => import("@/components/booking-section").then(m => m.BookingSection))
 
 // ─── Intersection Observer hook ──────────────────────────────────────────────
@@ -230,6 +231,9 @@ export default function AgenticPage() {
       <section id="modalidades" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-b border-black/[0.06] bg-[#F5F4F0]">
         <KageModalitiesSection />
       </section>
+
+      {/* ── PREGUNTAS FRECUENTES (GEO & RICH SNIPPETS) ───────────────────── */}
+      <KageFaqSection />
 
       {/* ── AGENDAR CITA (CALENDARIO & LISTA KAGE DE CONSULTAS) ──────────── */}
       <BookingSection />
