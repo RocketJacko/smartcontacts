@@ -3,6 +3,8 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { RevealText } from "@/components/reveal-text"
+import { PixelIcon } from "@/components/pixel-icon"
+import { PhoneInput } from "@/components/phone-input"
 import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown, AlertCircle, Loader2 } from "lucide-react"
 
 export function BookingSection() {
@@ -524,18 +526,11 @@ export function BookingSection() {
                   <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
                     {t.booking.phoneLabel} *
                   </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
-                    <input
-                      type="tel"
-                      required
-                      aria-label={t.booking.phoneLabel}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder={t.booking.phonePlaceholder}
-                      className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans"
-                    />
-                  </div>
+                  <PhoneInput
+                    value={phone}
+                    onChange={(fullNum) => setPhone(fullNum)}
+                    placeholder={t.booking.phonePlaceholder}
+                  />
                 </div>
 
                 {/* Corporate Email */}
