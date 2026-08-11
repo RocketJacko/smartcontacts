@@ -10,6 +10,7 @@ import { BookingSection } from "@/components/booking-section"
 import { PixelIcon } from "@/components/pixel-icon"
 import { RevealText } from "@/components/reveal-text"
 import { MobileNav } from "@/components/mobile-nav"
+import { Footer } from "@/components/footer"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
@@ -306,40 +307,7 @@ export default function AgenticPage() {
 
 
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
-      <footer className="py-6 sm:py-8 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <span className="font-pixel text-xs tracking-[0.25em] text-black/75 font-semibold">SMARTCONTACTS</span>
-
-          {/* Nav sections */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            {[
-              { label: t.nav.platform,   href: "/propuesta" },
-              { label: t.nav.coverage,   href: "/cobertura" },
-              { label: t.nav.modalities, href: "/modalidades" },
-              { label: t.nav.about,      href: "/sobre-mi" },
-              { label: t.nav.schedule,   href: "/agendar" },
-              { label: "Landing",        href: "/landing" },
-            ].map(l => (
-              <Link key={l.label} href={l.href} className="text-xs text-black/75 hover:text-black transition-colors font-mono tracking-wider font-medium">{l.label}</Link>
-            ))}
-          </div>
-
-          {/* Social / Direct links */}
-          <div className="flex items-center gap-6">
-            <a
-              href="https://www.linkedin.com/in/jesus-carmona-automatization/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-black/50 hover:text-black transition-colors font-mono tracking-wider"
-            >
-              LinkedIn &rarr;
-            </a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/75 font-medium">{t.footer.rights}</span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
