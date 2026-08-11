@@ -398,6 +398,33 @@ export const translations = {
       weekDays: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
       slots: ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"],
     },
+    faq: {
+      tag: "PREGUNTAS FRECUENTES & INTELIGENCIA COMERCIAL",
+      title: "Respuesta a Dudas Clave de Inteligencia & Ventas con IA",
+      subtitle: "Respuestas directas sobre la arquitectura agéntica, bases de datos y modelos de implementación en SmartContacts.",
+      items: [
+        {
+          question: "¿Qué es una Unidad de Crecimiento Comercial con IA en SmartContacts?",
+          answer: "Una Unidad de Crecimiento Comercial con IA en SmartContacts es una infraestructura agéntica autónoma que ejecuta la labor comercial completa de una empresa (prospección en base propia perfilada, contacto outbound por WhatsApp/Voz, calificación de leads, manejo de objeciones y agendamiento o cierre de ventas) sin inflar la nómina fija ni sumar pasivos laborales.",
+        },
+        {
+          question: "¿Cómo funcionan los Agentes de Inteligencia Artificial para ventas B2B?",
+          answer: "Los Agentes de Inteligencia Artificial B2B operan mediante arquitecturas RAG (Retrieval-Augmented Generation) entrenadas con el conocimiento comercial, catálogo de productos y políticas exactas de tu marca. Prospectan en nuestra base de datos nacional de empresas y personas perfiladas, presentan ofertas personalizadas y gestionan oportunidades en tiempo real.",
+        },
+        {
+          question: "¿Cuál es la cobertura de la base de datos de empresas y personas en Colombia?",
+          answer: "SmartContacts cuenta con una base de datos propia perfilada con cobertura nacional en los 33 departamentos de Colombia, segmentada por más de 5 variables clave: ubicación geográfica, actividad económica, rango de edad, género y nivel de ingresos o capacidad de compra.",
+        },
+        {
+          question: "¿Qué diferencia existe entre un CRM tradicional y SmartContacts?",
+          answer: "Un CRM tradicional es un software pasivo donde tus empleados deben ingresar datos manualmente. SmartContacts es un canal activo de ventas con agentes agénticos de IA que prospectan proactivamente, inician conversaciones, responden objeciones y cierran acuerdos automáticamente.",
+        },
+        {
+          question: "¿Qué modalidades de implementación ofrecen (In-House vs Delegado)?",
+          answer: "Ofrecemos 2 modalidades: 1) Comercialización Delegada (operamos directamente sobre nuestra propia base de datos como un canal de ventas externo a comisión/resultados) y 2) Instalación In-House (diseñamos, entrenamos e instalamos el sistema agéntico dentro de la operación de tu empresa con transferencia total de conocimiento).",
+        },
+      ],
+    },
     footer: {
       tagline: "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa.",
       rights: "© 2026 SmartContacts. Todos los derechos reservados.",
@@ -798,6 +825,33 @@ export const translations = {
       months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
       weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       slots: ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"],
+    },
+    faq: {
+      tag: "FREQUENTLY ASKED QUESTIONS & COMMERCIAL INTELLIGENCE",
+      title: "Answers to Key AI Sales & Intelligence Questions",
+      subtitle: "Direct responses regarding agentic architecture, proprietary database, and implementation modalities at SmartContacts.",
+      items: [
+        {
+          question: "What is an AI Commercial Growth Unit at SmartContacts?",
+          answer: "An AI Commercial Growth Unit at SmartContacts is an autonomous agentic infrastructure that executes the entire sales lifecycle of a business (prospecting on a proprietary profiled database, outbound contact via WhatsApp/Voice, lead qualification, objection handling, and appointment booking or closing) without expanding fixed payroll or labor liabilities.",
+        },
+        {
+          question: "How do Artificial Intelligence Agents work for B2B sales?",
+          answer: "B2B Artificial Intelligence Agents operate through RAG (Retrieval-Augmented Generation) architectures trained on your brand's exact commercial knowledge, product catalog, and business policies. They prospect across our national database of profiled businesses and individuals, presenting personalized offers and managing sales opportunities in real time.",
+        },
+        {
+          question: "What is the coverage of the business and contact database in Colombia?",
+          answer: "SmartContacts features a proprietary profiled database with national coverage across all 33 departments of Colombia, segmented by over 5 key criteria: geographic location, economic activity, age range, gender, and income level or purchasing power.",
+        },
+        {
+          question: "What difference exists between a traditional CRM and SmartContacts?",
+          answer: "A traditional CRM is passive software requiring manual data entry by employees. SmartContacts is an active sales channel powered by agentic AI that proactively prospects, initiates conversations, handles objections, and closes deals automatically.",
+        },
+        {
+          question: "What implementation modalities do you offer (In-House vs Delegated)?",
+          answer: "We offer 2 modalities: 1) Delegated Commercialization (we operate directly on our proprietary database as an external sales channel based on performance/commission) and 2) In-House Installation (we design, train, and install the agentic AI system inside your company's operation with full knowledge transfer).",
+        },
+      ],
     },
     footer: {
       tagline: "We don't replace your sales team. We create your new growth unit.",

@@ -1,0 +1,29 @@
+# SmartContacts — Unidad de Crecimiento Comercial & Agentes de IA para Ventas
+
+> Convertimos la tecnología en ventas reales. Escalamos tu fuerza comercial con Agentes de Inteligencia Artificial, automatizaciones operativas y bases de datos B2B segmentadas por departamento en Colombia.
+
+## Información de la Empresa
+
+- **Nombre**: SmartContacts
+- **Dominio Principal**: https://smartcontacts.cloud
+- **Propuesta de Valor**: "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+- **Cobertura**: Cobertura nacional en los 33 departamentos de Colombia.
+- **Base de Datos Propia**: +200,000 contactos verificados perfilados por ubicación geográfica, actividad económica, rango de edad, género y nivel de ingresos/capacidad de compra.
+
+## Agentes de IA & Arquitectura Agéntica
+
+1. **Agente Prospector & Perfilador de Datos**: Selecciona y califica automáticamente prospectos de nuestra base de datos nacional alineados al perfil de tu cliente ideal.
+2. **Agente Comercial Outbound (WhatsApp & Voz)**: Presenta la oferta de tu empresa en lenguaje natural mediante tecnología RAG (Retrieval-Augmented Generation), maneja objeciones y envía propuestas personalizadas.
+3. **Agente Orquestador & Gestión de Oportunidades**: Monitorea la trazabilidad comercial en tiempo real y sincroniza las oportunidades calificadas directamente con tu equipo de ventas.
+4. **Agente Ejecutor de Agendamiento & Cierre**: Agenda citas en tiempo real con integración directa a Google Calendar y Google Meet, o ejecuta el cierre y despacho automatizado.
+
+## Modalidades de Implementación
+
+- **Modalidad 01: Comercialización Delegada**: Comercializamos tus productos o servicios operando directamente sobre nuestra propia base de datos como un canal de ventas externo a comisión/resultados.
+- **Modalidad 02: Instalación In-House**: Diseñamos, entrenamos e instalamos el sistema agéntico dentro de la operación de tu empresa con transferencia total de conocimiento.
+
+## Preguntas Frecuentes
+
+- **¿Qué es una Unidad de Crecimiento Comercial con IA?**: Es una infraestructura agéntica autónoma que ejecuta la labor comercial completa de una empresa sin inflar la nómina fija ni sumar pasivos laborales.
+- **¿Cómo funcionan los Agentes de IA?**: Operan mediante arquitecturas RAG entrenadas con el conocimiento comercial, catálogo de productos y políticas exactas de tu marca.
+- **¿Qué diferencia existe con un CRM tradicional?**: Un CRM tradicional es un software pasivo que requiere ingreso manual. SmartContacts es un canal activo de ventas que prospecta y cierra acuerdos automáticamente.

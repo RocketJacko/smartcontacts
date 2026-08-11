@@ -151,7 +151,7 @@ const jsonLd = {
           name: '¿Qué es una Unidad de Crecimiento Comercial con IA en SmartContacts?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Una Unidad de Crecimiento Comercial con IA es una infraestructura tecnológica autónoma que combina inteligencia de datos B2B (+200,000 contactos verificados en Colombia), Agentes de Inteligencia Artificial y automatización CRM para multiplicar tus ventas sin reemplazar a tu equipo comercial.',
+            text: 'Una Unidad de Crecimiento Comercial con IA en SmartContacts es una infraestructura agéntica autónoma que ejecuta la labor comercial completa de una empresa (prospección en base propia perfilada, contacto outbound por WhatsApp/Voz, calificación de leads, manejo de objeciones y agendamiento o cierre de ventas) sin inflar la nómina fija ni sumar pasivos laborales.',
           },
         },
         {
@@ -159,31 +159,31 @@ const jsonLd = {
           name: '¿Cómo funcionan los Agentes de Inteligencia Artificial para ventas B2B?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Los Agentes de IA ejecutan la prospección activa las 24/7: identifican decisiones de compra, redactan interacción personalizada, califican el interés mediante tecnología RAG y agendan la reunión directamente en el calendario de tus ejecutivos.',
+            text: 'Los Agentes de Inteligencia Artificial B2B operan mediante arquitecturas RAG (Retrieval-Augmented Generation) entrenadas con el conocimiento comercial, catálogo de productos y políticas exactas de tu marca. Prospectan en nuestra base de datos nacional de empresas y personas perfiladas, presentan ofertas personalizadas y gestionan oportunidades en tiempo real.',
           },
         },
         {
           '@type': 'Question',
-          name: '¿Cuál es la cobertura de la base de datos empresarial en Colombia?',
+          name: '¿Cuál es la cobertura de la base de datos de empresas en Colombia?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Contamos con una infraestructura propia de datos con más de 200,000 contactos comerciales verificados y segmentados por ejecutivos, empresas y cobertura en los 32 departamentos de Colombia.',
+            text: 'SmartContacts cuenta con una base de datos propia perfilada con cobertura nacional en los 33 departamentos de Colombia, segmentada por más de 5 variables clave: ubicación geográfica, actividad económica, rango de edad, género y nivel de ingresos o capacidad de compra.',
           },
         },
         {
           '@type': 'Question',
-          name: '¿Qué diferencia a SmartContacts de un CRM tradicional o una agencia?',
+          name: '¿Qué diferencia existe entre un CRM tradicional y SmartContacts?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Un CRM es solo una herramienta pasiva de registro y las agencias tradicionales cobran por impresiones. SmartContacts construye una unidad operativa agéntica que prospecta activamente y entrega reuniones calificadas en tu embudo.',
+            text: 'Un CRM tradicional es un software pasivo donde tus empleados deben ingresar datos manualmente. SmartContacts es un canal activo de ventas con agentes agénticos de IA que prospectan proactivamente, inician conversaciones, responden objeciones y cierran acuerdos automáticamente.',
           },
         },
         {
           '@type': 'Question',
-          name: '¿Qué modalidades de implementación ofrecen?',
+          name: '¿Qué modalidades de implementación ofrecen (In-House vs Delegado)?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Ofrecemos dos modalidades: Implementación In-House (configuración directa en tu propia infraestructura de software) o Unidad Delegada (gestión integral externa administrada por nuestros especialistas de crecimiento).',
+            text: 'Ofrecemos 2 modalidades: 1) Comercialización Delegada (operamos directamente sobre nuestra propia base de datos como un canal de ventas externo a comisión/resultados) y 2) Instalación In-House (diseñamos, entrenamos e instalamos el sistema agéntico dentro de la operación de tu empresa con transferencia total de conocimiento).',
           },
         },
       ],
