@@ -92,6 +92,7 @@ export function BookingSection() {
   const [errorMsg, setErrorMsg] = useState("")
   const [emailError, setEmailError] = useState("")
   const [isValidatingEmail, setIsValidatingEmail] = useState(false)
+  const [hasAcceptedHabeasData, setHasAcceptedHabeasData] = useState(true)
 
   const validateEmailDomain = async (inputEmail: string) => {
     if (!inputEmail || !inputEmail.includes("@")) {
@@ -147,6 +148,11 @@ export function BookingSection() {
       return
     }
 
+    if (!hasAcceptedHabeasData) {
+      setErrorMsg(language === "es" ? "Debes autorizar el tratamiento de datos personales para continuar." : "You must authorize personal data treatment to proceed.")
+      return
+    }
+
     // Validar dominio antes de enviar
     const isValidDomain = await validateEmailDomain(email)
     if (!isValidDomain) {
@@ -172,6 +178,7 @@ export function BookingSection() {
           date: formattedDate,
           time: selectedSlot,
           timeSlot: selectedSlot,
+          acepta_tratamiento_datos: hasAcceptedHabeasData,
         }),
       })
 
@@ -619,6 +626,29 @@ export function BookingSection() {
                     className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans resize-none"
                   />
                 </div>
+              </div>
+
+              {/* Habeas Data Legal Consent Checkbox (Ley 1581 de 2012) */}
+              <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="habeasDataConsent"
+                  aria-label="Autorización de Tratamiento de Datos Personales"
+                  checked={hasAcceptedHabeasData}
+                  onChange={(e) => setHasAcceptedHabeasData(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
+                />
+                <label htmlFor="habeasDataConsent" className="text-[11px] text-black/75 leading-relaxed font-sans cursor-pointer select-none">
+                  {language === "es" ? (
+                    <>
+                      Autorizo a <strong>Smartcontacts</strong> para el tratamiento de mis datos personales y el envío de confirmaciones y comunicaciones relativas a esta reserva según la <strong>Ley 1581 de 2012 (Habeas Data)</strong> y la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a>.
+                    </>
+                  ) : (
+                    <>
+                      I authorize <strong>Smartcontacts</strong> to process my personal data and send confirmations and communications regarding this reservation pursuant to <strong>Law 1581 of 2012 (Habeas Data)</strong> and the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a>.
+                    </>
+                  )}
+                </label>
               </div>
 
               {errorMsg && (

@@ -21,6 +21,7 @@ const bookingSchema = z.object({
   service: z.string().optional(),
   topic: z.string().optional(),
   description: z.string().optional(),
+  acepta_tratamiento_datos: z.boolean().optional(),
 })
 
 export async function POST(request: Request) {

@@ -123,6 +123,7 @@ export class ProcessBookingUseCase {
             p_fin: endISO,
             p_google_event_id: googleEventId || null,
             p_meet_link: meetLink,
+            p_acepta_tratamiento_datos: data.acepta_tratamiento_datos ?? true,
           }),
         })
 

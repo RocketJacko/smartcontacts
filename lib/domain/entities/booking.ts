@@ -18,6 +18,7 @@ export interface BookingRequest {
   service?: string
   topic?: string
   description?: string
+  acepta_tratamiento_datos?: boolean
 }
 
 export interface BookingResult {
