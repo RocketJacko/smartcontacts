@@ -209,15 +209,118 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
     if (!res.ok) {
       const errText = await res.text()
       console.error('[GMAIL SEND ERROR]', res.status, errText)
-      return { success: false, error: `Gmail API respondió estatus ${res.status}` }
+      return { success: false, error: errText }
     }
 
     const data = await res.json()
     console.log('[GMAIL SEND SUCCESS] Mensaje enviado con éxito. ID:', data.id)
     return { success: true, messageId: data.id }
 
-  } catch (err: any) {
-    console.error('[GMAIL SEND EXCEPTION]', err)
-    return { success: false, error: err.message || 'Error inesperado en envío de Gmail' }
+  } catch (error: any) {
+    console.error('[GMAIL SEND EXCEPTION]', error)
+    return { success: false, error: error.message || 'Error inesperado enviando correo' }
+  }
+}
+
+/**
+ * Envía el correo de recordatorio personalizado 30 minutos antes.
+ */
+export async function send30MinReminderEmail(params: {
+  toEmail: string
+  toName: string
+  title: string
+  timeStr: string
+  meetLink: string
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const { senderEmail, senderName } = getGmailCredentials()
+  const accessToken = await getAccessToken()
+
+  if (!accessToken) {
+    return { success: false, error: 'Credenciales de Gmail no configuradas' }
+  }
+
+  try {
+    const subject = `⏰ Recordatorio: Tu Asesoría Inicia en 30 Minutos — Smartcontacts`
+    const meetUrl = params.meetLink || 'https://meet.google.com/smartcontacts-asesoria'
+
+    const htmlBody = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recordatorio de Asesoría</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7f7f8; margin: 0; padding: 24px; color: #111111;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.08); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+    <!-- Header Alerta -->
+    <tr>
+      <td style="padding: 32px; background-color: #111111; color: #ffffff;">
+        <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: #10b981; font-weight: 700;">RECORDATORIO DE SESIÓN</span>
+        <h1 style="margin: 8px 0 0 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">¡Tu Asesoría Inicia en 30 Minutos!</h1>
+      </td>
+    </tr>
+    <!-- Content -->
+    <tr>
+      <td style="padding: 32px;">
+        <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #333333;">
+          Hola <strong>${params.toName}</strong>,
+        </p>
+        <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+          Te recordamos que tu sesión de consultoría comercial <strong>"${params.title}"</strong> está programada para iniciar en 30 minutos (a las <strong>${params.timeStr}</strong>).
+        </p>
+
+        <!-- CTA Button -->
+        <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 0 28px 0; width: 100%;">
+          <tr>
+            <td align="center">
+              <a href="${meetUrl}" target="_blank" style="display: block; width: 100%; text-align: center; background-color: #10b981; color: #ffffff; padding: 16px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; text-decoration: none; box-sizing: border-box;">
+                🎥 Unirse Ahora a la Reunión de Google Meet
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin: 0; font-size: 12px; color: #888888; text-align: center; line-height: 1.5;">
+          Si necesitas hacer algún ajuste previo, responde a este correo. ¡Nos vemos en breve!
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+
+    const rawMessage = createRawMimeMessage(
+      senderName,
+      senderEmail,
+      params.toEmail,
+      subject,
+      htmlBody
+    )
+
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw: rawMessage }),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('[GMAIL REMINDER SEND ERROR]', res.status, errText)
+      return { success: false, error: errText }
+    }
+
+    const data = await res.json()
+    console.log('[GMAIL REMINDER SUCCESS] Recordatorio 30m enviado a:', params.toEmail, 'ID:', data.id)
+    return { success: true, messageId: data.id }
+
+  } catch (error: any) {
+    console.error('[GMAIL REMINDER EXCEPTION]', error)
+    return { success: false, error: error.message || 'Error enviando recordatorio' }
   }
 }

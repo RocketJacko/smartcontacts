@@ -134,7 +134,6 @@ export async function createGoogleCalendarEvent(params: CalendarEventParams): Pr
       reminders: {
         useDefault: false,
         overrides: [
-          { method: 'email', minutes: 60 },
           { method: 'popup', minutes: 15 },
         ],
       },
