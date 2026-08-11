@@ -5,7 +5,7 @@ import { RevealText } from "@/components/reveal-text"
 import { Footer } from "@/components/footer"
 import { PixelIcon } from "@/components/pixel-icon"
 import { useLanguage } from "@/lib/language-context"
-import { Sparkles, ArrowRight, CheckCircle2, Phone, Building, User, Mail, Loader2 } from "lucide-react"
+import { Sparkles, ArrowRight, CheckCircle2, Phone, Building, User, Mail, Loader2, AlertCircle } from "lucide-react"
 
 export default function DirectLandingPage() {
   const { language } = useLanguage()
@@ -19,9 +19,41 @@ export default function DirectLandingPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [emailError, setEmailError] = useState("")
+
+  const validateEmailDomain = async (inputEmail: string) => {
+    if (!inputEmail || !inputEmail.includes("@")) {
+      setEmailError("")
+      return true
+    }
+    try {
+      const res = await fetch("https://fxhemyrjetpwtmjxmftk.supabase.co/functions/v1/check-domain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inputEmail }),
+      })
+      const data = await res.json()
+      if (data && data.valid === false) {
+        setEmailError("Email no aceptado")
+        return false
+      } else {
+        setEmailError("")
+        return true
+      }
+    } catch {
+      setEmailError("")
+      return true
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formState.email) {
+      const isValid = await validateEmailDomain(formState.email)
+      if (!isValid) return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -207,10 +239,22 @@ export default function DirectLandingPage() {
                   <input
                     type="email"
                     value={formState.email}
-                    onChange={(e) => setFormState({ ...formState, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormState({ ...formState, email: e.target.value })
+                      if (emailError) setEmailError("")
+                    }}
+                    onBlur={() => validateEmailDomain(formState.email)}
                     placeholder="juan@empresa.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/15 bg-[#FAF9F6] text-xs font-sans text-[#111] focus:outline-none focus:border-black transition-colors"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-[#FAF9F6] text-xs font-sans text-[#111] focus:outline-none transition-colors ${
+                      emailError ? "border-rose-500 bg-rose-500/5 focus:border-rose-600" : "border-black/15 focus:border-black"
+                    }`}
                   />
+                  {emailError && (
+                    <p className="text-[11px] font-mono text-rose-600 mt-1 flex items-center gap-1 font-semibold">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{emailError}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Company & Sector */}

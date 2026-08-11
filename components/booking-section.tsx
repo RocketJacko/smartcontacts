@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { RevealText } from "@/components/reveal-text"
-import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown } from "lucide-react"
+import { Calendar, Clock, CheckCircle2, User, Phone, Mail, Building, ArrowRight, ArrowLeft, ShieldCheck, FileText, Check, ChevronDown, AlertCircle } from "lucide-react"
 
 export function BookingSection() {
   const { t, language } = useLanguage()
@@ -154,7 +154,6 @@ export function BookingSection() {
     // Validar dominio antes de enviar
     const isValidDomain = await validateEmailDomain(email)
     if (!isValidDomain) {
-      setErrorMsg("Email no aceptado")
       return
     }
 
