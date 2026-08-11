@@ -6,9 +6,9 @@
  */
 
 function getGmailCredentials() {
-  const clientId = process.env.GMAIL_CLIENT_ID || 'your-google-client-id'
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET || 'your-google-client-secret'
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN || 'your-google-refresh-token'
+  const clientId = process.env.GMAIL_CLIENT_ID || ''
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET || ''
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN || ''
   const senderEmail = process.env.GMAIL_SENDER_EMAIL || 'jesus.carmona966@pascualbravo.edu.co'
   const senderName = process.env.GMAIL_SENDER_NAME || 'Agendamiento Smartcontacts'
 

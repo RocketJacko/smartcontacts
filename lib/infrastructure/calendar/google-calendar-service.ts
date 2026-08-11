@@ -16,9 +16,9 @@ export interface CalendarEventResult {
 }
 
 async function getCalendarAccessToken(): Promise<string> {
-  const clientId = process.env.GMAIL_CLIENT_ID || 'your-google-client-id'
-  const clientSecret = process.env.GMAIL_CLIENT_SECRET || 'your-google-client-secret'
-  const refreshToken = process.env.GMAIL_REFRESH_TOKEN || 'your-google-refresh-token'
+  const clientId = process.env.GMAIL_CLIENT_ID || ''
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET || ''
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN || ''
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
