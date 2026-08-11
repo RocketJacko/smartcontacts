@@ -463,85 +463,143 @@ export default function SidebarNavPreview() {
             </span>
           </div>
 
-          {/* 3 Bento KPI Metric Cards (Centrados en Agendamiento, Fuerza Agéntica & Habeas Data) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+          {/* ── 4-STAGE SALES CONVERSION FUNNEL (AARRR METRICS) ────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             
-            {/* KPI 1: Agendamientos & Calendario */}
+            {/* ETAPA 1: Tráfico & Captura Web */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">AGENDAMIENTO</span>
+                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">1. TRÁFICO & VISITAS</span>
+                  <Globe className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <div className="text-3xl font-bold text-[#111] tracking-tight">1,250</div>
+                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Visitantes Únicos a la Web</p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                <span>🇨🇴 🇲🇽 🇺🇸 PAÍSES</span>
+                <span className="text-blue-700 font-bold">78% Móvil / 22% PC</span>
+              </div>
+            </div>
+
+            {/* ETAPA 2: Conversión a Agendamiento */}
+            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">2. AGENDAMIENTOS 45M</span>
                   <Calendar className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">45 Minutos</div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Duración por Cita Consultiva</p>
+                <div className="text-3xl font-bold text-[#111] tracking-tight">60 Citas</div>
+                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Reservadas en Calendario</p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>SUPABASE / MEET</span>
-                <span className="text-amber-700 font-bold">Sincronizado</span>
+                <span>CONVERSIÓN WEB</span>
+                <span className="text-amber-700 font-bold flex items-center gap-0.5">
+                  <ArrowUpRight className="w-3 h-3" /> 4.8%
+                </span>
               </div>
             </div>
 
-            {/* KPI 2: Fuerza Agéntica */}
+            {/* ETAPA 3: Asistencia a Meet (Show-Up Rate) */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">FUERZA AGÉNTICA IA</span>
+                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">3. ASISTENCIA MEET</span>
                   <Bot className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">4 Agentes</div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Prospector, Comercial, OCR, Auto</p>
+                <div className="text-3xl font-bold text-[#111] tracking-tight">85.0%</div>
+                <p className="text-xs text-black/70 mt-1 font-sans font-medium">51 Conectados a Videollamada</p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>UPTIME 99.9%</span>
-                <span className="text-purple-700 font-bold">1.2s Latencia</span>
+                <span>RECORDATORIO 30M</span>
+                <span className="text-purple-700 font-bold">Gmail / API Activo</span>
               </div>
             </div>
 
-            {/* KPI 3: Habeas Data (Ley 1581) */}
+            {/* ETAPA 4: Calificación & Cierre Comercial */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">HABEAS DATA</span>
-                  <ShieldCheck className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">4. CIERRE DE VENTAS</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">Ley 1581</div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Trazabilidad IP & Consentimiento</p>
+                <div className="text-3xl font-bold text-[#111] tracking-tight">12 Cerrados</div>
+                <p className="text-xs text-black/70 mt-1 font-sans font-medium">18 en 2do Contacto / 15 Futuro</p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>AUDITORÍA SIC</span>
-                <span className="text-blue-700 font-bold flex items-center gap-0.5">
-                  <CheckCircle2 className="w-3 h-3" /> 100% Ok
+                <span>TASA DE CIERRE</span>
+                <span className="text-emerald-700 font-bold flex items-center gap-0.5">
+                  <CheckCircle2 className="w-3 h-3" /> 23.5%
                 </span>
               </div>
             </div>
 
           </div>
 
-          {/* Standard Card List Rows (Following DESIGN.md specification) */}
+          {/* ── MÓDULO DE CALIFICACIÓN RÁPIDA DE CITAS MEET ───────────────────── */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
-              <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
-                REGISTRO DE EJECUCIONES EN VIVO (LOGS DE AGENTES & AGENDAMIENTO)
-              </span>
-              <span className="text-xs font-mono text-black/50">4 Tareas Procesadas</span>
+              <div>
+                <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  CALIFICACIÓN DE REUNIONES MEET (CICLO DE VIDA & EVOLUCIÓN DE CITA)
+                </span>
+                <p className="text-xs text-black/60 font-sans mt-0.5">
+                  Selecciona la clasificación de la sesión realizada para actualizar Supabase en tiempo real.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-black/50 shrink-0">Supabase RPC Activo</span>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {[
-                { time: "11:14:09", label: "Agendamiento 45m procesado & Meet generado (pqy-odwu-pwd)", status: "Completado" },
-                { time: "11:10:02", label: "Verificación de disponibilidad de horario comercial en Supabase", status: "Sincronizado" },
-                { time: "11:08:45", label: "Autorización de Tratamiento de Datos (Ley 1581) registrada con IP", status: "Auditado" },
-                { time: "11:05:30", label: "Ejecución de flujo agéntico de prospección comercial en n8n", status: "Activo" },
-              ].map((log, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
-                >
-                  <span className="text-[11px] text-black/40 font-mono min-w-[65px] font-medium">{log.time}</span>
-                  <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">{log.label}</span>
-                  <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{log.status}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
+                { id: "evt-01", name: "Carlos Mendoza", company: "Grupo Ventus S.A.S.", topic: "Unidad Comercial IA", time: "Hoy, 02:00 PM", status: "agendado" },
+                { id: "evt-02", name: "Mariana Silva", company: "Tecnología Logística LTDA", topic: "Integración n8n & CRM", time: "Hoy, 03:00 PM", status: "recordatorio_enviado" },
+                { id: "evt-03", name: "Andrés Restrepo", company: "Inversiones del Norte", topic: "Flujos de Automatización", time: "Ayer, 04:00 PM", status: "cumplida" },
+              ].map((item, idx) => (
+                <div key={item.id} className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.05] flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-black/[0.03]">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-[#111]">{item.name}</span>
+                      <span className="text-[10px] font-mono text-black/40">• {item.company}</span>
+                    </div>
+                    <p className="text-xs text-black/60 font-sans">
+                      Tema: <strong>{item.topic}</strong> | Horario: <span className="font-mono text-black/50">{item.time}</span>
+                    </p>
+                  </div>
+
+                  {/* Badges de Calificación de Llamada en 1 Clic */}
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => alert(`Calificado como CERRADO GANADO para ${item.name}`)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 border border-emerald-500/20 text-[11px] font-mono font-semibold transition-all cursor-pointer"
+                    >
+                      🏆 Cerrado
+                    </button>
+                    <button
+                      onClick={() => alert(`Calificado como SEGUNDO CONTACTO para ${item.name}`)}
+                      className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 border border-blue-500/20 text-[11px] font-mono font-semibold transition-all cursor-pointer"
+                    >
+                      ⏳ 2do Contacto
+                    </button>
+                    <button
+                      onClick={() => alert(`Calificado como LLAMAR FUTURO para ${item.name}`)}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 border border-amber-500/20 text-[11px] font-mono font-semibold transition-all cursor-pointer"
+                    >
+                      📅 Futuro
+                    </button>
+                    <button
+                      onClick={() => alert(`Calificado como NO INTERESA para ${item.name}`)}
+                      className="px-2.5 py-1 rounded-lg bg-gray-500/10 hover:bg-gray-500/20 text-gray-800 border border-gray-500/20 text-[11px] font-mono font-semibold transition-all cursor-pointer"
+                    >
+                      ❌ No Interesa
+                    </button>
+                    <button
+                      onClick={() => alert(`Calificado como NO-SHOW (No Asistió) para ${item.name}`)}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 border border-rose-500/20 text-[11px] font-mono font-semibold transition-all cursor-pointer"
+                    >
+                      🚫 No-Show
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
