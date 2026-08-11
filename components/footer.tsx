@@ -35,37 +35,68 @@ export function Footer() {
         }}
       />
 
-      <div className="relative z-10 max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8 pt-4">
-        <Link href="/" className="font-pixel text-xs tracking-[0.25em] text-black/70 hover:opacity-80 transition-opacity">
-          SMARTCONTACTS
-        </Link>
-
-        {/* Nav sections */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          {[
-            { label: t.nav.platform,   href: "/propuesta" },
-            { label: t.nav.coverage,   href: "/cobertura" },
-            { label: t.nav.modalities, href: "/modalidades" },
-            { label: t.nav.about,      href: "/sobre-mi" },
-            { label: t.nav.schedule,   href: "/agendar" },
-          ].map(l => (
-            <Link key={l.label} href={l.href} className="text-xs text-black/60 hover:text-black transition-colors font-mono tracking-wider">
-              {l.label}
+      <div className="relative z-10 max-w-6xl mx-auto flex flex-col space-y-8 pt-4">
+        
+        {/* Main top row */}
+        <div className="flex flex-col md:flex-row items-start justify-between gap-8 pb-8 border-b border-black/[0.08]">
+          <div className="space-y-3 max-w-sm">
+            <Link href="/" className="font-pixel text-xs tracking-[0.25em] text-black/80 hover:opacity-80 transition-opacity block">
+              SMARTCONTACTS
             </Link>
-          ))}
+            <p className="text-xs text-black/70 font-normal leading-relaxed">
+              Unidad de crecimiento comercial e inteligencia de datos B2B para multiplicar tus ventas con Agentes de IA.
+            </p>
+          </div>
+
+          {/* Contact Details */}
+          <div className="space-y-2 text-xs font-mono text-black/75">
+            <span className="text-[10px] text-black/40 uppercase tracking-widest block font-bold">CONTACTO DIRECTO</span>
+            <p className="flex items-center gap-2">
+              <a href="https://wa.me/573127529629" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4">
+                +57 312 752 9629 (WhatsApp)
+              </a>
+            </p>
+            <p>
+              <a href="mailto:jesus.carmona966@pascualbravo.edu.co" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4">
+                jesus.carmona966@pascualbravo.edu.co
+              </a>
+            </p>
+            <p className="text-black/60">Medellín, Antioquia, Colombia</p>
+          </div>
+
+          {/* Nav links */}
+          <div className="flex flex-col space-y-2 text-xs font-mono">
+            <span className="text-[10px] text-black/40 uppercase tracking-widest block font-bold">NAVEGACIÓN</span>
+            <Link href="/propuesta" className="text-black/70 hover:text-black transition-colors">{t.nav.platform}</Link>
+            <Link href="/cobertura" className="text-black/70 hover:text-black transition-colors">{t.nav.coverage}</Link>
+            <Link href="/modalidades" className="text-black/70 hover:text-black transition-colors">{t.nav.modalities}</Link>
+            <Link href="/sobre-mi" className="text-black/70 hover:text-black transition-colors">{t.nav.about}</Link>
+            <Link href="/agendar" className="text-black/70 hover:text-black transition-colors">{t.nav.schedule}</Link>
+          </div>
+
+          {/* Legal links */}
+          <div className="flex flex-col space-y-2 text-xs font-mono">
+            <span className="text-[10px] text-black/40 uppercase tracking-widest block font-bold">LEGAL & CUMPLIMIENTO</span>
+            <Link href="/privacidad" className="text-black/70 hover:text-black transition-colors font-medium">Privacidad (Ley 1581)</Link>
+            <Link href="/cookies" className="text-black/70 hover:text-black transition-colors font-medium">Política de Cookies</Link>
+            <Link href="/terminos" className="text-black/70 hover:text-black transition-colors font-medium">Términos y Condiciones</Link>
+            <Link href="/legal" className="text-black/70 hover:text-black transition-colors font-medium">Marco Legal Colombia</Link>
+          </div>
         </div>
 
-        {/* Social / Direct links */}
-        <div className="flex items-center gap-6">
+        {/* Bottom row */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-black/50">
+          <p>© {new Date().getFullYear()} SmartContacts — Medellín, Colombia. Todos los derechos reservados.</p>
           <a
             href="https://www.linkedin.com/in/jesus-carmona-automatization/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-black/60 hover:text-black transition-colors font-mono tracking-wider font-medium"
+            className="hover:text-black transition-colors font-medium"
           >
             LinkedIn &rarr;
           </a>
         </div>
+
       </div>
     </footer>
   )
