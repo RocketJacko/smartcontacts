@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { isDomainBlocked } from '@/lib/blocked-domains'
+import { sendBookingConfirmationEmail } from '@/lib/gmail-service'
 
 const bookingSchema = z.object({
   type: z.enum(['lead', 'booking']).default('booking'),
@@ -149,6 +150,20 @@ export async function POST(request: Request) {
       })
     } catch (n8nErr) {
       console.warn('[SMARTCONTACTS N8N DISPATCH WARNING]', n8nErr)
+    }
+
+    // Async Non-blocking Gmail Confirmation Email Dispatch
+    if (validatedData.email) {
+      sendBookingConfirmationEmail({
+        toEmail: validatedData.email,
+        toName: validatedData.name || 'Cliente',
+        date: validatedData.date || new Date().toISOString().split('T')[0],
+        time: validatedData.time || validatedData.timeSlot || '02:00 PM',
+        topicTitle: validatedData.topic || validatedData.service || 'Asesoría Estratégica Smartcontacts',
+        company: validatedData.company,
+      }).catch((emailErr) => {
+        console.warn('[GMAIL ASYNC DISPATCH EXCEPTION]', emailErr)
+      })
     }
 
     return NextResponse.json(

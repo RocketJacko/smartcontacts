@@ -732,7 +732,7 @@ export const translations = {
       submitBtn: "CONFIRM & SCHEDULE APPOINTMENT",
       submittingBtn: "PROCESSING BOOKING...",
       successTitle: "Appointment Successfully Scheduled!",
-      successDesc: "Your strategic session has been booked. Our team will reach out via WhatsApp and email for pre-session confirmation.",
+      successDesc: "We have sent you an email with the appointment confirmation and the meeting link. Our consulting team will contact you very soon.",
       summaryTitle: "APPOINTMENT SUMMARY",
       summaryAgent: "Growth Consultation Session",
       summaryLocation: "Video Call / Direct WhatsApp",
