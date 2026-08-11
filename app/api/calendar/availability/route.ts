@@ -43,17 +43,17 @@ export async function GET(request: Request) {
       )
     }
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      return NextResponse.json({ error: 'Falta configuración de Supabase' }, { status: 500 })
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co'
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4aGVteXJqZXRwd3RtanhtZnRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzIwNzMsImV4cCI6MjEwMTMwODA3M30.bxCsvD7m4-pVKSDM2JABs_-EAkXYcveQ4xMQG0xARhs'
+    const secretKey = process.env.CHECK_DOMAIN_SECRET || 'smartcontacts-booking-secret-2026'
 
     // Invoke PL/pgSQL function obtener_disponibilidad via Supabase REST RPC
-    const rpcUrl = `${SUPABASE_URL}/rest/v1/rpc/obtener_disponibilidad`
+    const rpcUrl = `${supabaseUrl}/rest/v1/rpc/obtener_disponibilidad`
     const response = await fetch(rpcUrl, {
       method: 'POST',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ p_fecha: dateParam }),
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
           date: dateParam,
           exp: now + 5 * 60 * 1000, // 5 min TTL
         })
-        const signature = crypto.createHmac('sha256', SECRET_KEY).update(payloadStr).digest('hex')
+        const signature = crypto.createHmac('sha256', secretKey).update(payloadStr).digest('hex')
         const bookingToken = Buffer.from(`${payloadStr}|${signature}`).toString('base64')
 
         return {
