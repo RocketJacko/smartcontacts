@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Comunicación & Agendamiento Estudiantil - Google Workspace API</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #F5F4F0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; }
+    .card-bento { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .badge-status { background-color: rgba(16, 185, 129, 0.1); color: #047857; font-family: monospace; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .btn-dark-custom { background-color: #111; color: #fff; border-radius: 12px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-dark-custom:hover { background-color: #000; color: #fff; }
+  </style>
+</head>
+<body class="py-4">
+
+  <div class="container max-w-6xl">
+    
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-black-10">
+      <div>
+        <h1 class="h3 font-weight-light mb-1"><i class="fa-solid fa-graduation-cap text-success me-2"></i>Sistema de Agendamiento Estudiantil</h1>
+        <p class="text-muted small mb-0">Integración Unificada Google Workspace API & Cloud Monitoring (Pascual Bravo)</p>
+      </div>
+      <span class="badge badge-status px-3 py-2 rounded-pill"><i class="fa-solid fa-circle text-success me-1"></i>OAUTH 2.0 CONECTADO</span>
+    </div>
+
+    <!-- MÓDULO A: DASHBOARD DE MÉTRICAS DE APIS DE GOOGLE -->
+    <div class="card card-bento p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="h6 text-uppercase text-muted font-monospace mb-0"><i class="fa-solid fa-chart-line me-2"></i>Módulo A: Consumo de APIs en Tiempo Real (Cloud Monitoring API)</h5>
+        <button onclick="cargarMetricas()" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fa-solid fa-rotate me-1"></i>Actualizar</button>
+      </div>
+
+      <div class="row g-4">
+        <!-- Metric 1: Gmail API -->
+        <div class="col-md-6">
+          <div class="p-3 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between text-small font-monospace mb-1">
+              <span>MÉTRICA DE GMAIL API (HOY)</span>
+              <span id="gmailCountText" class="fw-bold">0 / 2,000</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+              <div id="gmailProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;"></div>
+            </div>
+            <small class="text-muted mt-1 d-block">Límite recomendado de envíos diarios.</small>
+          </div>
+        </div>
+
+        <!-- Metric 2: People API -->
+        <div class="col-md-6">
+          <div class="p-3 border rounded-3 bg-light">
+            <div class="d-flex justify-content-between text-small font-monospace mb-1">
+              <span>SOLICITUDES DIRECTORIO (PEOPLE API)</span>
+              <span id="peopleCountText" class="fw-bold">0 Peticiones</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+              <div id="peopleProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 15%;"></div>
+            </div>
+            <small class="text-muted mt-1 d-block">Consultas realizadas al directorio de 68k estudiantes.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      
+      <!-- MÓDULO B: DESCARGADOR DE DIRECTORIO DE ESTUDIANTES -->
+      <div class="col-lg-6">
+        <div class="card card-bento p-4 h-100">
+          <h5 class="h6 text-uppercase text-muted font-monospace mb-3"><i class="fa-solid fa-address-book me-2"></i>Módulo B: Directorio Estudiantil (68,403 Alumnos)</h5>
+          <p class="small text-muted mb-3">Descarga el directorio de contactos paginando de 1,000 en 1,000 mediante People API y guarda los resultados en <code>alumnos.csv</code>.</p>
+          
+          <button id="btnDescargar" onclick="iniciarDescargaDirectorio()" class="btn btn-dark-custom w-100 py-2.5 mb-3">
+            <i class="fa-solid fa-cloud-arrow-down me-2"></i>Descargar Directorio Completo (CSV)
+          </button>
+
+          <div id="contenedorProgresoDescarga" class="d-none">
+            <div class="d-flex justify-content-between text-small font-monospace mb-1">
+              <span id="txtEstadoDescarga">Iniciando...</span>
+              <span id="txtTotalAlumnos">0 Alumnos</span>
+            </div>
+            <div class="progress" style="height: 10px;">
+              <div id="barDescarga" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MÓDULO C: AGENDAMIENTO DE CITAS (CALENDAR API + MEET) -->
+      <div class="col-lg-6">
+        <div class="card card-bento p-4 h-100">
+          <h5 class="h6 text-uppercase text-muted font-monospace mb-3"><i class="fa-solid fa-video me-2"></i>Módulo C: Agendar Cita + Google Meet</h5>
+          
+          <form id="formCita" onsubmit="crearCitaCalendar(event)">
+            <div class="mb-2">
+              <label class="form-label small text-muted font-monospace mb-1">Correo del Estudiante</label>
+              <input type="email" id="citaEmail" class="form-control form-control-sm" placeholder="estudiante@pascualbravo.edu.co" required>
+            </div>
+
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small text-muted font-monospace mb-1">Inicio (Fecha y Hora)</label>
+                <input type="datetime-local" id="citaInicio" class="form-control form-control-sm" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small text-muted font-monospace mb-1">Fin (Fecha y Hora)</label>
+                <input type="datetime-local" id="citaFin" class="form-control form-control-sm" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-muted font-monospace mb-1">Motivo / Asunto de Cita</label>
+              <input type="text" id="citaMotivo" class="form-control form-control-sm" placeholder="Asesoría Académica y Seguimiento" required>
+            </div>
+
+            <button type="submit" class="btn btn-dark-custom w-100 py-2">
+              <i class="fa-solid fa-calendar-plus me-2"></i>Agendar Cita & Generar Meet
+            </button>
+          </form>
+
+          <div id="resultadoCita" class="mt-3 d-none p-3 rounded-3 bg-light border">
+            <span class="badge bg-success mb-2">Cita Creada Exitosamente</span>
+            <p class="small mb-1"><strong>Enlace de Google Meet:</strong></p>
+            <a id="linkMeet" href="#" target="_blank" class="small font-monospace text-decoration-underline text-success">https://meet.google.com/...</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MÓDULO D: ENVÍO DE CORREOS MASIVOS CON RETARDO SEGURO (GMAIL API) -->
+    <div class="card card-bento p-4 mt-4">
+      <h5 class="h6 text-uppercase text-muted font-monospace mb-3"><i class="fa-solid fa-paper-plane me-2"></i>Módulo D: Envío Masivo con Máscara ("Agendamiento Smartcontacts")</h5>
+      <p class="small text-muted mb-3">Envía correos aplicando un retardo preventivo de 2 segundos (<code>time.sleep(2)</code>) entre cada envío para evitar bloqueos por Spam.</p>
+
+      <form id="formCorreo" onsubmit="enviarCorreosMasivos(event)">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small text-muted font-monospace mb-1">Lista de Destinatarios (Email, Nombre por línea)</label>
+            <textarea id="listaCorreos" class="form-control font-monospace small" rows="5" placeholder="estudiante1@pascualbravo.edu.co, Juan Pérez&#10;estudiante2@pascualbravo.edu.co, María Gómez" required></textarea>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-2">
+              <label class="form-label small text-muted font-monospace mb-1">Asunto del Correo</label>
+              <input type="text" id="asuntoCorreo" class="form-control form-control-sm" placeholder="Recordatorio de Asesoría Estudiantil" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small text-muted font-monospace mb-1">Plantilla del Mensaje (Usa {Nombre})</label>
+              <textarea id="cuerpoCorreo" class="form-control font-monospace small" rows="3" required>Hola {Nombre}, confirmamos tu cita de asesoría académica. Saludos de Agendamiento Smartcontacts.</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <small class="text-muted font-monospace"><i class="fa-solid fa-shield-halved text-success me-1"></i>Remitente: Agendamiento Smartcontacts &lt;mi_correo@pascualbravo.edu.co&gt;</small>
+          <button type="submit" class="btn btn-dark-custom px-4 py-2">
+            <i class="fa-solid fa-paper-plane me-2"></i>Iniciar Envío Seguro (2s Retardo)
+          </button>
+        </div>
+      </form>
+
+      <div id="resultadoEnvio" class="mt-3 d-none p-3 rounded-3 bg-light border">
+        <span id="txtResultadoEnvio" class="small font-monospace">Enviando correos...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function cargarMetricas() {
+      fetch('/api/metrics')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('gmailCountText').innerText = `${data.gmail_sent} / ${data.gmail_limit}`;
+            const pct = (data.gmail_sent / data.gmail_limit) * 100;
+            document.getElementById('gmailProgressBar').style.width = `${pct}%`;
+            document.getElementById('peopleCountText').innerText = `${data.people_requests} Peticiones`;
+          }
+        });
+    }
+
+    function iniciarDescargaDirectorio() {
+      const cont = document.getElementById('contenedorProgresoDescarga');
+      cont.classList.remove('d-none');
+      
+      const evtSource = new EventSource("/api/descargar-directorio");
+      evtSource.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        document.getElementById('txtEstadoDescarga').innerText = data.status;
+        if (data.total) {
+          document.getElementById('txtTotalAlumnos').innerText = `${data.total} Alumnos`;
+        }
+        if (data.completed) {
+          evtSource.close();
+        }
+      };
+    }
+
+    function crearCitaCalendar(e) {
+      e.preventDefault();
+      const email = document.getElementById('citaEmail').value;
+      const inicio = document.getElementById('citaInicio').value + ":00-05:00";
+      const fin = document.getElementById('citaFin').value + ":00-05:00";
+      const motivo = document.getElementById('citaMotivo').value;
+
+      fetch('/api/crear-cita', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, inicio, fin, motivo })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('resultadoCita').classList.remove('d-none');
+          const link = document.getElementById('linkMeet');
+          link.href = data.meet_link;
+          link.innerText = data.meet_link;
+        } else {
+          alert("Error creando cita: " + data.error);
+        }
+      });
+    }
+
+    function enviarCorreosMasivos(e) {
+      e.preventDefault();
+      const rawText = document.getElementById('listaCorreos').value;
+      const asunto = document.getElementById('asuntoCorreo').value;
+      const cuerpo = document.getElementById('cuerpoCorreo').value;
+
+      const lineas = rawText.split('\n');
+      const destinatarios = lineas.map(l => {
+        const partes = l.split(',');
+        return { email: partes[0]?.trim(), nombre: partes[1]?.trim() || 'Estudiante' };
+      }).filter(d => d.email);
+
+      const resDiv = document.getElementById('resultadoEnvio');
+      const resTxt = document.getElementById('txtResultadoEnvio');
+      resDiv.classList.remove('d-none');
+      resTxt.innerText = `Enviando ${destinatarios.length} correos con retardo de 2 segundos entre cada uno... Por favor espera.`;
+
+      fetch('/api/enviar-correos-masivos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinatarios, asunto, cuerpo })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          resTxt.innerText = `✅ Proceso finalizado: ${data.enviados} correos enviados correctamente, ${data.fallidos} fallidos.`;
+          cargarMetricas();
+        } else {
+          resTxt.innerText = `❌ Error en el proceso: ${data.error}`;
+        }
+      });
+    }
+
+    // Carga inicial de métricas al abrir la página
+    document.addEventListener('DOMContentLoaded', cargarMetricas);
+  </script>
+</body>
+</html>
