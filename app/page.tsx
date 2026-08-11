@@ -164,9 +164,9 @@ export default function AgenticPage() {
             {t.hero.subtitle}
           </p>
 
-          {/* Hero CTA Button */}
+          {/* Hero CTA Buttons (Dual High-Conversion Action) */}
           <div
-            className="mb-10"
+            className="flex flex-wrap items-center gap-3.5 mb-10"
             style={{
               opacity: heroReady ? 1 : 0,
               filter: heroReady ? "blur(0px)" : "blur(16px)",
@@ -176,18 +176,27 @@ export default function AgenticPage() {
           >
             <a
               href="#agendar"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-widest hover:bg-black/80 transition-all shadow-sm font-medium"
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-wider hover:bg-black/80 transition-all shadow-md font-semibold cursor-pointer"
             >
-              {t.hero.submitBtn} &rarr;
+              <span>🚀 {t.hero.primaryCta || "AGENDAR ASESORÍA & CREAR UNIDAD DE CRECIMIENTO"}</span>
+              <span className="text-emerald-400 font-bold">&rarr;</span>
+            </a>
+
+            <a
+              href="#cobertura"
+              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-black/15 bg-white/80 hover:bg-white text-[#111] text-xs font-mono uppercase tracking-wider transition-all shadow-2xs font-semibold cursor-pointer"
+            >
+              <span>📊 {t.hero.secondaryCta || "EXPLORAR BASE DE DATOS (+200K)"}</span>
             </a>
           </div>
 
-          {/* 3 metrics — staggered after title */}
-          <div className="flex gap-8 sm:gap-12">
+          {/* 4 Sales Metrics — staggered after title */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 pt-4 border-t border-black/10">
             {[
-              { value: language === 'es' ? "Más de 10" : "Over 10", label: t.hero.stats.tasks },
-              { value: language === 'es' ? "Nacional" : "National", label: t.hero.stats.prospects },
-              { value: "2", label: t.hero.stats.modalities },
+              { value: "+200,000", label: t.hero.stats.contacts },
+              { value: "33", label: t.hero.stats.coverage },
+              { value: "100%", label: t.hero.stats.payroll },
+              { value: "24/7", label: t.hero.stats.agents },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -198,8 +207,8 @@ export default function AgenticPage() {
                   transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${120 + i * 80}ms, filter 0.8s cubic-bezier(0.16,1,0.3,1) ${120 + i * 80}ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${120 + i * 80}ms`,
                 }}
               >
-                <div className="text-3xl sm:text-4xl text-[#111] font-light tracking-tight" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.value}</div>
-                <div className="text-xs text-black/75 font-medium tracking-widest uppercase mt-1" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.label}</div>
+                <div className="text-2xl sm:text-3xl text-[#111] font-bold tracking-tight" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.value}</div>
+                <div className="text-[11px] text-black/75 font-semibold tracking-wider uppercase mt-1 leading-snug" style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{stat.label}</div>
               </div>
             ))}
           </div>

@@ -183,9 +183,14 @@ export function BookingSection() {
       } else {
         setErrorMsg(data.error || (language === "es" ? "Ocurrió un error al agendar la cita. Inténtalo de nuevo." : "Error booking slot."))
       }
-    } catch {
+    } catch (err: any) {
       setIsSubmitting(false)
-      setStep(4) // Fallback graceful success UI
+      setErrorMsg(
+        err?.message ||
+        (language === "es"
+          ? "No se pudo completar el agendamiento. Por favor verifica tu conexión o inténtalo nuevamente."
+          : "Could not complete booking. Please check your connection or try again.")
+      )
     }
   }
 
