@@ -44,13 +44,14 @@ export async function POST(request: Request) {
     // Log for Vercel Serverless Logs
     console.log('[SMARTCONTACTS LEAD RECEIVED]', payload)
 
-    // Save lead to Supabase PostgreSQL table (calendario.prospectos)
+    // Save lead to Supabase PostgreSQL table (calendario.prospectos & calendario.eventos)
     try {
       const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
       const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
       if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-        await fetch(`${SUPABASE_URL}/rest/v1/prospectos`, {
+        // 1. Insertar prospecto
+        const prospectoRes = await fetch(`${SUPABASE_URL}/rest/v1/prospectos`, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
             'Accept-Profile': 'calendario',
             'Content-Profile': 'calendario',
-            'Prefer': 'return=minimal',
+            'Prefer': 'return=representation',
           },
           body: JSON.stringify({
             name: validatedData.name || 'Sin Nombre',
@@ -72,9 +73,69 @@ export async function POST(request: Request) {
             status: 'pendiente',
           }),
         })
+
+        if (prospectoRes.ok) {
+          const prospectosData = await prospectoRes.json()
+          const prospectoId = prospectosData?.[0]?.id
+
+          if (prospectoId) {
+            // Calcular fecha/hora de inicio y fin para el evento en calendario.eventos
+            const startTimeStr = validatedData.date ? new Date(validatedData.date).toISOString() : new Date().toISOString()
+            const endTimeObj = new Date(startTimeStr)
+            endTimeObj.setHours(endTimeObj.getHours() + 1)
+            const endTimeStr = endTimeObj.toISOString()
+
+            // 2. Insertar evento vinculado al prospecto en calendario.eventos
+            const eventoRes = await fetch(`${SUPABASE_URL}/rest/v1/eventos`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Accept-Profile': 'calendario',
+                'Content-Profile': 'calendario',
+                'Prefer': 'return=representation',
+              },
+              body: JSON.stringify({
+                prospecto_id: prospectoId,
+                titulo: `Agendamiento: ${validatedData.topic || 'Sesión Comercial'} - ${validatedData.name || validatedData.email}`,
+                descripcion: validatedData.description || `Contacto: ${validatedData.phone || 'S/N'}. Empresa: ${validatedData.company || 'S/E'}`,
+                inicio: startTimeStr,
+                fin: endTimeStr,
+                zona_horaria: 'America/Bogota',
+                visibilidad: 'publico',
+              }),
+            })
+
+            if (eventoRes.ok) {
+              const eventoData = await eventoRes.json()
+              const eventoId = eventoData?.[0]?.id
+
+              if (eventoId) {
+                // 3. Registrar al prospecto como participante en calendario.participantes
+                await fetch(`${SUPABASE_URL}/rest/v1/participantes`, {
+                  method: 'POST',
+                  headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Accept-Profile': 'calendario',
+                    'Content-Profile': 'calendario',
+                    'Prefer': 'return=minimal',
+                  },
+                  body: JSON.stringify({
+                    evento_id: eventoId,
+                    email: validatedData.email,
+                    estado: 'pendiente',
+                  }),
+                })
+              }
+            }
+          }
+        }
       }
     } catch (dbErr) {
-      console.warn('[SUPABASE CALENDARIO.PROSPECTOS SAVE WARNING]', dbErr)
+      console.warn('[SUPABASE CALENDARIO DISPATCH WARNING]', dbErr)
     }
 
     // Forward to n8n Webhook on ventus server (ventusn8n.smartcontacts.cloud)
