@@ -399,7 +399,7 @@ export const translations = {
       ],
       months: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
       weekDays: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
-      slots: ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"],
+      slots: ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM"],
     },
     faq: {
       tag: "PREGUNTAS FRECUENTES & INTELIGENCIA COMERCIAL",
@@ -830,7 +830,7 @@ export const translations = {
       ],
       months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
       weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      slots: ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"],
+      slots: ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM"],
     },
     faq: {
       tag: "FREQUENTLY ASKED QUESTIONS & COMMERCIAL INTELLIGENCE",

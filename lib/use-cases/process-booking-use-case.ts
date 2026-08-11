@@ -77,7 +77,8 @@ export class ProcessBookingUseCase {
     const { cleanDate, startISO, endISO } = parseColombiaStartAndEndISO(data.date, timeString)
 
     // 1. Create Google Calendar Event & Google Meet Room
-    let meetLink = 'https://meet.google.com'
+    const uniqueSlug = `${cleanDate.replace(/-/g, '')}-${timeString.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+    let meetLink = `https://meet.google.com/smc-${uniqueSlug}`
     let googleEventId: string | undefined = undefined
 
     try {
