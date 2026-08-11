@@ -29,6 +29,7 @@ export const translations = {
     },
     platform: {
       tag: "NUESTRA PROPUESTA DE VALOR",
+      tagline: "Ventas escaladas con respuestas exactas y cero confusión humana.",
       title: "Nos sumamos como un canal de ventas más, con todo ya construido.",
       autonomousTag: "SISTEMA AGÉNTICO DE IA, NO CHATBOT",
       autonomousTitle: "Agentes de IA que ejecutan la labor comercial completa.",
@@ -656,6 +657,45 @@ export const translations = {
         supportCode3: "✓ 98.6% Tickets resolved in real-time without human intervention.",
       }
     },
+    advantages: {
+      tag: "MEASURABLE VALUE ADVANTAGES",
+      title: "Direct impact on operational efficiency and sales conversion.",
+      items: [
+        { title: "Greater Operational Efficiency", desc: "Automate repetitive and complex tasks, reducing errors to zero." },
+        { title: "Data-Driven Decision Making", desc: "Access insights based on real-time data and prospecting indicators." },
+        { title: "Cost Reduction", desc: "Optimize resources without inflating fixed payroll or benefits burden." },
+        { title: "24/7 Experience", desc: "Immediate responses and continuous attention regardless of schedule." },
+        { title: "Scalability & Growth", desc: "Expand sales capacity easily according to lead volume." },
+        { title: "Competitive Advantage", desc: "Stay ahead of competitors with cutting-edge agentic technology." },
+      ]
+    },
+    methodology: {
+      tag: "4-PHASE METHODOLOGY",
+      title: "How We Implement Artificial Intelligence in Your Company",
+      subtitle: "A structured agentic engineering process designed to mitigate risks and maximize commercial ROI.",
+      phases: [
+        {
+          num: "01",
+          title: "Diagnosis & Requirement Understanding",
+          desc: "We understand your challenges, goals, and commercial workflows. We analyze key data, create the roadmap, and co-design the implementation plan."
+        },
+        {
+          num: "02",
+          title: "Development, Implementation & Integration",
+          desc: "We refine prompts, agentic models, data pipelines, and APIs. We integrate with security and permissions, guaranteeing quality with A/B testing."
+        },
+        {
+          num: "03",
+          title: "Training, Optimization & Deployment",
+          desc: "We train agents with exact brand knowledge and policies. We optimize precision, latency, and costs, deploying with real-time monitoring."
+        },
+        {
+          num: "04",
+          title: "Validation, Adjustments & Continuous Support",
+          desc: "We evaluate conversion metrics and cycle times, continuously improving agent knowledge and accompanying operational evolution."
+        }
+      ]
+    },
     pricing: {
       tag: "WORKING MODALITIES",
       title: "Two ways to empower your commercial capacity.",
@@ -719,25 +759,42 @@ export const translations = {
     },
     booking: {
       tag: "STRATEGIC CONSULTATION BOOKING",
-      title: "Schedule a meeting with our growth team.",
-      subtitle: "Select your preferred date, time slot, and leave your details to coordinate a personalized session.",
+      title: "Schedule Your Sales & Operational Consultation",
+      subtitle: "Select your topic of interest, pick an available date and time slot, and leave your details to coordinate a personalized strategic session.",
+      step1Title: "PHASE 01 — Select Consultation Topic",
+      step2Title: "PHASE 02 — Select Available Date & Time",
+      step3Title: "PHASE 03 — Contact & Company Details",
       nameLabel: "Full Name",
       namePlaceholder: "Ex: John Doe",
       phoneLabel: "Mobile / WhatsApp",
       phonePlaceholder: "+1 (555) 000-0000",
       emailLabel: "Work Email",
       emailPlaceholder: "john@company.com",
-      dateLabel: "Select Date",
+      companyLabel: "Company Name",
+      companyPlaceholder: "Ex: Ventus Enterprise Group Inc.",
+      isCompanyLabel: "I Represent a Company or Business",
+      descLabel: "Brief Description of Your Challenge or Need",
+      descPlaceholder: "Tell us briefly about your processes, sales volume, or what you wish to automate...",
+      dateLabel: "Available Days (Next 7 Days)",
       timeLabel: "Available Time Slots",
-      submitBtn: "CONFIRM & SCHEDULE APPOINTMENT",
-      submittingBtn: "PROCESSING BOOKING...",
+      submitBtn: "BOOK STRATEGIC CONSULTATION",
+      submittingBtn: "SENDING REQUEST...",
       successTitle: "Appointment Successfully Scheduled!",
       successDesc: "We have sent you an email with the appointment confirmation and the meeting link. Our consulting team will contact you very soon.",
-      summaryTitle: "APPOINTMENT SUMMARY",
+      summaryTitle: "CONSULTATION SUMMARY",
+      summaryTopic: "Selected Topic",
       summaryAgent: "Growth Consultation Session",
       summaryLocation: "Video Call / Direct WhatsApp",
       summaryDuration: "45 Minutes",
       newBookingBtn: "BOOK ANOTHER APPOINTMENT",
+      topics: [
+        { id: "automation-no-ai", title: "Process Automation (No AI)", desc: "Structured workflows, API integrations, and repetitive task automation." },
+        { id: "workflows-integration", title: "Workflow Creation & Integration", desc: "Orchestration of operational systems, CRMs, databases, and tools." },
+        { id: "ai-agents-in-house", title: "Development & Installation of In-House AI Agents", desc: "Autonomous agents trained on your business knowledge and installed in-house." },
+        { id: "sales-model", title: "Delegated Commercialization & Sales System", desc: "Active commercial agent force prospecting on our proprietary database." },
+        { id: "ocr-documents", title: "Document Extraction & Intelligent OCR", desc: "Automatic processing of IDs, payroll stubs, and certificates." },
+        { id: "custom-consulting", title: "Tailored Strategic Consulting & Diagnosis", desc: "Full digital maturity assessment and custom architecture design." },
+      ],
       months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
       weekDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
       slots: ["09:00 AM", "10:30 AM", "02:00 PM", "03:30 PM", "05:00 PM"],
