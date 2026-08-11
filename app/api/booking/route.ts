@@ -46,8 +46,8 @@ export async function POST(request: Request) {
 
     // Save lead to Supabase PostgreSQL table (calendario.prospectos & calendario.eventos)
     try {
-      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fxhemyrjetpwtmjxmftk.supabase.co'
+      const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4aGVteXJqZXRwd3RtanhtZnRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzIwNzMsImV4cCI6MjEwMTMwODA3M30.bxCsvD7m4-pVKSDM2JABs_-EAkXYcveQ4xMQG0xARhs'
 
       if (SUPABASE_URL && SUPABASE_ANON_KEY) {
         // 1. Insertar prospecto
