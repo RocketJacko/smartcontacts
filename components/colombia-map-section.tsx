@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { RevealText } from "@/components/reveal-text"
 import { PixelIcon } from "@/components/pixel-icon"
-import totalsData from "@/lib/data/consolidado_total_personas_departamento.json"
 import svgPathsData from "@/lib/data/colombia_svg_paths.json"
+import { Loader2 } from "lucide-react"
 
 interface DeptData {
   departamento: string
@@ -35,9 +35,33 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 export function ColombiaMapSection() {
   const { language } = useLanguage()
+  const [deptList, setDeptList] = useState<DeptData[]>([])
   const [activeDept, setActiveDept] = useState<DeptData | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Fetch dynamic coverage data from Supabase API (/api/coverage)
+  useEffect(() => {
+    fetch("/api/coverage")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.departamentos) && data.departamentos.length > 0) {
+          const mapped = data.departamentos.map((d: any) => ({
+            departamento: String(d.departamento),
+            personas_naturales: Number(d.personas_naturales || 0),
+            personas_juridicas: Number(d.personas_juridicas || 0),
+            total: Number(d.total || 0),
+          }))
+          setDeptList(mapped)
+        }
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        console.warn("Error fetching dynamic coverage:", err)
+        setIsLoading(false)
+      })
+  }, [])
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return
@@ -48,11 +72,16 @@ export function ColombiaMapSection() {
     })
   }
 
-  // Default to BOGOTA D.C. or first department so data is always displayed cleanly
-  const bogotaDept = totalsData.departamentos.find(d => d.departamento === "BOGOTA D.C.") || totalsData.departamentos[0]
-  const displayDept = activeDept || bogotaDept
+  // Dynamic selected department or fallback to Bogota
+  const defaultDept: DeptData = deptList.find(d => d.departamento === "BOGOTA D.C.") || deptList[0] || {
+    departamento: "BOGOTA D.C.",
+    personas_naturales: 310739,
+    personas_juridicas: 212284,
+    total: 523023
+  }
+  const displayDept = activeDept || defaultDept
 
-  const naturalPercent = Math.round((displayDept.personas_naturales / displayDept.total) * 100)
+  const naturalPercent = displayDept.total > 0 ? Math.round((displayDept.personas_naturales / displayDept.total) * 100) : 50
   const juridicaPercent = 100 - naturalPercent
 
   return (
@@ -88,7 +117,7 @@ export function ColombiaMapSection() {
                 viewBox="0 0 600 800"
                 className="w-full h-full filter drop-shadow-sm transition-all"
               >
-                {totalsData.departamentos.map(dept => {
+                {(deptList.length > 0 ? deptList : Object.keys(SVG_PATHS).map(k => ({ departamento: k, personas_naturales: 0, personas_juridicas: 0, total: 0 }))).map(dept => {
                   const svgKey = getSvgKeyForDept(dept.departamento)
                   if (!svgKey || !SVG_PATHS[svgKey]) return null
 
