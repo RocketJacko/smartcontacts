@@ -2,25 +2,20 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  ChevronDown,
   ChevronRight,
   Search,
   Plus,
   RefreshCw,
   Video,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  ShieldCheck,
-  Trash2,
-  Edit,
   ExternalLink,
   Mail,
-  Calendar as CalendarIcon,
   User,
   Building,
   Phone,
-  AlertTriangle,
+  MessageSquare,
+  Calendar as CalendarIcon,
+  Clock,
+  Trash2,
   X,
 } from "lucide-react"
 
@@ -28,11 +23,10 @@ export interface CalendarBookingRecord {
   id: string
   titulo: string
   descripcion: string
+  comentarioAdicional?: string
   meetLink: string
   estado: "agendado" | "cumplida" | "no_asistio" | "cancelada"
   resultadoComercial: string
-  recordatorioEnviado: boolean
-  creadoEn: string
   fechaCita: string
   horaCita: string
   prospecto: {
@@ -42,7 +36,7 @@ export interface CalendarBookingRecord {
     empresa: string
     telefono: string
     tema: string
-    aceptaTratamientoDatos: boolean
+    comentario?: string
   }
 }
 
@@ -62,6 +56,7 @@ export function CalendarDataTable4() {
     empresa: "",
     telefono: "",
     tema: "Consultoría Agéntica 45M",
+    comentario: "",
     fecha: new Date().toISOString().split("T")[0],
     hora: "10:00 AM",
   })
@@ -95,8 +90,8 @@ export function CalendarDataTable4() {
     }))
   }
 
-  // Update Status Action (PUT)
-  const handleUpdateStatus = async (id: string, newEstado: "cumplida" | "no_asistio" | "cancelada" | "agendado") => {
+  // Update Status Action (PUT) via clean Select Dropdown
+  const handleUpdateStatus = async (id: string, newEstado: string) => {
     try {
       const res = await fetch("/api/calendar/crud", {
         method: "PUT",
@@ -114,7 +109,7 @@ export function CalendarDataTable4() {
 
   // Delete Record Action (DELETE)
   const handleDeleteRecord = async (id: string) => {
-    if (!confirm("¿Está seguro de que desea eliminar este agendamiento de la base de datos?")) return
+    if (!confirm("¿Está seguro de que desea eliminar este registro de agendamiento?")) return
     try {
       const res = await fetch(`/api/calendar/crud?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -147,6 +142,7 @@ export function CalendarDataTable4() {
           empresa: "",
           telefono: "",
           tema: "Consultoría Agéntica 45M",
+          comentario: "",
           fecha: new Date().toISOString().split("T")[0],
           hora: "10:00 AM",
         })
@@ -161,93 +157,81 @@ export function CalendarDataTable4() {
     }
   }
 
-  // Render Status Badge
-  const getStatusBadge = (estado: string) => {
+  // Status Color Indicator Dot according to DESIGN.md
+  const getStatusDotColor = (estado: string) => {
     switch (estado) {
       case "cumplida":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-emerald-800 bg-emerald-500/10 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            CUMPLIDA
-          </span>
-        )
+        return "bg-[#16a34a]"
       case "no_asistio":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-rose-800 bg-rose-500/10 border border-rose-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-            NO ASISTIÓ
-          </span>
-        )
+        return "bg-[#d73a49]"
       case "cancelada":
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-black/50 bg-black/5 border border-black/10">
-            <span className="w-1.5 h-1.5 rounded-full bg-black/40" />
-            CANCELADA
-          </span>
-        )
+        return "bg-black/30"
       default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-purple-800 bg-purple-500/10 border border-purple-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
-            AGENDADA
-          </span>
-        )
+        return "bg-[#7c3aed]"
+    }
+  }
+
+  const getStatusText = (estado: string) => {
+    switch (estado) {
+      case "cumplida":
+        return "CUMPLIDA (ASISTIÓ)"
+      case "no_asistio":
+        return "NO ASISTIÓ (ABANDONO)"
+      case "cancelada":
+        return "CANCELADA"
+      default:
+        return "AGENDADA"
     }
   }
 
   return (
-    <div className="w-full space-y-5 font-sans">
+    <div className="w-full space-y-4 font-sans text-[#111]">
       
-      {/* ── TOP FILTER BAR & HEADER CONTROLS ─────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-black/[0.08] shadow-2xs">
+      {/* ── TOP BAR & FILTER DROPDOWN MENU ────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
         
-        {/* Status Pill Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden">
-          {[
-            { id: "todos", label: "TODOS" },
-            { id: "agendado", label: "AGENDADOS" },
-            { id: "cumplida", label: "CUMPLIDOS" },
-            { id: "no_asistio", label: "NO ASISTIÓ" },
-            { id: "cancelada", label: "CANCELADOS" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedEstado(tab.id)}
-              className={`px-3 py-1.5 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                selectedEstado === tab.id
-                  ? "bg-[#111] text-white shadow-xs"
-                  : "bg-black/[0.03] text-black/60 hover:bg-black/[0.06] hover:text-[#111]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Dropdown Filter (Lista Desplegable en lugar de botones de colores) */}
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold shrink-0">
+            FILTRAR ESTADO:
+          </label>
+          <select
+            value={selectedEstado}
+            onChange={(e) => setSelectedEstado(e.target.value)}
+            className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] font-medium outline-none focus:border-black/30 cursor-pointer transition-colors"
+          >
+            <option value="todos">Todos los Agendamientos</option>
+            <option value="agendado">Agendadas (Pendientes)</option>
+            <option value="cumplida">Cumplidas (Asistió)</option>
+            <option value="no_asistio">No Asistió (Abandono)</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
         </div>
 
-        {/* Search & Actions */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex-1 sm:w-64">
+        {/* Search & New Booking Controls */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-60">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar prospecto o empresa..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-black/[0.03] border border-black/10 text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
+              placeholder="Buscar por Nombre, Empresa o Correo..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
             />
           </div>
 
           <button
             onClick={loadRecords}
-            title="Refrescar agendamientos"
-            className="p-2 rounded-xl border border-black/10 bg-black/[0.02] text-black/60 hover:bg-black/[0.06] hover:text-[#111] transition-colors cursor-pointer"
+            title="Refrescar Lista"
+            className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-purple-600" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#111]" : ""}`} />
           </button>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#111] text-white text-xs font-medium shadow-xs hover:bg-black/90 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-2xs"
           >
             <Plus className="w-4 h-4" />
             <span>Nuevo Agendamiento</span>
@@ -255,204 +239,153 @@ export function CalendarDataTable4() {
         </div>
       </div>
 
-      {/* ── DATA TABLE 4 (EXPANDABLE ROW DETAIL PANELS IN PLACE) ──────────────── */}
-      <div className="bg-white rounded-2xl border border-black/[0.08] shadow-2xs overflow-hidden">
+      {/* ── DATA TABLE (STRICT ADHERENCE TO DESIGN.md PATTERN) ────────────────── */}
+      <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full text-left border-collapse font-sans">
             <thead>
-              <tr className="border-b border-black/[0.08] bg-black/[0.02] text-[10px] font-mono text-black/40 uppercase tracking-widest">
-                <th className="py-3.5 px-4 w-10 text-center"></th>
-                <th className="py-3.5 px-4 font-bold">Prospecto / Empresa</th>
-                <th className="py-3.5 px-4 font-bold">Contacto</th>
-                <th className="py-3.5 px-4 font-bold">Tema / Modalidad</th>
-                <th className="py-3.5 px-4 font-bold">Estado Cita</th>
-                <th className="py-3.5 px-4 font-bold">Fecha / Hora</th>
-                <th className="py-3.5 px-4 font-bold text-right">Acción</th>
+              <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                <th className="py-3 px-3.5 w-8 text-center"></th>
+                <th className="py-3 px-3.5 font-bold">Nombre del Cliente</th>
+                <th className="py-3 px-3.5 font-bold">Empresa / Organización</th>
+                <th className="py-3 px-3.5 font-bold">Celular / Teléfono</th>
+                <th className="py-3 px-3.5 font-bold">Tema / Asesoría</th>
+                <th className="py-3 px-3.5 font-bold">Estado</th>
+                <th className="py-3 px-3.5 font-bold text-right">Fecha / Hora</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-black/[0.06]">
+            <tbody className="divide-y divide-black/[0.05]">
               {records.length > 0 ? (
                 records.map((rec) => {
                   const isExpanded = !!expandedRowIds[rec.id]
                   return (
                     <React.Fragment key={rec.id}>
                       
-                      {/* MAIN ROW */}
+                      {/* MAIN ROW PATTERN */}
                       <tr
                         onClick={() => toggleRow(rec.id)}
                         className={`group cursor-pointer transition-colors ${
-                          isExpanded ? "bg-purple-50/40" : "hover:bg-black/[0.02]"
+                          isExpanded ? "bg-[#F5F4F0]/60" : "hover:bg-black/[0.02]"
                         }`}
                       >
-                        <td className="py-3.5 px-4 text-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleRow(rec.id)
-                            }}
-                            className="p-1 rounded-lg text-black/40 group-hover:text-[#111] hover:bg-black/5 transition-transform"
-                          >
-                            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-90 text-purple-600" : ""}`} />
-                          </button>
+                        <td className="py-3 px-3.5 text-center">
+                          <ChevronRight
+                            className={`w-4 h-4 text-black/30 group-hover:text-[#111] transition-transform duration-200 ${
+                              isExpanded ? "rotate-90 text-[#111]" : ""
+                            }`}
+                          />
                         </td>
 
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-semibold text-[#111] group-hover:text-purple-900 transition-colors">
-                              {rec.prospecto.nombre}
-                            </span>
-                            <span className="text-[11px] text-black/50 font-light flex items-center gap-1 mt-0.5">
-                              <Building className="w-3 h-3 text-black/30" />
-                              {rec.prospecto.empresa}
-                            </span>
-                          </div>
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs font-semibold text-[#111] flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-black/30 shrink-0" />
+                            {rec.prospecto.nombre}
+                          </span>
                         </td>
 
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-col">
-                            <span className="text-xs text-black/80 font-mono flex items-center gap-1">
-                              <Mail className="w-3 h-3 text-black/30" />
-                              {rec.prospecto.email}
-                            </span>
-                            {rec.prospecto.telefono && (
-                              <span className="text-[10px] text-black/40 font-mono mt-0.5 flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-black/30" />
-                                {rec.prospecto.telefono}
-                              </span>
-                            )}
-                          </div>
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs text-black/70 font-normal flex items-center gap-1.5">
+                            <Building className="w-3.5 h-3.5 text-black/30 shrink-0" />
+                            {rec.prospecto.empresa}
+                          </span>
                         </td>
 
-                        <td className="py-3.5 px-4">
-                          <span className="text-xs text-black/70 font-sans font-medium line-clamp-1">
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs text-black/80 font-mono flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-black/30 shrink-0" />
+                            {rec.prospecto.telefono || "No especificado"}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs text-black/70 font-light truncate max-w-[200px] block">
                             {rec.prospecto.tema}
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4">{getStatusBadge(rec.estado)}</td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-col text-xs font-mono">
-                            <span className="text-[#111] font-semibold">{rec.fechaCita}</span>
-                            <span className="text-black/40 text-[10px]">{rec.horaCita}</span>
-                          </div>
+                        <td className="py-3 px-3.5">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/70">
+                            <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(rec.estado)}`} />
+                            {getStatusText(rec.estado)}
+                          </span>
                         </td>
 
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleRow(rec.id)
-                            }}
-                            className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded-lg bg-black/[0.04] hover:bg-black/10 text-black/80 transition-colors"
-                          >
-                            {isExpanded ? "Ocultar" : "Ver Detalle"}
-                          </button>
+                        <td className="py-3 px-3.5 text-right font-mono text-xs text-black/60">
+                          <span>{rec.fechaCita}</span>
+                          <span className="text-black/30 ml-1.5 text-[10px]">{rec.horaCita}</span>
                         </td>
                       </tr>
 
-                      {/* EXPANDABLE ROW DETAIL PANEL REVEALED IN PLACE (DATA TABLE 4 PATTERN) */}
+                      {/* EXPANDABLE ROW DETAIL PANEL REVEALED IN PLACE */}
                       {isExpanded && (
-                        <tr className="bg-purple-50/30 border-b border-purple-100">
-                          <td colSpan={7} className="p-4 sm:p-6">
-                            <div className="bg-white rounded-xl p-5 border border-purple-200/60 shadow-xs space-y-4 font-sans animate-in fade-in duration-150">
+                        <tr className="bg-[#F5F4F0]/40 border-b border-black/[0.08]">
+                          <td colSpan={7} className="p-4 sm:p-5">
+                            <div className="bg-white rounded-xl p-4 sm:p-5 border border-black/[0.07] space-y-4 font-sans shadow-2xs">
                               
+                              {/* Descriptive Header */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.06] pb-3">
                                 <div>
                                   <h4 className="text-sm font-semibold text-[#111] flex items-center gap-2">
-                                    <span>{rec.titulo}</span>
-                                    <span className="text-[10px] font-mono text-purple-700 bg-purple-100 px-2 py-0.5 rounded font-bold">
-                                      ID: {rec.id.substring(0, 8)}...
-                                    </span>
+                                    <span>{rec.prospecto.nombre}</span>
+                                    <span className="text-xs text-black/50 font-normal">({rec.prospecto.empresa})</span>
                                   </h4>
-                                  <p className="text-xs text-black/60 mt-0.5 font-light">{rec.descripcion}</p>
+                                  <span className="text-xs font-mono text-black/50 mt-0.5 block">
+                                    Correo: <span className="text-[#111]">{rec.prospecto.email}</span> | Celular: <span className="text-[#111]">{rec.prospecto.telefono}</span>
+                                  </span>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <a
-                                    href={rec.meetLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium shadow-xs transition-colors"
-                                  >
-                                    <Video className="w-3.5 h-3.5" />
-                                    <span>Unirse a Google Meet</span>
-                                    <ExternalLink className="w-3 h-3 text-white/70" />
-                                  </a>
-                                </div>
+                                <a
+                                  href={rec.meetLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111] hover:bg-black/90 text-white text-xs font-medium transition-colors w-fit"
+                                >
+                                  <Video className="w-3.5 h-3.5 text-white" />
+                                  <span>Unirse a Google Meet</span>
+                                  <ExternalLink className="w-3 h-3 text-white/60" />
+                                </a>
                               </div>
 
-                              {/* Detailed Info Grid */}
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-                                <div className="p-3 rounded-lg bg-black/[0.02] border border-black/[0.04]">
-                                  <span className="text-[10px] text-black/40 uppercase block mb-1 font-bold">TRATAMIENTO HABEAS DATA</span>
-                                  <div className="flex items-center gap-1.5 font-semibold text-emerald-700">
-                                    <ShieldCheck className="w-4 h-4" />
-                                    <span>{rec.prospecto.aceptaTratamientoDatos ? "Aceptado & Auditado con IP" : "No Registrado"}</span>
-                                  </div>
-                                </div>
-
-                                <div className="p-3 rounded-lg bg-black/[0.02] border border-black/[0.04]">
-                                  <span className="text-[10px] text-black/40 uppercase block mb-1 font-bold">RECORDATORIO 30M GMAIL</span>
-                                  <div className="flex items-center gap-1.5 font-semibold text-purple-700">
-                                    <Mail className="w-4 h-4" />
-                                    <span>{rec.recordatorioEnviado ? "Despachado a Gmail" : "Programado"}</span>
-                                  </div>
-                                </div>
-
-                                <div className="p-3 rounded-lg bg-black/[0.02] border border-black/[0.04]">
-                                  <span className="text-[10px] text-black/40 uppercase block mb-1 font-bold">CREADO EN SUPABASE</span>
-                                  <div className="flex items-center gap-1.5 text-black/70 font-semibold">
-                                    <Clock className="w-4 h-4 text-black/40" />
-                                    <span>{new Date(rec.creadoEn).toLocaleString("es-CO")}</span>
-                                  </div>
-                                </div>
+                              {/* Form Comment / Additional Message */}
+                              <div className="p-3.5 rounded-lg bg-[#F5F4F0] border border-black/[0.05] space-y-1">
+                                <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                  <MessageSquare className="w-3.5 h-3.5 text-black/30" />
+                                  COMENTARIO Y MENSAJE ADICIONAL CAPTURADO EN FORMULARIO
+                                </span>
+                                <p className="text-xs text-black/80 font-sans italic leading-relaxed">
+                                  "{rec.prospecto.comentario || rec.descripcion || "Sin comentarios adicionales registrados en la reserva."}"
+                                </p>
                               </div>
 
-                              {/* Quick Action Controls */}
-                              <div className="pt-3 border-t border-black/[0.06] flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <span className="font-mono text-black/40 text-[10px] uppercase font-bold">CAMBIAR ESTADO OPERACIONAL:</span>
+                              {/* Appointment History & Control Selector */}
+                              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-black/[0.06] text-xs">
                                 
+                                {/* Desplegable para Cambiar Estado (Sin botones inventados) */}
                                 <div className="flex items-center gap-2">
-                                  {rec.estado !== "cumplida" && (
-                                    <button
-                                      onClick={() => handleUpdateStatus(rec.id, "cumplida")}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 font-mono font-bold text-[11px] border border-emerald-500/20 transition-colors"
-                                    >
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                      Marcar Cumplida
-                                    </button>
-                                  )}
-
-                                  {rec.estado !== "no_asistio" && (
-                                    <button
-                                      onClick={() => handleUpdateStatus(rec.id, "no_asistio")}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 font-mono font-bold text-[11px] border border-rose-500/20 transition-colors"
-                                    >
-                                      <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                                      Marcar No Asistió
-                                    </button>
-                                  )}
-
-                                  {rec.estado !== "cancelada" && (
-                                    <button
-                                      onClick={() => handleUpdateStatus(rec.id, "cancelada")}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 text-black/70 font-mono font-bold text-[11px] border border-black/10 transition-colors"
-                                    >
-                                      <AlertTriangle className="w-3.5 h-3.5 text-black/50" />
-                                      Cancelar Cita
-                                    </button>
-                                  )}
-
-                                  <button
-                                    onClick={() => handleDeleteRecord(rec.id)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-mono font-bold text-[11px] border border-red-200 transition-colors ml-2"
+                                  <span className="text-[10px] font-mono text-black/40 uppercase font-bold">
+                                    CAMBIAR ESTADO DE CITA:
+                                  </span>
+                                  <select
+                                    value={rec.estado}
+                                    onChange={(e) => handleUpdateStatus(rec.id, e.target.value)}
+                                    className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-semibold text-[#111] outline-none focus:border-black/30 cursor-pointer"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                                    Eliminar
-                                  </button>
+                                    <option value="agendado">Agendada (Pendiente)</option>
+                                    <option value="cumplida">Cumplida (Asistió a la Sesión)</option>
+                                    <option value="no_asistio">No Asistió (Abandono)</option>
+                                    <option value="cancelada">Cancelada</option>
+                                  </select>
                                 </div>
+
+                                <button
+                                  onClick={() => handleDeleteRecord(rec.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors w-fit"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                  Eliminar Agendamiento
+                                </button>
+
                               </div>
 
                             </div>
@@ -465,8 +398,8 @@ export function CalendarDataTable4() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-black/40">
-                    <p className="text-xs font-mono">No se encontraron agendamientos en la base de datos.</p>
+                  <td colSpan={7} className="py-10 text-center text-black/40">
+                    <p className="text-xs font-mono">No hay agendamientos registrados bajo este filtro.</p>
                   </td>
                 </tr>
               )}
@@ -477,114 +410,125 @@ export function CalendarDataTable4() {
 
       {/* ── MODAL: CREAR NUEVO AGENDAMIENTO ───────────────────────────────────── */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl border border-black/15 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-black/[0.08]">
-              <h3 className="text-base font-semibold text-[#111]">Nuevo Agendamiento (Esquema Calendario)</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-black/15 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in duration-150">
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-black/[0.08]">
+              <h3 className="text-sm font-semibold text-[#111]">Nuevo Agendamiento (Esquema `calendario`)</h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 className="p-1 rounded-lg text-black/40 hover:bg-black/5 hover:text-[#111]"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateBooking} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleCreateBooking} className="p-5 space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Nombre Completo *</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Nombre Completo *</label>
                   <input
                     required
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ej. Carlos Gómez"
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Correo Electrónico *</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Correo Electrónico *</label>
                   <input
                     required
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="carlos@empresa.com"
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Empresa</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Empresa</label>
                   <input
                     type="text"
                     value={formData.empresa}
                     onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
                     placeholder="Ej. Soluciones S.A.S."
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Teléfono</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Celular / Teléfono</label>
                   <input
                     type="text"
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                     placeholder="+57 300 123 4567"
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Tema / Modalidad</label>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Tema / Modalidad</label>
                 <input
                   type="text"
                   value={formData.tema}
                   onChange={(e) => setFormData({ ...formData, tema: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                  className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Comentario Adicional</label>
+                <textarea
+                  rows={2}
+                  value={formData.comentario}
+                  onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+                  placeholder="Detalles adicionales sobre los objetivos del cliente..."
+                  className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Fecha</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Fecha</label>
                   <input
                     type="date"
                     value={formData.fecha}
                     onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-mono font-bold text-black/60 uppercase block mb-1">Hora</label>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">Hora</label>
                   <input
                     type="text"
                     value={formData.hora}
                     onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
                     placeholder="10:00 AM"
-                    className="w-full px-3 py-2 rounded-xl bg-black/[0.03] border border-black/10 text-xs outline-none focus:border-black/30"
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-black/[0.08] flex justify-end gap-2">
+              <div className="pt-3 border-t border-black/[0.08] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-medium text-black/70"
+                  className="px-3.5 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-medium text-black/70"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl bg-[#111] hover:bg-black/90 text-xs font-medium text-white shadow-xs"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#111] hover:bg-black/90 text-xs font-medium text-white shadow-xs"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar Agendamiento"}
                 </button>
