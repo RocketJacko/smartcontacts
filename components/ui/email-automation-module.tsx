@@ -545,6 +545,7 @@ export function EmailAutomationModule({
             totalDirectoryCount: data.totalDirectoryCount !== undefined ? data.totalDirectoryCount : totalCount + (data.insertedCount || 0),
             duplicateEmails: data.duplicateEmails || [],
           })
+          loadCampaigns()
           loadContacts()
         } else {
           showFeedback("error", "Error en Carga", data.error || "Fallo en la inserción de contactos.")
@@ -622,6 +623,7 @@ export function EmailAutomationModule({
         "Carga Completada por Lotes (Nivel 2)",
         `Se procesaron ${count} contactos. ${totalInserted} registrados, ${totalDuplicates} omitidos por ya existir.`
       )
+      loadCampaigns()
       loadContacts()
       setUploadProgress((prev) => ({ ...prev, isProcessing: false }))
       return
@@ -658,6 +660,7 @@ export function EmailAutomationModule({
           totalDirectoryCount: data.totalDirectoryCount || totalCount + (data.insertedCount || 0),
           duplicateEmails: data.duplicateEmails || [],
         })
+        loadCampaigns()
         loadContacts()
       } else {
         showFeedback("error", "Error en Servidor", data.error || "Fallo durante el procesamiento en servidor.")

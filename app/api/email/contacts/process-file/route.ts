@@ -92,6 +92,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron registros de correos electrónicos válidos en el archivo' }, { status: 400 })
     }
 
+    // Auto-registrar la categoría en la tabla automatizacion.campanas de forma resiliente
+    try {
+      await fetch(`${url}/rest/v1/campanas`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'automatizacion',
+          'Content-Profile': 'automatizacion',
+          Prefer: 'resolution=ignore-duplicates',
+        },
+        body: JSON.stringify({
+          nombre: campana_nombre.trim(),
+          descripcion: 'Categoría auto-registrada desde archivo masivo',
+          estado: 'activa',
+        }),
+      })
+    } catch {
+      // Silencioso
+    }
+
     // Inserción en servidor en bloques de 2,000 llamando a la función RPC atómica de Supabase
     const BATCH_SIZE = 2000
     let totalInserted = 0

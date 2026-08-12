@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
-// GET: Obtener lista de campañas activas
+// GET: Obtener lista de campañas y categorías activas (Unificando campanas e inventario_contactos)
 export async function GET() {
   try {
     const { url, anonKey } = getSupabaseConfig()
@@ -9,6 +9,7 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
+    // 1. Consultar tabla campanas
     let res = await fetch(`${url}/rest/v1/campanas?select=*&order=creado_en.desc`, {
       headers: {
         apikey: anonKey,
@@ -19,7 +20,6 @@ export async function GET() {
     })
 
     if (!res.ok) {
-      // Fallback a vista publica
       res = await fetch(`${url}/rest/v1/campanas?select=*&order=creado_en.desc`, {
         headers: {
           apikey: anonKey,
@@ -29,12 +29,59 @@ export async function GET() {
       })
     }
 
-    if (!res.ok) {
-      return NextResponse.json({ success: true, campaigns: [{ id: 'default', nombre: 'Campaña Q3 - Consultoría IA Agéntica' }] })
+    let campaigns: any[] = []
+    if (res.ok) {
+      campaigns = await res.json()
     }
 
-    const campaigns = await res.json()
-    return NextResponse.json({ success: true, campaigns })
+    // 2. Consultar categorías distintas presentes en inventario_contactos
+    let contactsRes = await fetch(`${url}/rest/v1/inventario_contactos?select=campana_nombre`, {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'automatizacion',
+      },
+      cache: 'no-store',
+    })
+
+    if (!contactsRes.ok) {
+      contactsRes = await fetch(`${url}/rest/v1/inventario_contactos?select=campana_nombre`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        cache: 'no-store',
+      })
+    }
+
+    const categorySet = new Set<string>()
+    // Añadir campañas oficiales de la tabla campanas
+    campaigns.forEach((c: any) => {
+      if (c.nombre) categorySet.add(c.nombre.trim())
+    })
+
+    // Añadir categorías encontradas en inventario_contactos
+    if (contactsRes.ok) {
+      const contactRows = await contactsRes.json()
+      if (Array.isArray(contactRows)) {
+        contactRows.forEach((r: any) => {
+          if (r.campana_nombre) categorySet.add(r.campana_nombre.trim())
+        })
+      }
+    }
+
+    // Si no hay nada, asegurar valor por defecto
+    if (categorySet.size === 0) {
+      categorySet.add('Directorio - Universidades & Educación')
+    }
+
+    // Convertir a lista de objetos unificados
+    const mergedCampaigns = Array.from(categorySet).map((nombre, index) => {
+      const existing = campaigns.find((c: any) => c.nombre?.trim() === nombre)
+      return existing || { id: `cat-${index}`, nombre, estado: 'activa' }
+    })
+
+    return NextResponse.json({ success: true, campaigns: mergedCampaigns })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }

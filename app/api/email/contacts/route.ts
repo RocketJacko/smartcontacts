@@ -41,6 +41,28 @@ export async function POST(request: Request) {
       estado: 'pendiente',
     }))
 
+    // Auto-registrar la categoría en la tabla automatizacion.campanas de forma resiliente
+    try {
+      await fetch(`${url}/rest/v1/campanas`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'automatizacion',
+          'Content-Profile': 'automatizacion',
+          Prefer: 'resolution=ignore-duplicates',
+        },
+        body: JSON.stringify({
+          nombre: campana_nombre.trim(),
+          descripcion: 'Categoría auto-registrada desde inserción de contactos',
+          estado: 'activa',
+        }),
+      })
+    } catch {
+      // Silencioso
+    }
+
     // Invocar la función almacenada PL/pgSQL en Supabase para procesamiento 100% atómico en DB
     let rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
       method: 'POST',
