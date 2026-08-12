@@ -22,7 +22,7 @@ app = Flask(__name__)
 SCOPES = [
     'https://www.googleapis.com/auth/directory.readonly',
     'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/monitoring.read',
+    'https://www.googleapis.com/auth/monitoring',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive.file'
