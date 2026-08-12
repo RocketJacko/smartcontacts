@@ -310,7 +310,15 @@ export function EmailAutomationModule() {
       })
       const data = await res.json()
       if (data.success) {
-        showFeedback("success", "Contacto Creado", `El contacto ${singleContactForm.email} fue agregado a la categoría "${campaignName}".`)
+        setImportSummaryReport({
+          isOpen: true,
+          categoryName: campaignName,
+          totalProcessed: data.processedTotal !== undefined ? data.processedTotal : 1,
+          insertedCount: data.insertedCount !== undefined ? data.insertedCount : 0,
+          duplicateCount: data.duplicateCount !== undefined ? data.duplicateCount : 0,
+          totalDirectoryCount: data.totalDirectoryCount !== undefined ? data.totalDirectoryCount : totalCount + (data.insertedCount || 0),
+          duplicateEmails: data.duplicateEmails || [],
+        })
         setSingleContactForm({ email: "", nombre: "", empresa: "", telefono: "" })
         setIsAddContactModalOpen(false)
         loadContacts(1, pageSize, searchQuery)
@@ -490,7 +498,7 @@ export function EmailAutomationModule() {
     }
 
     // NIVEL 1: 1 a 1,000 correos (Single insert)
-    if (count <= 1000 && !rawText) {
+    if (count <= 1000) {
       setUploadProgress({
         isProcessing: true,
         currentChunk: 1,
@@ -533,7 +541,7 @@ export function EmailAutomationModule() {
     }
 
     // NIVEL 2: 1,001 a 10,000 correos (Chunked Loop de 1,000 en 1,000)
-    if (count <= 10000 && !rawText) {
+    if (count <= 10000) {
       const chunkSize = 1000
       const totalChunks = Math.ceil(count / chunkSize)
 

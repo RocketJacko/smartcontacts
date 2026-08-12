@@ -92,16 +92,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron registros de correos electrónicos válidos en el archivo' }, { status: 400 })
     }
 
-    // Inserción en servidor en bloques de 2,000
+    // Inserción en servidor en bloques de 2,000 llamando a la función RPC atómica de Supabase
     const BATCH_SIZE = 2000
     let totalInserted = 0
-
+    let totalDuplicates = 0
     const duplicateEmailList: string[] = []
+    let finalTotalDirectory = 0
 
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      let insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
+      let rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
@@ -109,52 +110,51 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
           'Accept-Profile': 'automatizacion',
           'Content-Profile': 'automatizacion',
-          Prefer: 'resolution=ignore-duplicates,return=representation',
         },
-        body: JSON.stringify(batch),
+        body: JSON.stringify({
+          p_campana_nombre: campana_nombre.trim(),
+          p_contactos: batch,
+        }),
       })
 
-      if (!insertRes.ok) {
-        // Fallback a vista publica
-        insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
+      if (!rpcRes.ok) {
+        rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
           method: 'POST',
           headers: {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
             'Content-Type': 'application/json',
-            Prefer: 'resolution=ignore-duplicates,return=representation',
           },
-          body: JSON.stringify(batch),
+          body: JSON.stringify({
+            p_campana_nombre: campana_nombre.trim(),
+            p_contactos: batch,
+          }),
         })
       }
 
-      if (insertRes.ok) {
-        const insertedRows = await insertRes.json()
-        const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
-        totalInserted += insertedCount
-
-        const insertedEmails = new Set(
-          Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email.toLowerCase()) : []
-        )
-        batch.forEach((c: any) => {
-          if (!insertedEmails.has(c.email.toLowerCase())) {
-            duplicateEmailList.push(c.email)
-          }
-        })
+      if (rpcRes.ok) {
+        const result = await rpcRes.json()
+        totalInserted += result.insertados || 0
+        totalDuplicates += result.omitidos || 0
+        if (result.duplicados && Array.isArray(result.duplicados)) {
+          duplicateEmailList.push(...result.duplicados)
+        }
+        if (result.total_directorio) {
+          finalTotalDirectory = result.total_directorio
+        }
       }
     }
-
-    const duplicates = duplicateEmailList.length
 
     return NextResponse.json({
       success: true,
       processedTotal: parsedContacts.length,
       insertedCount: totalInserted,
-      duplicateCount: duplicates,
+      duplicateCount: totalDuplicates,
+      totalDirectoryCount: finalTotalDirectory,
       duplicateEmails: duplicateEmailList,
-      message: `Procesamiento en servidor completado: ${totalInserted} nuevos contactos registrados, ${duplicates} omitidos por ya existir en la categoría.`,
+      message: `Procesamiento en servidor completado: ${totalInserted} nuevos contactos registrados, ${totalDuplicates} omitidos por ya existir en la categoría.`,
     })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message || 'Error en servidor' }, { status: 500 })
   }
 }
