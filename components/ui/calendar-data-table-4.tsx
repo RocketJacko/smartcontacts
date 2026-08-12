@@ -13,11 +13,21 @@ import {
   Building,
   Phone,
   MessageSquare,
-  Calendar as CalendarIcon,
-  Clock,
   Trash2,
   X,
+  AlertTriangle,
+  Send,
+  CheckCircle2,
+  Clock,
+  History,
+  Save,
 } from "lucide-react"
+
+export interface ConversationalNote {
+  fecha: string
+  autor: string
+  texto: string
+}
 
 export interface CalendarBookingRecord {
   id: string
@@ -27,8 +37,11 @@ export interface CalendarBookingRecord {
   meetLink: string
   estado: "agendado" | "cumplida" | "no_asistio" | "cancelada"
   resultadoComercial: string
+  recordatorioEnviado: boolean
+  recordatorio8amEnviado: boolean
   fechaCita: string
   horaCita: string
+  historialConversacional?: ConversationalNote[]
   prospecto: {
     id: string
     nombre: string
@@ -43,11 +56,16 @@ export interface CalendarBookingRecord {
 export function CalendarDataTable4() {
   const [records, setRecords] = useState<CalendarBookingRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [unconfirmedTodayCount, setUnconfirmedTodayCount] = useState(0)
   const [expandedRowIds, setExpandedRowIds] = useState<Record<string, boolean>>({})
   const [selectedEstado, setSelectedEstado] = useState<string>("todos")
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // State for inline comment editing & conversational notes
+  const [editingComments, setEditingComments] = useState<Record<string, string>>({})
+  const [newNoteTexts, setNewNoteTexts] = useState<Record<string, string>>({})
 
   // Form State for New Booking
   const [formData, setFormData] = useState({
@@ -70,6 +88,14 @@ export function CalendarDataTable4() {
       const data = await res.json()
       if (data.success) {
         setRecords(data.records)
+        setUnconfirmedTodayCount(data.unconfirmedTodayCount || 0)
+
+        // Initialize editing comments state
+        const initialComments: Record<string, string> = {}
+        data.records.forEach((r: CalendarBookingRecord) => {
+          initialComments[r.id] = r.comentarioAdicional || r.prospecto.comentario || r.descripcion || ""
+        })
+        setEditingComments(initialComments)
       }
     } catch (err) {
       console.error("Error loading calendar records:", err)
@@ -90,7 +116,47 @@ export function CalendarDataTable4() {
     }))
   }
 
-  // Update Status Action (PUT) via clean Select Dropdown
+  // Save Updated Comment Action (PUT)
+  const handleSaveComment = async (id: string) => {
+    const updatedText = editingComments[id] || ""
+    try {
+      const res = await fetch("/api/calendar/crud", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, comentario: updatedText }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert("Comentario actualizado y guardado correctamente.")
+        loadRecords()
+      }
+    } catch (err) {
+      console.error("Error saving comment:", err)
+    }
+  }
+
+  // Post New Conversational Note Action (PUT)
+  const handleAddNote = async (id: string) => {
+    const text = newNoteTexts[id] || ""
+    if (!text.trim()) return
+
+    try {
+      const res = await fetch("/api/calendar/crud", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, nuevaNotaHistorial: text, autor: "Asesor Comercial" }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setNewNoteTexts((prev) => ({ ...prev, [id]: "" }))
+        loadRecords()
+      }
+    } catch (err) {
+      console.error("Error adding note:", err)
+    }
+  }
+
+  // Update Status Action (PUT)
   const handleUpdateStatus = async (id: string, newEstado: string) => {
     try {
       const res = await fetch("/api/calendar/crud", {
@@ -180,17 +246,42 @@ export function CalendarDataTable4() {
       case "cancelada":
         return "CANCELADA"
       default:
-        return "AGENDADA"
+        return "AGENDADA (PENDIENTE)"
     }
   }
 
   return (
     <div className="w-full space-y-4 font-sans text-[#111]">
       
+      {/* ── BANNER DE ALERTA: ACTIVIDADES NO GESTIONADAS / PENDIENTES PARA HOY ── */}
+      {unconfirmedTodayCount > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-2xs font-sans animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-700 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wide">
+                ¡ALERTA DE GESTIÓN PENDIENTE PARA HOY!
+              </h4>
+              <p className="text-xs text-amber-800/90 mt-0.5 font-normal">
+                Tienes <strong className="font-bold underline">{unconfirmedTodayCount} agendamiento(s) sin gestionar / sin confirmar</strong> programados para el día de hoy.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedEstado("agendado")}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-800 text-white text-xs font-medium hover:bg-amber-900 transition-colors shrink-0 shadow-xs cursor-pointer"
+          >
+            Filtrar Agendados Hoy
+          </button>
+        </div>
+      )}
+
       {/* ── TOP BAR & FILTER DROPDOWN MENU ────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
         
-        {/* Dropdown Filter (Lista Desplegable en lugar de botones de colores) */}
+        {/* Dropdown Filter */}
         <div className="flex items-center gap-3">
           <label className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold shrink-0">
             FILTRAR ESTADO:
@@ -239,7 +330,7 @@ export function CalendarDataTable4() {
         </div>
       </div>
 
-      {/* ── DATA TABLE (STRICT ADHERENCE TO DESIGN.md PATTERN) ────────────────── */}
+      {/* ── DATA TABLE 4 (EXPANDABLE ROW DETAIL PANELS IN PLACE) ──────────────── */}
       <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse font-sans">
@@ -323,7 +414,7 @@ export function CalendarDataTable4() {
                           <td colSpan={7} className="p-4 sm:p-5">
                             <div className="bg-white rounded-xl p-4 sm:p-5 border border-black/[0.07] space-y-4 font-sans shadow-2xs">
                               
-                              {/* Descriptive Header */}
+                              {/* Header Contact & Meet Link */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.06] pb-3">
                                 <div>
                                   <h4 className="text-sm font-semibold text-[#111] flex items-center gap-2">
@@ -347,21 +438,121 @@ export function CalendarDataTable4() {
                                 </a>
                               </div>
 
-                              {/* Form Comment / Additional Message */}
-                              <div className="p-3.5 rounded-lg bg-[#F5F4F0] border border-black/[0.05] space-y-1">
-                                <span className="text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold flex items-center gap-1.5">
-                                  <MessageSquare className="w-3.5 h-3.5 text-black/30" />
-                                  COMENTARIO Y MENSAJE ADICIONAL CAPTURADO EN FORMULARIO
-                                </span>
-                                <p className="text-xs text-black/80 font-sans italic leading-relaxed">
-                                  "{rec.prospecto.comentario || rec.descripcion || "Sin comentarios adicionales registrados en la reserva."}"
-                                </p>
+                              {/* EDITABLE COMMENT CONTROL & REGLAS DE CORREO DISPATCH */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                
+                                {/* 1. CAMPO DE COMENTARIO EDITABLE */}
+                                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                      <MessageSquare className="w-3.5 h-3.5 text-black/40" />
+                                      COMENTARIO Y NOTAS EDITABLES DEL AGENDAMIENTO
+                                    </span>
+                                    <button
+                                      onClick={() => handleSaveComment(rec.id)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#111] text-white text-[10px] font-mono font-bold hover:bg-black/90 transition-colors shadow-2xs"
+                                    >
+                                      <Save className="w-3 h-3" />
+                                      Guardar
+                                    </button>
+                                  </div>
+                                  <textarea
+                                    rows={3}
+                                    value={editingComments[rec.id] ?? ""}
+                                    onChange={(e) => setEditingComments({ ...editingComments, [rec.id]: e.target.value })}
+                                    placeholder="Escribe comentarios, objetivos comerciales o requerimientos del cliente..."
+                                    className="w-full p-2.5 rounded-lg bg-white border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30 resize-none"
+                                  />
+                                </div>
+
+                                {/* 2. REGLAS DE CORREO & TRAZABILIDAD DE DESPACHOS */}
+                                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2.5 text-xs font-mono">
+                                  <span className="text-[10px] text-black/50 uppercase tracking-widest font-bold block mb-1">
+                                    REGLAS DE RECORDATORIO DE CORREO (AUTOMÁTICO)
+                                  </span>
+
+                                  {/* Regla 1: Recordatorio 8:00 AM */}
+                                  <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                                    <div className="flex items-center gap-2">
+                                      <Mail className="w-3.5 h-3.5 text-purple-600" />
+                                      <span>RECORDATORIO MATUTINO (8:00 AM)</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
+                                      DESPACHADO
+                                    </span>
+                                  </div>
+
+                                  {/* Regla 2: Recordatorio 30 Minutos Antes */}
+                                  <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-3.5 h-3.5 text-rose-600" />
+                                      <span>RECORDATORIO PREVIO (30 MINUTOS)</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-800 border border-purple-500/20">
+                                      DESPACHADO
+                                    </span>
+                                  </div>
+                                </div>
+
                               </div>
 
-                              {/* Appointment History & Control Selector */}
+                              {/* HISTORIAL CONVERSACIONAL Y DE INTERACCIONES */}
+                              <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-3">
+                                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                  <History className="w-3.5 h-3.5 text-black/40" />
+                                  HISTORIAL CONVERSACIONAL Y DE ATENCIÓN DE AGENTES DE IA & ASESORES
+                                </span>
+
+                                {/* Feed de notas conversacionales previas */}
+                                <div className="space-y-2 max-h-36 overflow-y-auto">
+                                  {rec.historialConversacional && rec.historialConversacional.length > 0 ? (
+                                    rec.historialConversacional.map((note, nIdx) => (
+                                      <div
+                                        key={nIdx}
+                                        className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-black/[0.04] text-xs font-sans"
+                                      >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#111] mt-1.5 shrink-0" />
+                                        <div className="flex-1">
+                                          <div className="flex items-center justify-between text-[10px] font-mono text-black/40 mb-0.5">
+                                            <span className="font-bold text-[#111]">{note.autor}</span>
+                                            <span>{note.fecha}</span>
+                                          </div>
+                                          <p className="text-black/80 font-normal">{note.texto}</p>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-black/40 font-mono italic block">No hay interacciones conversacionales registradas aún.</span>
+                                  )}
+                                </div>
+
+                                {/* Formulario para Agregar Nueva Nota al Historial */}
+                                <div className="flex gap-2 pt-1">
+                                  <input
+                                    type="text"
+                                    value={newNoteTexts[rec.id] || ""}
+                                    onChange={(e) => setNewNoteTexts({ ...newNoteTexts, [rec.id]: e.target.value })}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault()
+                                        handleAddNote(rec.id)
+                                      }
+                                    }}
+                                    placeholder="Escribir nueva nota en el historial conversacional..."
+                                    className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-black/[0.08] text-xs outline-none focus:border-black/30"
+                                  />
+                                  <button
+                                    onClick={() => handleAddNote(rec.id)}
+                                    className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Send className="w-3 h-3" />
+                                    <span>Agregar</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Appointment Status Control & Actions */}
                               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-black/[0.06] text-xs">
-                                
-                                {/* Desplegable para Cambiar Estado (Sin botones inventados) */}
                                 <div className="flex items-center gap-2">
                                   <span className="text-[10px] font-mono text-black/40 uppercase font-bold">
                                     CAMBIAR ESTADO DE CITA:
@@ -385,7 +576,6 @@ export function CalendarDataTable4() {
                                   <Trash2 className="w-3.5 h-3.5 text-red-600" />
                                   Eliminar Agendamiento
                                 </button>
-
                               </div>
 
                             </div>

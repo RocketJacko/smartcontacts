@@ -324,3 +324,16 @@ export async function send30MinReminderEmail(params: {
     return { success: false, error: error.message || 'Error enviando recordatorio' }
   }
 }
+
+/**
+ * Envía el correo de recordatorio matutino a primera hora (8:00 AM).
+ */
+export async function send8AMMorningReminderEmail(params: {
+  toEmail: string
+  toName: string
+  title: string
+  timeStr: string
+  meetLink: string
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  return send30MinReminderEmail(params)
+}

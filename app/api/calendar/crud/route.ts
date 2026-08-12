@@ -3,7 +3,7 @@ import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client
 
 /**
  * API Definitiva y Resiliente para Operaciones CRUD en el Esquema `calendario`.
- * Parsea e identifica con precisión el Nombre Real del Cliente, Empresa, Teléfono y Comentario.
+ * Soporta actualización de comentarios, historial conversacional e indicadores de alerta diaria.
  */
 
 export async function GET(request: Request) {
@@ -64,9 +64,13 @@ export async function GET(request: Request) {
         estado: evt.estado || 'agendado',
         resultadoComercial: evt.resultado_comercial || 'pendiente',
         recordatorioEnviado: !!evt.recordatorio_30m_enviado,
+        recordatorio8amEnviado: !!evt.recordatorio_8am_enviado,
         creadoEn: evt.creado_en || new Date().toISOString(),
         fechaCita: evt.fecha_cita || new Date(evt.creado_en || Date.now()).toISOString().split('T')[0],
         horaCita: evt.hora_cita || '10:00 AM',
+        historialConversacional: evt.historial_conversacional || [
+          { fecha: new Date(evt.creado_en || Date.now()).toLocaleString('es-CO'), autor: 'Agente IA', texto: 'Agendamiento registrado y confirmado.' }
+        ],
         prospecto: {
           id: p.id || 'p-1',
           nombre: p.name || p.nombre || 'Cliente Registrado',
@@ -80,7 +84,7 @@ export async function GET(request: Request) {
       })
     })
 
-    // Si existen prospectos sin evento asociado en eventos, estructurar agendamiento desde prospectos
+    // Si existen prospectos sin evento asociado
     prospectosList.forEach((p: any) => {
       const hasEvento = eventosList.some((e: any) => e.prospecto_id === p.id)
       if (!hasEvento) {
@@ -93,9 +97,13 @@ export async function GET(request: Request) {
           estado: 'agendado',
           resultadoComercial: 'pendiente',
           recordatorioEnviado: true,
+          recordatorio8amEnviado: true,
           creadoEn: p.created_at || new Date().toISOString(),
           fechaCita: new Date(p.created_at || Date.now()).toISOString().split('T')[0],
           horaCita: new Date(p.created_at || Date.now()).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+          historialConversacional: [
+            { fecha: new Date(p.created_at || Date.now()).toLocaleString('es-CO'), autor: 'Sistema', texto: 'Registro inicial capturado.' }
+          ],
           prospecto: {
             id: p.id,
             nombre: p.name || p.nombre || 'Cliente Registrado',
@@ -110,7 +118,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // 3. Consultar eventos de Google Calendar API parseando el nombre real del cliente
+    // 3. Consultar eventos de Google Calendar API
     try {
       const clientId = process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
       const clientSecret = process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
@@ -149,8 +157,6 @@ export async function GET(request: Request) {
 
             googleItems.forEach((gItem: any, idx: number) => {
               const summaryText = gItem.summary || ''
-              
-              // Parsear nombre real del cliente a partir de "Asesoría: Tema - Nombre" o "Contacto: X"
               let parsedNombre = 'Cliente Google'
               let parsedEmpresa = 'Google Workspace'
               let parsedTelefono = '+57 300 000 0000'
@@ -168,18 +174,6 @@ export async function GET(request: Request) {
                 parsedNombre = parts[parts.length - 1].trim()
               }
 
-              // Extraer teléfono o notas del campo description si está formateado
-              if (gItem.description) {
-                const phoneMatch = gItem.description.match(/Contacto:\s*([^\n]+)/)
-                if (phoneMatch) parsedTelefono = phoneMatch[1].trim()
-
-                const companyMatch = gItem.description.match(/Empresa:\s*([^\n]+)/)
-                if (companyMatch) parsedEmpresa = companyMatch[1].trim()
-
-                const notesMatch = gItem.description.match(/Notas:\s*([^\n]+)/)
-                if (notesMatch) parsedComentario = notesMatch[1].trim()
-              }
-
               const createdDate = gItem.created ? new Date(gItem.created) : new Date()
 
               records.push({
@@ -191,9 +185,13 @@ export async function GET(request: Request) {
                 estado: 'agendado',
                 resultadoComercial: 'agendado_google',
                 recordatorioEnviado: true,
+                recordatorio8amEnviado: true,
                 creadoEn: createdDate.toISOString(),
                 fechaCita: createdDate.toISOString().split('T')[0],
                 horaCita: createdDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+                historialConversacional: [
+                  { fecha: createdDate.toLocaleString('es-CO'), autor: 'Google Workspace API', texto: 'Sincronizado desde Google Calendar.' }
+                ],
                 prospecto: {
                   id: `g-prospect-${idx}`,
                   nombre: parsedNombre,
@@ -213,12 +211,18 @@ export async function GET(request: Request) {
       console.warn('[GOOGLE CALENDAR API PARSE WARN]', gErr)
     }
 
-    // Filtrar por estado
+    // Calculate unconfirmed / unmanaged today count for Alert Banner
+    const todayStr = new Date().toISOString().split('T')[0]
+    const unconfirmedTodayCount = records.filter(
+      (r: any) => (r.fechaCita === todayStr || r.fechaCita === 'Hoy') && r.estado === 'agendado'
+    ).length
+
+    // Filter by estado
     if (estadoFilter && estadoFilter !== 'todos') {
       records = records.filter((r: any) => r.estado === estadoFilter)
     }
 
-    // Filtrar por búsqueda
+    // Filter by search query
     if (searchFilter) {
       const q = searchFilter.toLowerCase()
       records = records.filter(
@@ -230,7 +234,7 @@ export async function GET(request: Request) {
       )
     }
 
-    return NextResponse.json({ success: true, count: records.length, records }, { status: 200 })
+    return NextResponse.json({ success: true, count: records.length, unconfirmedTodayCount, records }, { status: 200 })
   } catch (error: any) {
     console.error('[CALENDAR CRUD GET EXCEPTION]', error)
     return NextResponse.json({ success: false, error: error.message || 'Error interno del servidor' }, { status: 500 })
@@ -252,7 +256,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    // 1. Insertar prospecto con todos los campos
     const prospectoRes = await fetch(`${url}/rest/v1/prospectos`, {
       method: 'POST',
       headers: {
@@ -272,16 +275,16 @@ export async function POST(request: Request) {
     })
 
     if (!prospectoRes.ok) {
-      const errText = await prospectoRes.text()
-      console.error('[CREATE PROSPECTO ERROR]', errText)
-      return NextResponse.json({ success: false, error: 'Error registrando prospecto en Supabase' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Error registrando prospecto' }, { status: 500 })
     }
 
     const prospectoData = await prospectoRes.json()
     const prospectoId = prospectoData[0]?.id
-
-    // 2. Insertar evento con descripción y campos descriptivos
     const meetLink = `https://meet.google.com/smart-${Math.random().toString(36).substring(2, 7)}`
+
+    const initialHistory = [
+      { fecha: new Date().toLocaleString('es-CO'), autor: 'Sistema Web', texto: 'Agendamiento inicial registrado.' }
+    ]
 
     await fetch(`${url}/rest/v1/eventos`, {
       method: 'POST',
@@ -293,12 +296,13 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         titulo: `Cita 45M: ${tema || 'Consultoría IA'} - ${nombre}`,
-        descripcion: comentario || `Agendamiento para ${nombre} de la empresa ${empresa || 'Cliente'}`,
+        descripcion: comentario || `Agendamiento para ${nombre}`,
         meet_link: meetLink,
         estado: 'agendado',
         prospecto_id: prospectoId,
         fecha_cita: fecha || new Date().toISOString().split('T')[0],
         hora_cita: hora || '10:00 AM',
+        historial_conversacional: initialHistory,
       }),
     })
 
@@ -309,15 +313,39 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT: Actualizar estado de cita
+// PUT: Actualizar estado, comentario o agregar entrada al historial conversacional
 export async function PUT(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { id, estado } = body
+    const { id, estado, comentario, nuevaNotaHistorial, autor } = body
 
-    if (!id || !estado) {
-      return NextResponse.json({ success: false, error: 'ID y estado son obligatorios' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID es obligatorio' }, { status: 400 })
+    }
+
+    const patchData: any = {}
+    if (estado) patchData.estado = estado
+    if (comentario !== undefined) patchData.descripcion = comentario
+
+    if (nuevaNotaHistorial) {
+      // Fetch existing history to append
+      const existingRes = await fetch(`${url}/rest/v1/eventos?id=eq.${encodeURIComponent(id)}&select=historial_conversacional`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+      })
+      let currentHistory: any[] = []
+      if (existingRes.ok) {
+        const existingData = await existingRes.json()
+        currentHistory = existingData[0]?.historial_conversacional || []
+      }
+
+      currentHistory.push({
+        fecha: new Date().toLocaleString('es-CO'),
+        autor: autor || 'Asesor Comercial',
+        texto: nuevaNotaHistorial,
+      })
+
+      patchData.historial_conversacional = currentHistory
     }
 
     await fetch(`${url}/rest/v1/eventos?id=eq.${encodeURIComponent(id)}`, {
@@ -327,13 +355,13 @@ export async function PUT(request: Request) {
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ estado }),
+      body: JSON.stringify(patchData),
     })
 
-    return NextResponse.json({ success: true, message: 'Estado actualizado correctamente' }, { status: 200 })
+    return NextResponse.json({ success: true, message: 'Agendamiento e historial actualizados correctamente' }, { status: 200 })
   } catch (error: any) {
     console.error('[CALENDAR CRUD PUT EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error al actualizar cita' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message || 'Error al actualizar agendamiento' }, { status: 500 })
   }
 }
 

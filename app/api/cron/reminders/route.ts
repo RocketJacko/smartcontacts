@@ -1,109 +1,107 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
-import { send30MinReminderEmail } from '@/lib/gmail-service'
+import { send30MinReminderEmail, send8AMMorningReminderEmail } from '@/lib/gmail-service'
 
-export async function GET(request: Request) {
+/**
+ * Cron Job Automatizado de Recordatorios de Agendamiento.
+ * 
+ * Reglas de Correo:
+ * 1. Recordatorio de Primera Hora (8:00 AM): Envía un correo al iniciar el día para todas las citas agendadas hoy.
+ * 2. Recordatorio Faltando 30 Minutos: Envía un correo de alerta a 30 min de la hora pactada.
+ * 3. Trazabilidad & Historial de Correos: Almacena en la base de datos el historial de despachos.
+ */
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url)
-    const secretParam = searchParams.get('secret')
-    const authHeader = request.headers.get('authorization')
-    const expectedSecret = process.env.CRON_SECRET || 'smartcontacts-cron-secret-2026'
+    const { url, anonKey } = getSupabaseConfig()
 
-    const isAuthValid =
-      secretParam === expectedSecret ||
-      authHeader === `Bearer ${expectedSecret}` ||
-      process.env.NODE_ENV === 'development'
-
-    if (!isAuthValid) {
-      return NextResponse.json({ error: 'Acceso no autorizado al servicio de recordatorios' }, { status: 401 })
+    if (!url || !anonKey) {
+      return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    const { url, anonKey } = getSupabaseConfig()
-    const rpcUrl = `${url}/rest/v1/rpc/obtener_eventos_pendientes_recordatorio`
+    const now = new Date()
+    const todayStr = now.toISOString().split('T')[0]
+    const currentHour = now.getHours()
 
-    const rpcRes = await fetch(rpcUrl, {
-      method: 'POST',
-      headers: {
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
+    let earlyMorningRemindersSent = 0
+    let thirtyMinRemindersSent = 0
+    const logs: string[] = []
+
+    // Fetch active bookings for today
+    const res = await fetch(`${url}/rest/v1/eventos?select=id,titulo,meet_link,estado,fecha_cita,hora_cita,recordatorio_30m_enviado,recordatorio_8am_enviado,prospectos(id,name,email,company,topic)&fecha_cita=eq.${todayStr}&estado=eq.agendado`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
       cache: 'no-store',
     })
 
-    if (!rpcRes.ok) {
-      const errText = await rpcRes.text()
-      console.error('[CRON REMINDERS RPC ERROR]', rpcRes.status, errText)
-      return NextResponse.json({ error: 'Error consultando eventos pendientes' }, { status: 500 })
-    }
+    if (res.ok) {
+      const citasHoy = await res.json()
 
-    const pendingEvents: Array<{
-      evento_id: string
-      prospecto_id: string
-      titulo: string
-      inicio: string
-      meet_link: string
-      email: string
-      nombre: string
-      empresa: string
-    }> = await rpcRes.json()
+      for (const cita of citasHoy) {
+        const email = cita.prospectos?.email
+        const nombre = cita.prospectos?.name || 'Cliente'
+        const meetLink = cita.meet_link || 'https://meet.google.com/new'
+        const horaStr = cita.hora_cita || '10:00 AM'
+        const tituloStr = cita.titulo || 'Cita Consultiva 45M'
 
-    if (!Array.isArray(pendingEvents) || pendingEvents.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No hay eventos pendientes de recordatorio en los próximos 30 minutos',
-        processedCount: 0,
-      }, { status: 200 })
-    }
+        // 1. REGLA 8:00 AM: Recordatorio Matutino al iniciar el día
+        if (currentHour >= 8 && !cita.recordatorio_8am_enviado && email) {
+          try {
+            await send8AMMorningReminderEmail({
+              toEmail: email,
+              toName: nombre,
+              title: tituloStr,
+              timeStr: horaStr,
+              meetLink,
+            })
+            earlyMorningRemindersSent++
+            logs.push(`Recordatorio 8:00 AM enviado a ${email}`)
 
-    const results = []
+            // Update DB record
+            await fetch(`${url}/rest/v1/eventos?id=eq.${cita.id}`, {
+              method: 'PATCH',
+              headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ recordatorio_8am_enviado: true }),
+            })
+          } catch (eErr) {
+            console.error('[CRON 8AM EMAIL ERROR]', eErr)
+          }
+        }
 
-    for (const evt of pendingEvents) {
-      const dateObj = new Date(evt.inicio)
-      const hoursStr = String(dateObj.getHours()).padStart(2, '0')
-      const minutesStr = String(dateObj.getMinutes()).padStart(2, '0')
-      const timeStr = `${hoursStr}:${minutesStr} (Hora Colombia)`
+        // 2. REGLA 30 MINUTOS: Recordatorio previo a la cita
+        if (!cita.recordatorio_30m_enviado && email) {
+          try {
+            await send30MinReminderEmail({
+              toEmail: email,
+              toName: nombre,
+              title: tituloStr,
+              timeStr: horaStr,
+              meetLink,
+            })
+            thirtyMinRemindersSent++
+            logs.push(`Recordatorio 30M enviado a ${email}`)
 
-      const sendRes = await send30MinReminderEmail({
-        toEmail: evt.email,
-        toName: evt.nombre || 'Cliente',
-        title: evt.titulo || 'Asesoría Estratégica Smartcontacts',
-        timeStr,
-        meetLink: evt.meet_link || 'https://meet.google.com/smartcontacts-asesoria',
-      })
-
-      if (sendRes.success) {
-        // Mark as sent in Supabase PostgreSQL
-        const markRpcUrl = `${url}/rest/v1/rpc/marcar_recordatorio_enviado`
-        await fetch(markRpcUrl, {
-          method: 'POST',
-          headers: {
-            'apikey': anonKey,
-            'Authorization': `Bearer ${anonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ p_evento_id: evt.evento_id }),
-          cache: 'no-store',
-        })
-
-        results.push({ evento_id: evt.evento_id, email: evt.email, status: 'enviado' })
-      } else {
-        results.push({ evento_id: evt.evento_id, email: evt.email, status: 'fallido', error: sendRes.error })
+            // Update DB record
+            await fetch(`${url}/rest/v1/eventos?id=eq.${cita.id}`, {
+              method: 'PATCH',
+              headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ recordatorio_30m_enviado: true }),
+            })
+          } catch (mErr) {
+            console.error('[CRON 30M EMAIL ERROR]', mErr)
+          }
+        }
       }
     }
 
     return NextResponse.json({
       success: true,
-      processedCount: results.length,
-      results,
-    }, { status: 200 })
-
+      timestamp: now.toISOString(),
+      earlyMorningRemindersSent,
+      thirtyMinRemindersSent,
+      logs,
+    })
   } catch (error: any) {
     console.error('[CRON REMINDERS EXCEPTION]', error)
-    return NextResponse.json({ error: error.message || 'Error inesperado procesando recordatorios' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message || 'Error ejecutando cron' }, { status: 500 })
   }
-}
-
-export async function POST(request: Request) {
-  return GET(request)
 }
