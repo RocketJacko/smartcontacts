@@ -837,40 +837,7 @@ export function EmailAutomationModule({
         </div>
       )}
 
-      {/* ── SUB-MÓDULO ENCABEZADO INDEPENDIENTE (NAVEGACIÓN POR MENÚ LATERAL) ──── */}
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs font-sans">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
-            {activeTab === "contacts" && <Users className="w-4 h-4" />}
-            {activeTab === "dispatch" && <Play className="w-4 h-4" />}
-            {activeTab === "templates" && <FileText className="w-4 h-4" />}
-            {activeTab === "roundrobin" && <RefreshCw className="w-4 h-4" />}
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-black/40 font-semibold uppercase">
-              <span>Email Marketing</span>
-              <span>/</span>
-              <span className="text-purple-800 font-bold">
-                {activeTab === "contacts" && "Directorio de Contactos"}
-                {activeTab === "dispatch" && "Despacho & Goteo en Vivo"}
-                {activeTab === "templates" && "Plantillas Predeterminadas"}
-                {activeTab === "roundrobin" && "Pool Round-Robin Anti-Spam"}
-              </span>
-            </div>
-            <h2 className="text-sm font-bold text-[#111]">
-              {activeTab === "contacts" && "Gestión de Inventario & Carga por Categorías"}
-              {activeTab === "dispatch" && "Consola de Despacho & Goteo en Tiempo Real"}
-              {activeTab === "templates" && "Editor de Plantillas Predeterminadas (3 Brazos)"}
-              {activeTab === "roundrobin" && "Administrador de Pool Anti-Spam (Rotador Sequential)"}
-            </h2>
-          </div>
-        </div>
 
-        <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] bg-[#F5F4F0] px-3 py-1.5 rounded-xl border border-black/5 text-black/60 font-semibold">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Mapeo Nativo Nube</span>
-        </div>
-      </div>
 
       {/* ── TAB 1: DESPACHO & GOTEO EN VIVO ───────────────────────────────────── */}
       {activeTab === "dispatch" && (
