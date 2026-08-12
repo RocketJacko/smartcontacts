@@ -1412,39 +1412,27 @@ export function EmailAutomationModule({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5">
-                    <select
-                      value={campaignName}
-                      onChange={(e) => {
-                        if (e.target.value === "__NEW_CATEGORY__") {
-                          setIsCreatingCategory(true)
-                        } else {
-                          setCampaignName(e.target.value)
-                        }
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
-                    >
-                      {campaignsList.map((c) => (
-                        <option key={c.id || c.nombre} value={c.nombre}>
-                          {c.nombre}
-                        </option>
-                      ))}
-                      {!campaignsList.some((c) => c.nombre === campaignName) && (
-                        <option value={campaignName}>{campaignName}</option>
-                      )}
-                      <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsCreatingCategory(true)}
-                      className="px-2.5 py-1.5 rounded-xl bg-purple-100 text-purple-900 hover:bg-purple-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                      title="Crear nueva categoría"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Nueva</span>
-                    </button>
-                  </div>
+                  <select
+                    value={campaignName}
+                    onChange={(e) => {
+                      if (e.target.value === "__NEW_CATEGORY__") {
+                        setIsCreatingCategory(true)
+                      } else {
+                        setCampaignName(e.target.value)
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                  >
+                    {campaignsList.map((c) => (
+                      <option key={c.id || c.nombre} value={c.nombre}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                    {!campaignsList.some((c) => c.nombre === campaignName) && (
+                      <option value={campaignName}>{campaignName}</option>
+                    )}
+                    <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
+                  </select>
                 )}
 
                 <span className="text-[10px] font-mono bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full font-bold">
