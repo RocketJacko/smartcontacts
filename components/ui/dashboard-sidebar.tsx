@@ -25,6 +25,9 @@ import {
   RefreshCw,
   InboxIcon,
   Globe,
+  Mail,
+  Play,
+  FileText,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
@@ -57,15 +60,21 @@ const mockNavGroups: NavGroupData[] = [
     headingKey: "operation",
     items: [
       {
-        id: "projects",
+        id: "email",
         titleKey: "campaigns",
-        icon: FolderKanban,
+        icon: Mail,
+        children: [
+          { id: "email-contacts", titleKey: "emailContacts", icon: Users },
+          { id: "email-dispatch", titleKey: "emailDispatch", icon: Play },
+          { id: "email-templates", titleKey: "emailTemplates", icon: FileText },
+          { id: "email-roundrobin", titleKey: "emailRoundRobin", icon: RefreshCw },
+        ],
       },
       { id: "calendar", titleKey: "calendar", icon: Calendar },
       {
         id: "team",
         titleKey: "agents",
-        icon: Users,
+        icon: Bot,
       },
     ],
   },
@@ -148,9 +157,14 @@ function NavItem({
   level?: number
 }) {
   const { t } = useLanguage()
-  const isActive = activeId === item.id
-  const hasChildren = !!item.children
-  const [isOpen, setIsOpen] = useState(false)
+  const hasChildren = !!item.children && item.children.length > 0
+  const isChildActive = hasChildren && item.children!.some((child) => child.id === activeId)
+  const isActive = activeId === item.id || isChildActive
+  const [isOpen, setIsOpen] = useState(isChildActive || item.id === "email")
+
+  useEffect(() => {
+    if (isChildActive) setIsOpen(true)
+  }, [isChildActive])
 
   const titleText = (t.dashboard?.menu as any)?.[item.titleKey] || item.titleKey
   const badgeVal = item.badgeKey === "totalProspectos" ? (metrics?.overview?.totalProspectos || 0) : null
@@ -158,6 +172,9 @@ function NavItem({
   const handleClick = () => {
     if (hasChildren) {
       setIsOpen(!isOpen)
+      if (!isOpen && item.children && item.children.length > 0) {
+        onSelect(item.children[0].id)
+      }
     } else {
       onSelect(item.id)
     }
@@ -168,8 +185,10 @@ function NavItem({
       <div
         className={`group flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none
           ${
-            isActive
+            isActive && !hasChildren
               ? "bg-black text-white font-medium shadow-sm"
+              : isActive && hasChildren
+              ? "bg-black/5 text-[#111] font-semibold"
               : "text-black/70 hover:bg-black/[0.04] hover:text-[#111]"
           }
         `}
@@ -178,7 +197,9 @@ function NavItem({
       >
         <div className="flex items-center gap-3 min-w-0">
           <item.icon
-            className={`w-4 h-4 transition-colors shrink-0 ${isActive ? "text-white" : "text-black/40 group-hover:text-black/80"}`}
+            className={`w-4 h-4 transition-colors shrink-0 ${
+              isActive && !hasChildren ? "text-white" : "text-purple-600 group-hover:text-black/80"
+            }`}
             strokeWidth={1.5}
           />
           <span className="text-xs tracking-wide truncate font-medium">{titleText}</span>
@@ -187,26 +208,43 @@ function NavItem({
         <div className="flex items-center gap-2 shrink-0">
           {item.shortcut && (
             <kbd className={`hidden group-hover:inline-flex items-center justify-center h-4 px-1.5 text-[9px] font-mono font-medium rounded ${
-              isActive ? "text-white/60 bg-white/10 border border-white/20" : "text-black/40 bg-black/[0.04] border border-black/10"
+              isActive && !hasChildren ? "text-white/60 bg-white/10 border border-white/20" : "text-black/40 bg-black/[0.04] border border-black/10"
             }`}>
               {item.shortcut}
             </kbd>
           )}
           {badgeVal !== null && badgeVal > 0 && (
             <span className={`flex items-center justify-center min-w-[18px] h-4.5 px-1.5 text-[10px] font-mono font-bold rounded-full ${
-              isActive ? "bg-white text-[#111]" : "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20"
+              isActive && !hasChildren ? "bg-white text-[#111]" : "bg-emerald-500/15 text-emerald-700 border border-emerald-500/20"
             }`}>
               {badgeVal}
             </span>
           )}
           {hasChildren && (
             <ChevronRight
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${isActive ? "text-white/60" : "text-black/40"} ${isOpen ? "rotate-90" : ""}`}
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isActive && !hasChildren ? "text-white/60" : "text-black/40"
+              } ${isOpen ? "rotate-90" : ""}`}
               strokeWidth={2}
             />
           )}
         </div>
       </div>
+
+      {hasChildren && isOpen && (
+        <div className="flex flex-col ml-4 pl-2 border-l border-black/10 my-1 space-y-0.5">
+          {item.children!.map((child) => (
+            <NavItem
+              key={child.id}
+              item={child}
+              activeId={activeId}
+              onSelect={onSelect}
+              metrics={metrics}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -575,8 +613,18 @@ export default function SidebarNavPreview() {
                 </div>
               </div>
             </>
-          ) : activeId === "projects" ? (
-            <EmailAutomationModule />
+          ) : activeId === "projects" || activeId === "email" || activeId.startsWith("email-") ? (
+            <EmailAutomationModule
+              initialTab={
+                activeId === "email-dispatch"
+                  ? "dispatch"
+                  : activeId === "email-templates"
+                  ? "templates"
+                  : activeId === "email-roundrobin"
+                  ? "roundrobin"
+                  : "contacts"
+              }
+            />
           ) : activeId === "calendar" || activeId === "inbox" ? (
             <>
               {/* Top Title Banner */}

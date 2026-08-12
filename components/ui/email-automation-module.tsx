@@ -40,8 +40,18 @@ import {
   Download,
 } from "lucide-react"
 
-export function EmailAutomationModule() {
-  const [activeTab, setActiveTab] = useState<"templates" | "contacts" | "roundrobin" | "dispatch">("dispatch")
+export function EmailAutomationModule({
+  initialTab = "contacts",
+}: {
+  initialTab?: "templates" | "contacts" | "roundrobin" | "dispatch"
+}) {
+  const [activeTab, setActiveTab] = useState<"templates" | "contacts" | "roundrobin" | "dispatch">(initialTab)
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
   
   // State for Templates
   const [templates, setTemplates] = useState<any[]>([])
@@ -819,47 +829,39 @@ export function EmailAutomationModule() {
         </div>
       )}
 
-      {/* ── TABS DE NAVEGACIÓN LIMPIAS SEGÚN DESIGN.MD ────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs text-xs font-medium">
-        <button
-          onClick={() => setActiveTab("dispatch")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === "dispatch" ? "bg-[#111] text-white shadow-xs" : "text-black/60 hover:bg-black/5 hover:text-[#111]"
-          }`}
-        >
-          <Play className="w-3.5 h-3.5" />
-          <span>Despacho & Goteo en Vivo</span>
-        </button>
+      {/* ── SUB-MÓDULO ENCABEZADO INDEPENDIENTE (NAVEGACIÓN POR MENÚ LATERAL) ──── */}
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs font-sans">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
+            {activeTab === "contacts" && <Users className="w-4 h-4" />}
+            {activeTab === "dispatch" && <Play className="w-4 h-4" />}
+            {activeTab === "templates" && <FileText className="w-4 h-4" />}
+            {activeTab === "roundrobin" && <RefreshCw className="w-4 h-4" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-black/40 font-semibold uppercase">
+              <span>Email Marketing</span>
+              <span>/</span>
+              <span className="text-purple-800 font-bold">
+                {activeTab === "contacts" && "Directorio de Contactos"}
+                {activeTab === "dispatch" && "Despacho & Goteo en Vivo"}
+                {activeTab === "templates" && "Plantillas Predeterminadas"}
+                {activeTab === "roundrobin" && "Pool Round-Robin Anti-Spam"}
+              </span>
+            </div>
+            <h2 className="text-sm font-bold text-[#111]">
+              {activeTab === "contacts" && "Gestión de Inventario & Carga por Categorías"}
+              {activeTab === "dispatch" && "Consola de Despacho & Goteo en Tiempo Real"}
+              {activeTab === "templates" && "Editor de Plantillas Predeterminadas (3 Brazos)"}
+              {activeTab === "roundrobin" && "Administrador de Pool Anti-Spam (Rotador Sequential)"}
+            </h2>
+          </div>
+        </div>
 
-        <button
-          onClick={() => setActiveTab("templates")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === "templates" ? "bg-[#111] text-white shadow-xs" : "text-black/60 hover:bg-black/5 hover:text-[#111]"
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Plantillas Predeterminadas (3 Tipos)</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("contacts")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === "contacts" ? "bg-[#111] text-white shadow-xs" : "text-black/60 hover:bg-black/5 hover:text-[#111]"
-          }`}
-        >
-          <Upload className="w-3.5 h-3.5" />
-          <span>Fuente de Contactos & Campaña</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("roundrobin")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-            activeTab === "roundrobin" ? "bg-[#111] text-white shadow-xs" : "text-black/60 hover:bg-black/5 hover:text-[#111]"
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Pool Round-Robin Configurable</span>
-        </button>
+        <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] bg-[#F5F4F0] px-3 py-1.5 rounded-xl border border-black/5 text-black/60 font-semibold">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Mapeo Nativo Nube</span>
+        </div>
       </div>
 
       {/* ── TAB 1: DESPACHO & GOTEO EN VIVO ───────────────────────────────────── */}
