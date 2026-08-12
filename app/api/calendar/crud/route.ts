@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 /**
- * API Definitiva y Resiliente para Operaciones CRUD en el Esquema `calendario` (Supabase + Google Calendar API).
- * Combina prospectos, eventos y citas en vivo de Google Calendar sin fallos.
+ * API Definitiva y Resiliente para Operaciones CRUD en el Esquema `calendario`.
+ * Parsea e identifica con precisión el Nombre Real del Cliente, Empresa, Teléfono y Comentario.
  */
 
 export async function GET(request: Request) {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
     let records: any[] = []
 
-    // 1. Query Supabase Prospectos
+    // 1. Consultar prospectos en Supabase
     let prospectosMap: Record<string, any> = {}
     let prospectosList: any[] = []
     try {
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       console.warn('[PROSPECTOS FETCH WARN]', pErr)
     }
 
-    // 2. Query Supabase Eventos
+    // 2. Consultar eventos en Supabase
     let eventosList: any[] = []
     try {
       const eventosRes = await fetch(`${url}/rest/v1/eventos?select=*&order=creado_en.desc`, {
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       console.warn('[EVENTOS FETCH WARN]', eErr)
     }
 
-    // Map Supabase Eventos + Prospectos
+    // Mapear eventos con prospectos
     eventosList.forEach((evt: any) => {
       const p = prospectosMap[evt.prospecto_id] || {}
       records.push({
@@ -69,18 +69,18 @@ export async function GET(request: Request) {
         horaCita: evt.hora_cita || '10:00 AM',
         prospecto: {
           id: p.id || 'p-1',
-          nombre: p.name || 'Cliente Registrado',
+          nombre: p.name || p.nombre || 'Cliente Registrado',
           email: p.email || 'cliente@empresa.com',
-          empresa: p.company || 'Empresa Privada',
-          telefono: p.phone || '+57 300 000 0000',
-          tema: p.topic || 'Consultoría IA Agéntica 45M',
-          comentario: p.topic || 'Consulta General',
+          empresa: p.company || p.empresa || 'Empresa Privada',
+          telefono: p.phone || p.telefono || '+57 300 000 0000',
+          tema: p.topic || p.servicio || 'Consultoría IA Agéntica 45M',
+          comentario: p.topic || p.descripcion || 'Consulta sobre soluciones de IA agéntica',
           aceptaTratamientoDatos: p.acepta_tratamiento_datos ?? true,
         },
       })
     })
 
-    // If prospectos exist without joined eventos, construct booking records
+    // Si existen prospectos sin evento asociado en eventos, estructurar agendamiento desde prospectos
     prospectosList.forEach((p: any) => {
       const hasEvento = eventosList.some((e: any) => e.prospecto_id === p.id)
       if (!hasEvento) {
@@ -98,19 +98,19 @@ export async function GET(request: Request) {
           horaCita: new Date(p.created_at || Date.now()).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
           prospecto: {
             id: p.id,
-            nombre: p.name || 'Cliente Registrado',
+            nombre: p.name || p.nombre || 'Cliente Registrado',
             email: p.email || 'contacto@empresa.com',
-            empresa: p.company || 'Empresa Privada',
-            telefono: p.phone || '+57 300 000 0000',
-            tema: p.topic || 'Consultoría IA Agéntica 45M',
-            comentario: p.topic || 'Consulta General',
+            empresa: p.company || p.empresa || 'Empresa Privada',
+            telefono: p.phone || p.telefono || '+57 300 000 0000',
+            tema: p.topic || p.servicio || 'Consultoría IA Agéntica 45M',
+            comentario: p.topic || 'Consulta sobre soluciones de IA agéntica',
             aceptaTratamientoDatos: p.acepta_tratamiento_datos ?? true,
           },
         })
       }
     })
 
-    // 3. Query Google Calendar API for real live events created in Google account
+    // 3. Consultar eventos de Google Calendar API parseando el nombre real del cliente
     try {
       const clientId = process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
       const clientSecret = process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
@@ -148,47 +148,77 @@ export async function GET(request: Request) {
             const googleItems = calData.items || []
 
             googleItems.forEach((gItem: any, idx: number) => {
-              const isAlreadyInRecords = records.some((r: any) => r.titulo.includes(gItem.summary || ''))
-              if (!isAlreadyInRecords) {
-                const createdDate = gItem.created ? new Date(gItem.created) : new Date()
-                records.push({
-                  id: gItem.id || `g-evt-${idx}`,
-                  titulo: gItem.summary || 'Cita Agendada en Google Calendar',
-                  descripcion: gItem.description || 'Evento agendado en Google Workspace API',
-                  comentarioAdicional: gItem.description || 'Reserva sincronizada desde Google Calendar API',
-                  meetLink: gItem.hangoutLink || 'https://meet.google.com/new',
-                  estado: 'agendado',
-                  resultadoComercial: 'agendado_google',
-                  recordatorioEnviado: true,
-                  creadoEn: createdDate.toISOString(),
-                  fechaCita: createdDate.toISOString().split('T')[0],
-                  horaCita: createdDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
-                  prospecto: {
-                    id: `g-prospect-${idx}`,
-                    nombre: gItem.organizer?.displayName || gItem.summary || 'Invitado Google',
-                    email: gItem.organizer?.email || 'google.workspace@pascualbravo.edu.co',
-                    empresa: 'Google Workspace',
-                    telefono: '+57 300 000 0000',
-                    tema: gItem.summary || 'Asesoría Estratégica',
-                    comentario: gItem.description || 'Reserva sincronizada desde Google Calendar API',
-                    aceptaTratamientoDatos: true,
-                  },
-                })
+              const summaryText = gItem.summary || ''
+              
+              // Parsear nombre real del cliente a partir de "Asesoría: Tema - Nombre" o "Contacto: X"
+              let parsedNombre = 'Cliente Google'
+              let parsedEmpresa = 'Google Workspace'
+              let parsedTelefono = '+57 300 000 0000'
+              let parsedComentario = gItem.description || 'Agendamiento registrado desde la plataforma web.'
+
+              if (gItem.attendees && gItem.attendees.length > 0) {
+                const clientAttendee = gItem.attendees.find((a: any) => a.email !== gItem.organizer?.email) || gItem.attendees[0]
+                if (clientAttendee) {
+                  parsedNombre = clientAttendee.displayName || clientAttendee.email.split('@')[0]
+                }
               }
+
+              if (parsedNombre === 'Cliente Google' && summaryText.includes('-')) {
+                const parts = summaryText.split('-')
+                parsedNombre = parts[parts.length - 1].trim()
+              }
+
+              // Extraer teléfono o notas del campo description si está formateado
+              if (gItem.description) {
+                const phoneMatch = gItem.description.match(/Contacto:\s*([^\n]+)/)
+                if (phoneMatch) parsedTelefono = phoneMatch[1].trim()
+
+                const companyMatch = gItem.description.match(/Empresa:\s*([^\n]+)/)
+                if (companyMatch) parsedEmpresa = companyMatch[1].trim()
+
+                const notesMatch = gItem.description.match(/Notas:\s*([^\n]+)/)
+                if (notesMatch) parsedComentario = notesMatch[1].trim()
+              }
+
+              const createdDate = gItem.created ? new Date(gItem.created) : new Date()
+
+              records.push({
+                id: gItem.id || `g-evt-${idx}`,
+                titulo: gItem.summary || 'Cita Consultiva 45M',
+                descripcion: gItem.description || 'Evento agendado en Google Workspace API',
+                comentarioAdicional: parsedComentario,
+                meetLink: gItem.hangoutLink || 'https://meet.google.com/new',
+                estado: 'agendado',
+                resultadoComercial: 'agendado_google',
+                recordatorioEnviado: true,
+                creadoEn: createdDate.toISOString(),
+                fechaCita: createdDate.toISOString().split('T')[0],
+                horaCita: createdDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+                prospecto: {
+                  id: `g-prospect-${idx}`,
+                  nombre: parsedNombre,
+                  email: gItem.attendees && gItem.attendees[0] ? gItem.attendees[0].email : (gItem.organizer?.email || 'cliente@smartcontacts.cloud'),
+                  empresa: parsedEmpresa,
+                  telefono: parsedTelefono,
+                  tema: summaryText || 'Asesoría Estratégica 45M',
+                  comentario: parsedComentario,
+                  aceptaTratamientoDatos: true,
+                },
+              })
             })
           }
         }
       }
     } catch (gErr) {
-      console.warn('[GOOGLE CALENDAR API FETCH WARN]', gErr)
+      console.warn('[GOOGLE CALENDAR API PARSE WARN]', gErr)
     }
 
-    // Filter by estado if requested
+    // Filtrar por estado
     if (estadoFilter && estadoFilter !== 'todos') {
       records = records.filter((r: any) => r.estado === estadoFilter)
     }
 
-    // Filter by search query if requested
+    // Filtrar por búsqueda
     if (searchFilter) {
       const q = searchFilter.toLowerCase()
       records = records.filter(
@@ -222,7 +252,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    // 1. Insert prospecto
+    // 1. Insertar prospecto con todos los campos
     const prospectoRes = await fetch(`${url}/rest/v1/prospectos`, {
       method: 'POST',
       headers: {
@@ -250,7 +280,7 @@ export async function POST(request: Request) {
     const prospectoData = await prospectoRes.json()
     const prospectoId = prospectoData[0]?.id
 
-    // 2. Insert evento
+    // 2. Insertar evento con descripción y campos descriptivos
     const meetLink = `https://meet.google.com/smart-${Math.random().toString(36).substring(2, 7)}`
 
     await fetch(`${url}/rest/v1/eventos`, {
@@ -263,7 +293,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         titulo: `Cita 45M: ${tema || 'Consultoría IA'} - ${nombre}`,
-        descripcion: comentario || `Sesión de agendamiento para la empresa ${empresa || 'Cliente'}`,
+        descripcion: comentario || `Agendamiento para ${nombre} de la empresa ${empresa || 'Cliente'}`,
         meet_link: meetLink,
         estado: 'agendado',
         prospecto_id: prospectoId,
