@@ -439,19 +439,13 @@ export default function SidebarNavPreview() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
           
           {/* Top Title Banner */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-black/[0.08]">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
-                {t.dashboard?.title || "Tablero de Inteligencia Multiagente & Servicios"}
-              </h1>
-              <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
-                {t.dashboard?.subtitle || "Métricas operacionales en tiempo real de agendamiento, APIs de Google y fuerza agéntica."}
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-emerald-800 bg-emerald-500/10 border border-emerald-500/20 font-semibold w-fit shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{t.dashboard?.liveSystem || "SISTEMA OPERACIONAL EN VIVO"}</span>
-            </span>
+          <div className="pb-4 border-b border-black/[0.08]">
+            <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+              {t.dashboard?.title || "Tablero de Inteligencia Multiagente & Servicios"}
+            </h1>
+            <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+              {t.dashboard?.subtitle || "Métricas operacionales en tiempo real de agendamiento, APIs de Google y fuerza agéntica."}
+            </p>
           </div>
 
           {/* ── REAL-TIME API CONSUMPTION & CALENDAR METRICS (BENTO GRID) ──────── */}
@@ -460,9 +454,8 @@ export default function SidebarNavPreview() {
             {/* KPI 1: Gmail API Consumption */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GMAIL API CONSUMO</span>
-                  <Mail className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">
                   {metrics?.googleApiConsumption?.gmailApi?.emailsSent ?? 0}
@@ -478,9 +471,8 @@ export default function SidebarNavPreview() {
             {/* KPI 2: Google Meet API */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GOOGLE MEET API</span>
-                  <Video className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">
                   {metrics?.googleApiConsumption?.meetApi?.linksGenerated ?? 0}
@@ -489,8 +481,8 @@ export default function SidebarNavPreview() {
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
                 <span>ESTADO API</span>
-                <span className="text-emerald-700 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> {metrics?.googleApiConsumption?.meetApi?.status || "OPERACIONAL"}
+                <span className="text-emerald-700 font-bold">
+                  {metrics?.googleApiConsumption?.meetApi?.status || "OPERACIONAL"}
                 </span>
               </div>
             </div>
@@ -498,9 +490,8 @@ export default function SidebarNavPreview() {
             {/* KPI 3: Show-Up Rate en Meet */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">ASISTENCIA MEET</span>
-                  <Bot className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">
                   {metrics?.overview?.showUpRate ?? 0}%
@@ -516,9 +507,8 @@ export default function SidebarNavPreview() {
             {/* KPI 4: Habeas Data Consent (Ley 1581) */}
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">HABEAS DATA</span>
-                  <ShieldCheck className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">
                   {metrics?.overview?.habeasDataPercentage ?? 0}%
@@ -527,8 +517,8 @@ export default function SidebarNavPreview() {
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
                 <span>TRAZABILIDAD IP</span>
-                <span className="text-blue-700 font-bold flex items-center gap-0.5">
-                  <CheckCircle2 className="w-3 h-3" /> {metrics?.overview?.habeasDataAceptados ?? 0} Auditados con IP
+                <span className="text-blue-700 font-bold">
+                  {metrics?.overview?.habeasDataAceptados ?? 0} Auditados con IP
                 </span>
               </div>
             </div>
@@ -597,8 +587,7 @@ export default function SidebarNavPreview() {
           {/* ── LIVE EXECUTION LOGS (100% REAL FROM SUPABASE POSTGRESQL) ───────── */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
-              <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-600" />
+              <div>
                 <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
                   REGISTRO REAL DE EJECUCIONES & AGENDAMIENTOS (SUPABASE DB)
                 </span>
