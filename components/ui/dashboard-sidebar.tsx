@@ -27,6 +27,7 @@ import {
   Globe,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
 
 export type NavItemData = {
   id: string
@@ -573,10 +574,25 @@ export default function SidebarNavPreview() {
                 </div>
               </div>
             </>
+          ) : activeId === "calendar" || activeId === "projects" || activeId === "inbox" ? (
+            <>
+              {/* Top Title Banner */}
+              <div className="pb-4 border-b border-black/[0.08]">
+                <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+                  Módulo de Agendamiento 45M & Operaciones CRUD (`calendario`)
+                </h1>
+                <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+                  Tabla de datos con paneles desplegables en sitio (Data Table 4) para administrar el esquema <span className="font-mono font-bold text-[#111]">calendario.eventos</span> y <span className="font-mono font-bold text-[#111]">calendario.prospectos</span>.
+                </p>
+              </div>
+
+              {/* DATA TABLE 4 (EXPANDABLE ROW DETAIL PANELS IN PLACE) */}
+              <CalendarDataTable4 />
+            </>
           ) : (
             <div className="p-8 rounded-2xl border border-black/[0.08] bg-white text-center font-sans space-y-3">
               <h2 className="text-xl font-light text-[#111]">Módulo {activeTitle}</h2>
-              <p className="text-xs text-black/60">Selecciona el módulo <strong className="text-[#111]">APIs & Google Cloud</strong> en el menú lateral para consultar el monitoreo exclusivo de las 4 APIs de Google.</p>
+              <p className="text-xs text-black/60">Selecciona el módulo <strong className="text-[#111]">Agendamiento 45M / Calendario</strong> o <strong className="text-[#111]">APIs & Google Cloud</strong> en el menú lateral.</p>
             </div>
           )}
 
