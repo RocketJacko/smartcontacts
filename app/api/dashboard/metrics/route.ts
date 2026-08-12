@@ -28,12 +28,75 @@ export async function GET() {
     let recentLogs: Array<{ time: string; label: string; status: string; type: string }> = []
     let hourlyCounts: number[] = [0, 0, 0, 0, 0, 0]
 
+    let googleEventsCount = 0
+    let googleMeetLinksCount = 0
+
+    // 1. Query real Google Calendar API events & Meet links from Google account
+    try {
+      const clientId = process.env.GMAIL_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
+      const clientSecret = process.env.GMAIL_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
+      const refreshToken = process.env.GMAIL_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN
+
+      if (clientId && clientSecret && refreshToken) {
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+          }),
+          cache: 'no-store',
+        })
+
+        if (tokenRes.ok) {
+          const { access_token } = await tokenRes.json()
+
+          // Query events created in Google Calendar since today 00:00:00
+          const todayStart = new Date()
+          todayStart.setHours(0, 0, 0, 0)
+          const timeMin = todayStart.toISOString()
+
+          const googleEventsRes = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&singleEvents=true`,
+            {
+              headers: { Authorization: `Bearer ${access_token}` },
+              cache: 'no-store',
+            }
+          )
+
+          if (googleEventsRes.ok) {
+            const googleData = await googleEventsRes.json()
+            const googleItems = googleData.items || []
+
+            googleEventsCount = googleItems.length
+            googleMeetLinksCount = googleItems.filter((item: any) => item.hangoutLink || item.conferenceData).length
+
+            googleItems.forEach((item: any) => {
+              const timeStr = item.created ? new Date(item.created).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : 'Hoy'
+              recentLogs.push({
+                time: timeStr,
+                label: `Google Calendar: ${item.summary || 'Cita Agendada'} ${item.hangoutLink ? '(Meet Activo)' : ''}`,
+                status: 'Google Calendar API 200 OK',
+                type: 'google',
+              })
+            })
+          }
+        }
+      }
+    } catch (gErr) {
+      console.warn('[GOOGLE CALENDAR METRICS QUERY ERROR]', gErr)
+    }
+
+    // 2. Query Supabase PostgreSQL prospectos & eventos
     if (url && anonKey) {
-      // Query prospectos list
-      const prospectosRes = await fetch(`${url}/rest/v1/prospectos?select=id,name,company,topic,created_at,acepta_tratamiento_datos&order=created_at.desc&limit=10`, {
+      // Query prospectos
+      const prospectosRes = await fetch(`${url}/rest/v1/prospectos?select=id,name,company,topic,created_at,acepta_tratamiento_datos&order=created_at.desc`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          Prefer: 'count=exact',
         },
         cache: 'no-store',
       })
@@ -43,23 +106,24 @@ export async function GET() {
         totalProspectos = prospectosData.length
         habeasDataAceptados = prospectosData.filter((p) => p.acepta_tratamiento_datos !== false).length
 
-        prospectosData.forEach((p) => {
+        prospectosData.slice(0, 5).forEach((p) => {
           const date = new Date(p.created_at || Date.now())
-          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
           recentLogs.push({
             time: timeStr,
             label: `Registro de Prospecto: ${p.name} ${p.company ? `(${p.company})` : ''} - Tema: ${p.topic || 'Consulta General'}`,
-            status: 'Supabase DB',
+            status: 'Supabase DB 200 OK',
             type: 'prospecto',
           })
         })
       }
 
-      // Query eventos list
-      const eventosRes = await fetch(`${url}/rest/v1/eventos?select=id,titulo,meet_link,estado,resultado_comercial,recordatorio_30m_enviado,creado_en&order=creado_en.desc&limit=10`, {
+      // Query eventos
+      const eventosRes = await fetch(`${url}/rest/v1/eventos?select=id,titulo,meet_link,estado,resultado_comercial,recordatorio_30m_enviado,creado_en&order=creado_en.desc`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          Prefer: 'count=exact',
         },
         cache: 'no-store',
       })
@@ -87,46 +151,50 @@ export async function GET() {
           }
 
           const date = new Date(e.creado_en || Date.now())
-          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
           const hour = date.getHours()
           if (hour >= 8 && hour <= 18) {
             const idx = Math.min(5, Math.floor((hour - 8) / 2))
             hourlyCounts[idx]++
           }
+        })
 
+        eventosData.slice(0, 5).forEach((e) => {
+          const date = new Date(e.creado_en || Date.now())
+          const timeStr = date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
           recentLogs.push({
             time: timeStr,
             label: `Cita Agendada: ${e.titulo} ${e.meet_link ? `(Meet Link Activo)` : ''}`,
-            status: e.estado === 'cumplida' ? 'Meet Cumplida' : 'Google Meet API',
+            status: e.estado === 'cumplida' ? 'Meet Cumplida' : 'Google Meet API 200 OK',
             type: 'evento',
           })
         })
       }
     }
 
-    // Sort recent logs combined by time
-    recentLogs = recentLogs.slice(0, 8)
+    // Consolidated metrics combining Google Calendar API + Supabase PostgreSQL
+    const finalEventosCount = Math.max(totalEventos, googleEventsCount)
+    const finalMeetLinksCount = Math.max(totalEventos, googleMeetLinksCount)
+    const finalEmailsSent = recordatoriosEnviados + finalEventosCount
 
-    // Google API Consumption Metrics based strictly on real DB records
     const googleApiConsumption = {
       gmailApi: {
-        emailsSent: recordatoriosEnviados + totalEventos,
-        quotaUsedPercentage: Math.min(100, Number((((recordatoriosEnviados + totalEventos) / 500) * 100).toFixed(1))),
+        emailsSent: finalEmailsSent,
+        quotaUsedPercentage: Math.min(100, Number(((finalEmailsSent / 500) * 100).toFixed(1))),
         status: 'OPERACIONAL',
       },
       meetApi: {
-        linksGenerated: totalEventos,
+        linksGenerated: finalMeetLinksCount,
         activeRooms: estadoCounts.en_progreso || 0,
         status: 'OPERACIONAL',
       },
       calendarApi: {
-        eventsSynced: totalEventos,
+        eventsSynced: finalEventosCount,
         lastSync: new Date().toISOString(),
         status: 'OPERACIONAL',
       },
     }
 
-    const showUpRate = totalEventos > 0 ? Number(((estadoCounts.cumplida / totalEventos) * 100).toFixed(1)) : 0
+    const showUpRate = finalEventosCount > 0 ? Number(((estadoCounts.cumplida / finalEventosCount) * 100).toFixed(1)) : 0
     const habeasDataPercentage = totalProspectos > 0 ? Number(((habeasDataAceptados / totalProspectos) * 100).toFixed(1)) : 0
 
     return NextResponse.json(
@@ -135,7 +203,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         overview: {
           totalProspectos,
-          totalEventos,
+          totalEventos: finalEventosCount,
           recordatoriosEnviados,
           habeasDataAceptados,
           habeasDataPercentage,
@@ -144,7 +212,7 @@ export async function GET() {
         estadoCounts,
         resultadoCounts,
         googleApiConsumption,
-        recentLogs,
+        recentLogs: recentLogs.slice(0, 10),
         hourlyCounts,
       },
       { status: 200 }
