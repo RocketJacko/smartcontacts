@@ -136,6 +136,26 @@ export function EmailAutomationModule() {
       .trim() || "Ocurrió un error al procesar la operación."
   }
 
+  // Descarga limpia del Reporte de Duplicados en CSV sin saturar la memoria RAM/DOM del navegador
+  const handleDownloadDuplicatesReport = () => {
+    if (!importSummaryReport || !importSummaryReport.duplicateEmails || !importSummaryReport.duplicateEmails.length) return
+    
+    const headers = "Correo Electrónico Omitido,Categoría del Directorio,Fecha de Importación\n"
+    const rows = importSummaryReport.duplicateEmails
+      .map((email) => `"${email}","${importSummaryReport.categoryName}","${new Date().toLocaleString("es-CO")}"`)
+      .join("\n")
+    
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.setAttribute("download", `Reporte_Duplicados_${importSummaryReport.categoryName.replace(/\s+/g, "_")}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   // State for Notifications
   const [uiNotification, setUiNotification] = useState<{
     type: "success" | "error" | "warning"
@@ -910,28 +930,30 @@ export function EmailAutomationModule() {
                   </div>
                 </div>
 
-                {/* LISTA DESPLEGABLE DE CORREOS OMITIDOS POR DUPLICIDAD */}
+                {/* BOTÓN OFICIAL DE DESCARGA DE REPORTE CSV PARA LISTAS MASIVAS */}
                 {importSummaryReport.duplicateEmails && importSummaryReport.duplicateEmails.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-mono font-bold uppercase text-black/50">
-                        CORREOS DUPLICADOS OMITIDOS ({importSummaryReport.duplicateEmails.length})
-                      </span>
-                      <span className="text-[10px] text-amber-800 font-mono font-medium">Subida atómica sin interrupción</span>
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200/80 space-y-3">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="text-xs font-semibold text-amber-950">Se detectaron {importSummaryReport.duplicateEmails.length} contactos ya existentes</h4>
+                        <p className="text-[11px] text-amber-900/80 mt-0.5">
+                          Para evitar congelamientos de pantalla o sobrecarga de recursos en el navegador, el detalle completo de correos omitidos se exporta en un reporte ligero.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="max-h-40 overflow-y-auto p-3 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1.5 font-mono text-[11px]">
-                      {importSummaryReport.duplicateEmails.map((email, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-black/70 py-0.5 border-b border-black/[0.03] last:border-0">
-                          <span>{email}</span>
-                          <span className="text-[9px] bg-amber-200/60 text-amber-900 px-1.5 py-0.2 rounded font-semibold">Ya Registrado</span>
-                        </div>
-                      ))}
-                    </div>
+                    <button
+                      onClick={handleDownloadDuplicatesReport}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-900 text-white text-xs font-medium hover:bg-amber-950 transition-all cursor-pointer shadow-xs font-mono"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Descargar Reporte Completo de Duplicados (.CSV)</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center font-mono text-emerald-800 text-[11px]">
-                    ✓ El 100% de los contactos ingresados fueron nuevos y se registraron exitosamente.
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-100 text-center font-mono text-emerald-800 text-[11px]">
+                    ✓ El 100% de los contactos ingresados fueron nuevos y se registraron exitosamente en el directorio.
                   </div>
                 )}
 

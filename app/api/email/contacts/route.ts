@@ -41,7 +41,52 @@ export async function POST(request: Request) {
       estado: 'pendiente',
     }))
 
-    // PostgREST exige Accept-Profile y Content-Profile para esquemas personalizados (automatizacion)
+    // Invocar la función almacenada PL/pgSQL en Supabase para procesamiento 100% atómico en DB
+    let rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+        'Accept-Profile': 'automatizacion',
+        'Content-Profile': 'automatizacion',
+      },
+      body: JSON.stringify({
+        p_campana_nombre: campana_nombre.trim(),
+        p_contactos: validContacts,
+      }),
+    })
+
+    if (!rpcRes.ok) {
+      // Fallback a esquema public
+      rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          p_campana_nombre: campana_nombre.trim(),
+          p_contactos: validContacts,
+        }),
+      })
+    }
+
+    if (rpcRes.ok) {
+      const result = await rpcRes.json()
+      return NextResponse.json({
+        success: true,
+        campana_nombre,
+        processedTotal: result.procesados || validContacts.length,
+        insertedCount: result.insertados || 0,
+        duplicateCount: result.omitidos || 0,
+        duplicateEmails: result.duplicados || [],
+        message: `Procesamiento en base de datos completado: ${result.insertados} nuevos contactos registrados, ${result.omitidos} omitidos por ya existir en la categoría.`,
+      })
+    }
+
+    // Fallback de inserción directa PostgREST
     let insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
       method: 'POST',
       headers: {
@@ -56,7 +101,6 @@ export async function POST(request: Request) {
     })
 
     if (!insertRes.ok) {
-      // Fallback a vista publica
       insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
         method: 'POST',
         headers: {
@@ -78,10 +122,8 @@ export async function POST(request: Request) {
         const emailMatch = errText.match(/Key \(email, campana_nombre\)=\(([^,]+),/i) || errText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
         const duplicateEmail = emailMatch ? emailMatch[1].trim() : ''
         userError = duplicateEmail 
-          ? `El correo ${duplicateEmail} ya se encuentra registrado en esta campaña.`
-          : 'El correo electrónico ya se encuentra registrado en esta campaña.'
-      } else if (errText.includes('PGRST106')) {
-        userError = 'Error de esquema de base de datos en Supabase.'
+          ? `El correo ${duplicateEmail} ya se encuentra registrado en esta categoría.`
+          : 'El correo electrónico ya se encuentra registrado en esta categoría.'
       }
 
       return NextResponse.json({ success: false, error: userError, code: insertRes.status }, { status: 400 })
@@ -89,8 +131,6 @@ export async function POST(request: Request) {
 
     const insertedRows = await insertRes.json()
     const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
-    
-    // Identificar correos insertados vs omitidos por duplicidad
     const insertedEmails = new Set(
       Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email.toLowerCase()) : []
     )
