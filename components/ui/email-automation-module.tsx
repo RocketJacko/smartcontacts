@@ -63,6 +63,7 @@ export function EmailAutomationModule({
   const [campaignsList, setCampaignsList] = useState<any[]>([])
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false)
   const [newCampaignNameInput, setNewCampaignNameInput] = useState("")
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
   // State for Import Metrics Summary Report Modal
@@ -233,8 +234,8 @@ export function EmailAutomationModule({
   }
 
   // Create New Campaign Action
-  const handleCreateCampaign = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreateCampaign = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!newCampaignNameInput.trim()) return
 
     try {
@@ -245,16 +246,18 @@ export function EmailAutomationModule({
       })
       const data = await res.json()
       if (data.success) {
-        setCampaignName(newCampaignNameInput.trim())
+        const createdName = newCampaignNameInput.trim()
+        setCampaignName(createdName)
         setNewCampaignNameInput("")
+        setIsCreatingCategory(false)
         setIsCreateCampaignModalOpen(false)
-        showFeedback("success", "Campaña Creada", `La campaña "${data.campaign.nombre}" fue registrada e inscrita.`)
+        showFeedback("success", "Categoría Creada", `La categoría "${createdName}" se ha creado y seleccionado automáticamente.`)
         loadCampaigns()
       } else {
-        showFeedback("error", "Error al Crear Campaña", data.error || "No se pudo registrar la campaña.")
+        showFeedback("error", "Error al Crear Categoría", data.error || "No se pudo registrar la categoría.")
       }
     } catch (err) {
-      showFeedback("error", "Error de Servidor", "Fallo de conexión al registrar la nueva campaña.")
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al guardar la nueva categoría.")
     }
   }
 
@@ -1251,35 +1254,80 @@ export function EmailAutomationModule({
                   </button>
                 </div>
 
-                {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA */}
-                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2">
+                {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA INLINE */}
+                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2 font-sans">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-mono font-bold text-black/50 uppercase">
                       Categoría del Directorio Destino *
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateCampaignModalOpen(true)}
-                      className="text-[11px] font-medium text-purple-700 hover:text-purple-900 flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Nueva Categoría</span>
-                    </button>
-                  </div>
-                  <select
-                    value={campaignName}
-                    onChange={(e) => setCampaignName(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
-                  >
-                    {campaignsList.map((c) => (
-                      <option key={c.id || c.nombre} value={c.nombre}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                    {!campaignsList.some((c) => c.nombre === campaignName) && (
-                      <option value={campaignName}>{campaignName}</option>
+                    {!isCreatingCategory && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingCategory(true)}
+                        className="text-[11px] font-semibold text-purple-700 hover:text-purple-900 flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>+ Nueva Categoría</span>
+                      </button>
                     )}
-                  </select>
+                  </div>
+
+                  {isCreatingCategory ? (
+                    <div className="flex items-center gap-1.5 animate-in fade-in">
+                      <input
+                        type="text"
+                        placeholder="Nombre de la nueva categoría..."
+                        value={newCampaignNameInput}
+                        onChange={(e) => setNewCampaignNameInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleCreateCampaign()
+                          if (e.key === "Escape") setIsCreatingCategory(false)
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-purple-300 text-xs font-semibold text-[#111] outline-none focus:border-purple-600 shadow-2xs"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCreateCampaign()}
+                        className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Guardar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingCategory(false)
+                          setNewCampaignNameInput("")
+                        }}
+                        className="px-2 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-black/60 cursor-pointer shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={campaignName}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW_CATEGORY__") {
+                          setIsCreatingCategory(true)
+                        } else {
+                          setCampaignName(e.target.value)
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                    >
+                      {campaignsList.map((c) => (
+                        <option key={c.id || c.nombre} value={c.nombre}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                      {!campaignsList.some((c) => c.nombre === campaignName) && (
+                        <option value={campaignName}>{campaignName}</option>
+                      )}
+                      <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
+                    </select>
+                  )}
                 </div>
 
                 {/* BARRA DE SELECCIÓN DE MODO (ARCHIVO VS TEXTAREA) */}
@@ -1401,23 +1449,77 @@ export function EmailAutomationModule({
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans space-y-0">
             {/* CABECERA CON BUSCADOR, CATEGORÍA Y ACCIONES MASIVAS */}
             <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
-              {/* IZQUIERDA: FILTRO Y SELECCIÓN DE CATEGORÍA ACTIVA */}
+              {/* IZQUIERDA: FILTRO Y SELECCIÓN DE CATEGORÍA ACTIVA INLINE */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-bold uppercase text-black/50 text-[10px]">CATEGORÍA:</span>
-                <select
-                  value={campaignName}
-                  onChange={(e) => setCampaignName(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
-                >
-                  {campaignsList.map((c) => (
-                    <option key={c.id || c.nombre} value={c.nombre}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                  {!campaignsList.some((c) => c.nombre === campaignName) && (
-                    <option value={campaignName}>{campaignName}</option>
-                  )}
-                </select>
+                {isCreatingCategory ? (
+                  <div className="flex items-center gap-1.5 animate-in fade-in">
+                    <input
+                      type="text"
+                      placeholder="Nombre de la nueva categoría..."
+                      value={newCampaignNameInput}
+                      onChange={(e) => setNewCampaignNameInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleCreateCampaign()
+                        if (e.key === "Escape") setIsCreatingCategory(false)
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-purple-300 text-xs font-semibold text-[#111] outline-none focus:border-purple-600 shadow-2xs"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCreateCampaign()}
+                      className="px-2.5 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Guardar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreatingCategory(false)
+                        setNewCampaignNameInput("")
+                      }}
+                      className="px-2 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-black/60 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={campaignName}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW_CATEGORY__") {
+                          setIsCreatingCategory(true)
+                        } else {
+                          setCampaignName(e.target.value)
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                    >
+                      {campaignsList.map((c) => (
+                        <option key={c.id || c.nombre} value={c.nombre}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                      {!campaignsList.some((c) => c.nombre === campaignName) && (
+                        <option value={campaignName}>{campaignName}</option>
+                      )}
+                      <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingCategory(true)}
+                      className="px-2.5 py-1.5 rounded-xl bg-purple-100 text-purple-900 hover:bg-purple-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Crear nueva categoría"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nueva</span>
+                    </button>
+                  </div>
+                )}
 
                 <span className="text-[10px] font-mono bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full font-bold">
                   {totalCount.toLocaleString()} Contactos
