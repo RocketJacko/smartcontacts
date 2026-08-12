@@ -37,6 +37,7 @@ import {
   Database,
   Cpu,
   Check,
+  Download,
 } from "lucide-react"
 
 export function EmailAutomationModule() {
