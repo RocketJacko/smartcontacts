@@ -342,3 +342,52 @@ export async function send8AMMorningReminderEmail(params: {
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   return send30MinReminderEmail(params)
 }
+
+/**
+ * Envía un correo electrónico personalizado con soporte para máscara de remitente y cuerpo HTML dinámico.
+ */
+export async function sendGmailCustomEmail(params: {
+  toEmail: string
+  subject: string
+  body: string
+  fromMask?: string
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const { senderEmail, senderName } = getGmailCredentials()
+  const accessToken = await getAccessToken()
+
+  if (!accessToken) {
+    return { success: false, error: 'Credenciales de Gmail no configuradas' }
+  }
+
+  try {
+    const rawMessage = createRawMimeMessage(
+      params.fromMask ? params.fromMask.split('<')[0].trim() : senderName,
+      senderEmail,
+      params.toEmail,
+      params.subject,
+      params.body
+    )
+
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw: rawMessage }),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('[GMAIL CUSTOM SEND ERROR]', res.status, errText)
+      return { success: false, error: errText }
+    }
+
+    const data = await res.json()
+    return { success: true, messageId: data.id }
+  } catch (error: any) {
+    console.error('[GMAIL CUSTOM SEND EXCEPTION]', error)
+    return { success: false, error: error.message || 'Error en envío de correo' }
+  }
+}
