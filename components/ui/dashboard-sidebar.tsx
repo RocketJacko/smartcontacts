@@ -20,15 +20,11 @@ import {
   PanelLeftOpen,
   Command,
   X,
-  ShieldCheck,
   Bot,
   Menu,
-  CheckCircle2,
-  Mail,
-  Video,
   RefreshCw,
-  Database,
   InboxIcon,
+  Globe,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
@@ -268,32 +264,51 @@ export default function SidebarNavPreview() {
   const { t } = useLanguage()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [activeId, setActiveId] = useState("home")
+  const [activeId, setActiveId] = useState("api") // Default directly to "api" (APIs & Google Cloud)
   const [activeWorkspace, setActiveWorkspace] = useState("SmartContacts Cloud")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [metrics, setMetrics] = useState<any>(null)
+  const [googleMetrics, setGoogleMetrics] = useState<any>(null)
+  const [generalMetrics, setGeneralMetrics] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch real-time API consumption & calendar metrics from /api/dashboard/metrics
-  const loadMetrics = () => {
+  // Fetch dedicated Google Metrics from /api/google/metrics
+  const loadGoogleMetrics = () => {
     setIsLoading(true)
-    fetch("/api/dashboard/metrics")
+    fetch("/api/google/metrics")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          setMetrics(data)
+          setGoogleMetrics(data)
         }
         setIsLoading(false)
       })
       .catch((err) => {
-        console.warn("Metrics fetch error:", err)
+        console.warn("Google metrics fetch error:", err)
         setIsLoading(false)
       })
   }
 
+  // Fetch general operational metrics from /api/dashboard/metrics
+  const loadGeneralMetrics = () => {
+    fetch("/api/dashboard/metrics")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setGeneralMetrics(data)
+        }
+      })
+      .catch((err) => {
+        console.warn("General metrics fetch error:", err)
+      })
+  }
+
   useEffect(() => {
-    loadMetrics()
-    const interval = setInterval(loadMetrics, 15000)
+    loadGoogleMetrics()
+    loadGeneralMetrics()
+    const interval = setInterval(() => {
+      loadGoogleMetrics()
+      loadGeneralMetrics()
+    }, 15000)
     return () => clearInterval(interval)
   }, [])
 
@@ -320,16 +335,7 @@ export default function SidebarNavPreview() {
     setIsMobileOpen(false)
   }
 
-  const activeTitle = (t.dashboard?.menu as any)?.[activeId] || "Unidad Comercial"
-
-  // Real SVG chart calculations based on real hourlyCounts from Supabase PostgreSQL
-  const hourlyData = metrics?.hourlyCounts && Array.isArray(metrics.hourlyCounts) ? metrics.hourlyCounts : [0, 0, 0, 0, 0, 0]
-  const maxVal = Math.max(1, ...hourlyData)
-  const points = hourlyData.map((val: number, idx: number) => {
-    const x = idx * 100
-    const y = 110 - (val / maxVal) * 80
-    return `${x},${y}`
-  }).join(" L ")
+  const activeTitle = (t.dashboard?.menu as any)?.[activeId] || "APIs & Google Cloud"
 
   return (
     <div className="min-h-screen w-full bg-[#F5F4F0] text-[#111] font-sans antialiased flex flex-col overflow-hidden">
@@ -362,7 +368,7 @@ export default function SidebarNavPreview() {
 
         <div className="flex items-center gap-2.5 sm:gap-3">
           <button
-            onClick={loadMetrics}
+            onClick={loadGoogleMetrics}
             title="Refrescar Métricas"
             aria-label="Refrescar Métricas"
             className="p-2 rounded-xl text-black/60 hover:bg-black/5 hover:text-[#111] transition-colors cursor-pointer"
@@ -413,7 +419,7 @@ export default function SidebarNavPreview() {
                 onSelect={handleSelect}
                 activeWorkspace={activeWorkspace}
                 onWorkspaceSelect={setActiveWorkspace}
-                metrics={metrics}
+                metrics={generalMetrics}
               />
             </div>
           </>
@@ -431,194 +437,148 @@ export default function SidebarNavPreview() {
             onSelect={handleSelect}
             activeWorkspace={activeWorkspace}
             onWorkspaceSelect={setActiveWorkspace}
-            metrics={metrics}
+            metrics={generalMetrics}
           />
         </aside>
 
         {/* MAIN DASHBOARD CONTENT */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
           
-          {/* Top Title Banner */}
-          <div className="pb-4 border-b border-black/[0.08]">
-            <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
-              {t.dashboard?.title || "Tablero de Inteligencia Multiagente & Servicios"}
-            </h1>
-            <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
-              {t.dashboard?.subtitle || "Métricas operacionales en tiempo real de agendamiento, APIs de Google y fuerza agéntica."}
-            </p>
-          </div>
-
-          {/* ── REAL-TIME API CONSUMPTION & CALENDAR METRICS (BENTO GRID) ──────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-            
-            {/* KPI 1: Gmail API Consumption */}
-            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GMAIL API CONSUMO</span>
-                </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">
-                  {metrics?.googleApiConsumption?.gmailApi?.emailsSent ?? 0}
-                </div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Correos & Confirmaciones Despachadas</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>CUOTA DIARIA</span>
-                <span className="text-rose-700 font-bold">{metrics?.googleApiConsumption?.gmailApi?.quotaUsedPercentage ?? 0}% USADO</span>
-              </div>
-            </div>
-
-            {/* KPI 2: Google Meet API */}
-            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GOOGLE MEET API</span>
-                </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">
-                  {metrics?.googleApiConsumption?.meetApi?.linksGenerated ?? 0}
-                </div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Salas de Videollamada Generadas</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>ESTADO API</span>
-                <span className="text-emerald-700 font-bold">
-                  {metrics?.googleApiConsumption?.meetApi?.status || "OPERACIONAL"}
-                </span>
-              </div>
-            </div>
-
-            {/* KPI 3: Show-Up Rate en Meet */}
-            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">ASISTENCIA MEET</span>
-                </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">
-                  {metrics?.overview?.showUpRate ?? 0}%
-                </div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Cumplimiento de Citas Consultivas</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>RECORDATORIO 30M</span>
-                <span className="text-purple-700 font-bold">{metrics?.overview?.recordatoriosEnviados ?? 0} Enviados</span>
-              </div>
-            </div>
-
-            {/* KPI 4: Habeas Data Consent (Ley 1581) */}
-            <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="mb-3">
-                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">HABEAS DATA</span>
-                </div>
-                <div className="text-3xl font-bold text-[#111] tracking-tight">
-                  {metrics?.overview?.habeasDataPercentage ?? 0}%
-                </div>
-                <p className="text-xs text-black/70 mt-1 font-sans font-medium">Consentimiento Legal Registrado</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
-                <span>TRAZABILIDAD IP</span>
-                <span className="text-blue-700 font-bold">
-                  {metrics?.overview?.habeasDataAceptados ?? 0} Auditados con IP
-                </span>
-              </div>
-            </div>
-
-          </div>
-
-          {/* ── REAL-TIME CLEAR LATENCY & CONSUMPTION CHART (REAL SVG DYNAMIC) ────── */}
-          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
-              <div>
-                <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold block">
-                  RENDIMIENTO & VOLUMEN DE EVENTOS EN SUPABASE Y APIS DE GOOGLE
-                </span>
-                <p className="text-xs text-black/60 font-sans mt-0.5">
-                  Visualización en tiempo real basada en registros almacenados en PostgreSQL.
+          {/* DEDICATED MODULE: APIS & GOOGLE CLOUD METRICS */}
+          {activeId === "api" || activeId === "home" ? (
+            <>
+              {/* Top Title Banner */}
+              <div className="pb-4 border-b border-black/[0.08]">
+                <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+                  Módulo de APIs & Google Cloud (Consumos en Tiempo Real)
+                </h1>
+                <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+                  Monitoreo exclusivo de las 4 APIs de Google Workspace: Gmail, Google Meet, Google Calendar y Google Sheets en el proyecto <span className="font-mono font-bold text-[#111]">auto-n8n-123456-a1</span>.
                 </p>
               </div>
-              <span className="text-xs font-mono text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full font-semibold shrink-0">
-                Total Registros DB: {metrics?.overview?.totalEventos || 0}
-              </span>
-            </div>
 
-            {/* Clear Dynamic SVG Line Chart based on real DB query data */}
-            <div className="h-44 w-full pt-4 flex flex-col justify-end relative">
-              <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 120">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Grid Lines */}
-                <line x1="0" y1="30" x2="500" y2="30" stroke="#000000" strokeOpacity="0.05" strokeDasharray="4 4" />
-                <line x1="0" y1="70" x2="500" y2="70" stroke="#000000" strokeOpacity="0.05" strokeDasharray="4 4" />
-                <line x1="0" y1="110" x2="500" y2="110" stroke="#000000" strokeOpacity="0.08" />
-
-                {/* Filled Area */}
-                <path
-                  d={`M 0,110 L ${points} L 500,110 Z`}
-                  fill="url(#chartGradient)"
-                />
-
-                {/* Smooth Line */}
-                <path
-                  d={`M ${points}`}
-                  fill="none"
-                  stroke="#10B981"
-                  strokeWidth="2.5"
-                />
-
-                <circle cx="500" cy="110" r="4" fill="#10B981" />
-              </svg>
-
-              <div className="flex items-center justify-between text-[10px] font-mono text-black/40 pt-2 border-t border-black/[0.04]">
-                <span>08:00 AM</span>
-                <span>10:00 AM</span>
-                <span>12:00 PM</span>
-                <span>02:00 PM</span>
-                <span>04:00 PM</span>
-                <span>06:00 PM</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── LIVE EXECUTION LOGS (100% REAL FROM SUPABASE POSTGRESQL) ───────── */}
-          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
-              <div>
-                <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
-                  REGISTRO REAL DE EJECUCIONES & AGENDAMIENTOS (SUPABASE DB)
-                </span>
-              </div>
-              <span className="text-xs font-mono text-black/50">
-                {metrics?.recentLogs?.length || 0} Registros Reales
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {metrics?.recentLogs && metrics.recentLogs.length > 0 ? (
-                metrics.recentLogs.map((log: any, i: number) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
-                  >
-                    <span className="text-[11px] text-black/40 font-mono min-w-[65px] font-medium">{log.time}</span>
-                    <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">{log.label}</span>
-                    <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{log.status}</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
+              {/* ── 4 GOOGLE WORKSPACE APIS BENTO GRID ────────────────────────── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                
+                {/* 1. Gmail API */}
+                <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+                  <div>
+                    <div className="mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GMAIL API</span>
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      {googleMetrics?.apis?.gmail?.requestCount ?? 0}
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Correos Despachadas Hoy</p>
                   </div>
-                ))
-              ) : (
-                <div className="py-8 flex flex-col items-center justify-center text-center text-black/40 space-y-2">
-                  <InboxIcon className="w-8 h-8 opacity-40" strokeWidth={1.5} />
-                  <p className="text-xs font-sans font-medium">No hay registros ni agendamientos en la base de datos de Supabase en este momento.</p>
-                  <p className="text-[11px] font-mono text-black/30">Crea una reserva en /agendar para ver aparecer los registros reales en tiempo real aquí.</p>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>CUOTA 2,000</span>
+                    <span className="text-rose-700 font-bold">{googleMetrics?.apis?.gmail?.quotaUsedPercentage ?? 0}% USADO</span>
+                  </div>
                 </div>
-              )}
+
+                {/* 2. Google Meet API */}
+                <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+                  <div>
+                    <div className="mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GOOGLE MEET API</span>
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      {googleMetrics?.apis?.meet?.requestCount ?? 0}
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Salas Meet Generadas Hoy</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>ESTADO API</span>
+                    <span className="text-emerald-700 font-bold">
+                      {googleMetrics?.apis?.meet?.status || "OPERACIONAL"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Google Calendar API */}
+                <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+                  <div>
+                    <div className="mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GOOGLE CALENDAR API</span>
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      {googleMetrics?.apis?.calendar?.requestCount ?? 0}
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Eventos Sincronizados Hoy</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>ESTADO API</span>
+                    <span className="text-purple-700 font-bold">
+                      {googleMetrics?.apis?.calendar?.status || "OPERACIONAL"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. Google Sheets API */}
+                <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group">
+                  <div>
+                    <div className="mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">GOOGLE SHEETS API</span>
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      {googleMetrics?.apis?.sheets?.requestCount ?? 0}
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Peticiones a Hojas de Cálculo</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>ESTADO API</span>
+                    <span className="text-blue-700 font-bold">
+                      {googleMetrics?.apis?.sheets?.status || "OPERACIONAL"}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ── REAL-TIME EVENT LOGS EXCLUSIVELY FROM GOOGLE CLOUD ───────────── */}
+              <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
+                  <div>
+                    <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
+                      REGISTRO EXCLUSIVO DE EVENTOS Y SALAS MEET EN GOOGLE WORKSPACE
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-black/50">
+                    {googleMetrics?.recentEvents?.length || 0} Eventos Registrados Hoy
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {googleMetrics?.recentEvents && googleMetrics.recentEvents.length > 0 ? (
+                    googleMetrics.recentEvents.map((evt: any, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
+                      >
+                        <span className="text-[11px] text-black/40 font-mono min-w-[65px] font-medium">{evt.time}</span>
+                        <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">
+                          {evt.title} {evt.meetLink ? `(Link Meet: ${evt.meetLink})` : ''}
+                        </span>
+                        <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{evt.service}</span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 flex flex-col items-center justify-center text-center text-black/40 space-y-2">
+                      <InboxIcon className="w-8 h-8 opacity-40" strokeWidth={1.5} />
+                      <p className="text-xs font-sans font-medium">No se han registrado eventos o salas Meet adicionales el día de hoy en la API de Google.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-8 rounded-2xl border border-black/[0.08] bg-white text-center font-sans space-y-3">
+              <h2 className="text-xl font-light text-[#111]">Módulo {activeTitle}</h2>
+              <p className="text-xs text-black/60">Selecciona el módulo <strong className="text-[#111]">APIs & Google Cloud</strong> en el menú lateral para consultar el monitoreo exclusivo de las 4 APIs de Google.</p>
             </div>
-          </div>
+          )}
 
         </main>
       </div>
@@ -651,7 +611,7 @@ export default function SidebarNavPreview() {
             </div>
             <div className="p-6 flex flex-col items-center justify-center text-center">
               <Command className="w-6 h-6 text-black/30 mb-2" strokeWidth={1.5} />
-              <p className="text-xs text-black/60 font-medium font-sans">Busca agendamientos o logs de ejecución de APIs...</p>
+              <p className="text-xs text-black/60 font-medium font-sans">Busca agendamientos o ejecuciones en Google Cloud...</p>
             </div>
           </div>
         </div>
