@@ -87,8 +87,8 @@ export async function POST(request: Request) {
       })
     }
 
-    // Fallback de inserción directa PostgREST
-    let insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+    // Fallback de inserción directa PostgREST con ON CONFLICT atómico
+    let insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
@@ -96,44 +96,36 @@ export async function POST(request: Request) {
         'Content-Type': 'application/json',
         'Accept-Profile': 'automatizacion',
         'Content-Profile': 'automatizacion',
-        Prefer: 'return=representation, resolution=ignore-duplicates',
+        Prefer: 'resolution=ignore-duplicates,return=representation',
       },
       body: JSON.stringify(payload),
     })
 
     if (!insertRes.ok) {
-      insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+      insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
           'Content-Type': 'application/json',
-          Prefer: 'return=representation, resolution=ignore-duplicates',
+          Prefer: 'resolution=ignore-duplicates,return=representation',
         },
         body: JSON.stringify(payload),
       })
     }
 
-    if (!insertRes.ok) {
-      const errText = await insertRes.text()
-      console.error('[POST CONTACTS ERROR]', insertRes.status, errText)
-
-      let userError = 'No se pudo completar la carga de contactos.'
-      if (errText.includes('23505') || errText.includes('unique_email_campana') || insertRes.status === 409) {
-        const emailMatch = errText.match(/Key \(email, campana_nombre\)=\(([^,]+),/i) || errText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
-        const duplicateEmail = emailMatch ? emailMatch[1].trim() : ''
-        userError = duplicateEmail 
-          ? `El correo ${duplicateEmail} ya se encuentra registrado en esta categoría.`
-          : 'El correo electrónico ya se encuentra registrado en esta categoría.'
+    let insertedRows: any[] = []
+    if (insertRes.ok) {
+      try {
+        insertedRows = await insertRes.json()
+      } catch {
+        insertedRows = []
       }
-
-      return NextResponse.json({ success: false, error: userError, code: insertRes.status }, { status: 400 })
     }
 
-    const insertedRows = await insertRes.json()
     const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
     const insertedEmails = new Set(
-      Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email.toLowerCase()) : []
+      Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email?.toLowerCase()).filter(Boolean) : []
     )
     const duplicateEmails = validContacts
       .filter((c: any) => !insertedEmails.has(c.email.toLowerCase()))
@@ -152,7 +144,7 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('[API CONTACTS POST ERROR]', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message || 'Error interno del servidor' }, { status: 500 })
   }
 }
 

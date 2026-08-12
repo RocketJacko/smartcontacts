@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      let insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+      let insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
@@ -109,20 +109,20 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
           'Accept-Profile': 'automatizacion',
           'Content-Profile': 'automatizacion',
-          Prefer: 'return=representation, resolution=ignore-duplicates',
+          Prefer: 'resolution=ignore-duplicates,return=representation',
         },
         body: JSON.stringify(batch),
       })
 
       if (!insertRes.ok) {
         // Fallback a vista publica
-        insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+        insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
           method: 'POST',
           headers: {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
             'Content-Type': 'application/json',
-            Prefer: 'return=representation, resolution=ignore-duplicates',
+            Prefer: 'resolution=ignore-duplicates,return=representation',
           },
           body: JSON.stringify(batch),
         })

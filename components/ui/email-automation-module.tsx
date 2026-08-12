@@ -273,17 +273,21 @@ export function EmailAutomationModule() {
 
       const res = await fetch(query)
       const data = await res.json()
-      if (data.success) {
-        setContactInventory(data.contacts || [])
+      if (data.success && Array.isArray(data.contacts)) {
+        setContactInventory(data.contacts)
         setTotalCount(data.totalCount || 0)
         setTotalPages(data.totalPages || 1)
         setCurrentPage(data.page || 1)
         setSelectedContactIds([])
       } else {
-        showFeedback("warning", "Consulta de Contactos", "No se pudo cargar el inventario de contactos.")
+        setContactInventory([])
+        setTotalCount(0)
+        setTotalPages(1)
       }
     } catch (err) {
-      showFeedback("error", "Conexión Supabase", "Error de red al consultar el inventario de contactos.")
+      setContactInventory([])
+      setTotalCount(0)
+      setTotalPages(1)
     }
   }
 
