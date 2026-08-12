@@ -214,7 +214,12 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
 
     const data = await res.json()
     console.log('[GMAIL SEND SUCCESS] Mensaje enviado con éxito. ID:', data.id)
-    return { success: true, messageId: data.id }
+
+    // Sistema de Goteo Aleatorio (Drip Rate-Limiting: 3 a 5 segundos)
+    const dripDelay = Math.floor(Math.random() * 2000) + 3000
+    await new Promise((resolve) => setTimeout(resolve, dripDelay))
+
+    return { success: true, messageId: data.id, dripDelaySeconds: (dripDelay / 1000).toFixed(1) }
 
   } catch (error: any) {
     console.error('[GMAIL SEND EXCEPTION]', error)
