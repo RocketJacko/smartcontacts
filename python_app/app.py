@@ -65,6 +65,46 @@ def obtener_credenciales():
 
     raise ValueError("Las credenciales de Google ya están configuradas en el servidor (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN).")
 
+def obtener_peticiones_hoy_cloud_monitoring(creds, project_id, service_name):
+    """
+    Opción 1: Consulta oficial a Google Cloud Monitoring API (monitoring_v3)
+    service_name: 'gmail.googleapis.com' o 'people.googleapis.com'
+    project_id: 'auto-n8n-123456-a1'
+    """
+    try:
+        client = monitoring_v3.MetricServiceClient(credentials=creds)
+        project_name = f"projects/{project_id}"
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        interval = monitoring_v3.TimeInterval({
+            "end_time": {"seconds": int(now.timestamp())},
+            "start_time": {"seconds": int((now - datetime.timedelta(days=1)).timestamp())}
+        })
+
+        api_filter = (
+            f'metric.type="serviceruntime.googleapis.com/api/request_count" '
+            f'AND resource.labels.service="{service_name}"'
+        )
+
+        results = client.list_time_series(
+            request={
+                "name": project_name,
+                "filter": api_filter,
+                "interval": interval,
+                "view": monitoring_v3.ListTimeSeriesRequest.TimeSeriesView.FULL
+            }
+        )
+
+        total_peticiones = 0
+        for series in results:
+            for point in series.points:
+                total_peticiones += point.value.int64_value
+
+        return total_peticiones
+    except Exception as e:
+        print(f"Error al consultar métricas para {service_name}: {e}")
+        return 0
+
 @app.route('/')
 def index():
     """Renderiza el Dashboard Web principal"""
@@ -73,31 +113,23 @@ def index():
 @app.route('/api/metrics', methods=['GET'])
 def obtener_metricas():
     """
-    Módulo A: Obtiene métricas en tiempo real de consumo de APIs utilizando
-    Google Cloud Monitoring API (o conteo estimado si la API no está vinculada aún).
+    Módulo A: Obtiene métricas oficiales en tiempo real de consumo de APIs utilizando
+    Google Cloud Monitoring API (serviceruntime.googleapis.com/api/request_count).
     """
     try:
         creds = obtener_credenciales()
+        project_id = os.environ.get('GOOGLE_CLOUD_PROJECT') or 'auto-n8n-123456-a1'
+
         gmail_sent_today = 0
         people_requests_today = 0
 
-        # Si Cloud Monitoring está habilitado y configurado
         if HAS_MONITORING:
-            try:
-                client = monitoring_v3.MetricServiceClient(credentials=creds)
-                project_name = f"projects/{creds.quota_project_id if hasattr(creds, 'quota_project_id') else 'default'}"
-                # Consulta de ejemplo de intervalo de las últimas 24 horas
-                now = datetime.datetime.utcnow()
-                interval = monitoring_v3.TimeInterval({
-                    "end_time": {"seconds": int(now.timestamp())},
-                    "start_time": {"seconds": int((now - datetime.timedelta(days=1)).timestamp())},
-                })
-            except Exception as e:
-                print("Monitoring query info:", e)
+            gmail_sent_today = obtener_peticiones_hoy_cloud_monitoring(creds, project_id, 'gmail.googleapis.com')
+            people_requests_today = obtener_peticiones_hoy_cloud_monitoring(creds, project_id, 'people.googleapis.com')
 
-        # Retorna estructura de métricas para el Dashboard
         return jsonify({
             "success": True,
+            "project_id": project_id,
             "gmail_sent": gmail_sent_today,
             "gmail_limit": 2000,
             "people_requests": people_requests_today,

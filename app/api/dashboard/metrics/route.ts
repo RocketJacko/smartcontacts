@@ -54,16 +54,38 @@ export async function GET() {
           if (gmailRes.ok) {
             const gmailData = await gmailRes.json()
             gmailSentToday = gmailData.messages ? gmailData.messages.length : (gmailData.resultSizeEstimate ?? 0)
-          } else {
-            // Fallback to profile or sent messages endpoint if q parameter yields 403 scope restriction
-            const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+          }
+
+          // A.2) Query Google Cloud Monitoring API v3 (serviceruntime.googleapis.com/api/request_count)
+          try {
+            const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'auto-n8n-123456-a1'
+            const nowIso = now.toISOString()
+            const startTimeIso = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+
+            const gmailFilter = 'metric.type="serviceruntime.googleapis.com/api/request_count" AND resource.labels.service="gmail.googleapis.com"'
+            const monitoringUrl = `https://monitoring.googleapis.com/v3/projects/${projectId}/timeSeries?filter=${encodeURIComponent(gmailFilter)}&interval.startTime=${encodeURIComponent(startTimeIso)}&interval.endTime=${encodeURIComponent(nowIso)}`
+
+            const monitoringRes = await fetch(monitoringUrl, {
               headers: { Authorization: `Bearer ${access_token}` },
               cache: 'no-store',
             })
-            if (profileRes.ok) {
-              const profileData = await profileRes.json()
-              gmailSentToday = profileData.messagesTotal ? 1 : 0
+
+            if (monitoringRes.ok) {
+              const monitoringData = await monitoringRes.json()
+              if (monitoringData.timeSeries && Array.isArray(monitoringData.timeSeries)) {
+                let totalReqs = 0
+                monitoringData.timeSeries.forEach((series: any) => {
+                  if (series.points && Array.isArray(series.points)) {
+                    series.points.forEach((pt: any) => {
+                      totalReqs += parseInt(pt.value?.int64Value || pt.value?.doubleValue || 0, 10)
+                    })
+                  }
+                })
+                if (totalReqs > 0) gmailSentToday = totalReqs
+              }
             }
+          } catch (mErr) {
+            console.warn('[CLOUD MONITORING API FETCH WARN]', mErr)
           }
 
           // B) Query Google Calendar API directly for events created today
