@@ -78,9 +78,10 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         campana_nombre,
-        processedTotal: result.procesados || validContacts.length,
-        insertedCount: result.insertados || 0,
-        duplicateCount: result.omitidos || 0,
+        processedTotal: result.procesados !== undefined ? result.procesados : validContacts.length,
+        insertedCount: result.insertados !== undefined ? result.insertados : 0,
+        duplicateCount: result.omitidos !== undefined ? result.omitidos : 0,
+        totalDirectoryCount: result.total_directorio !== undefined ? result.total_directorio : 0,
         duplicateEmails: result.duplicados || [],
         message: `Procesamiento en base de datos completado: ${result.insertados} nuevos contactos registrados, ${result.omitidos} omitidos por ya existir en la categoría.`,
       })

@@ -59,6 +59,7 @@ export function EmailAutomationModule() {
     totalProcessed: number
     insertedCount: number
     duplicateCount: number
+    totalDirectoryCount?: number
     duplicateEmails: string[]
   } | null>(null)
 
@@ -509,9 +510,10 @@ export function EmailAutomationModule() {
           setImportSummaryReport({
             isOpen: true,
             categoryName: campaignName,
-            totalProcessed: data.processedTotal || count,
-            insertedCount: data.insertedCount || 0,
-            duplicateCount: data.duplicateCount || 0,
+            totalProcessed: data.processedTotal !== undefined ? data.processedTotal : count,
+            insertedCount: data.insertedCount !== undefined ? data.insertedCount : 0,
+            duplicateCount: data.duplicateCount !== undefined ? data.duplicateCount : 0,
+            totalDirectoryCount: data.totalDirectoryCount !== undefined ? data.totalDirectoryCount : totalCount + (data.insertedCount || 0),
             duplicateEmails: data.duplicateEmails || [],
           })
           loadContacts()
@@ -582,6 +584,7 @@ export function EmailAutomationModule() {
         totalProcessed: count,
         insertedCount: totalInserted,
         duplicateCount: totalDuplicates,
+        totalDirectoryCount: totalCount + totalInserted,
         duplicateEmails: accumulatedDuplicateEmails,
       })
       showFeedback(
@@ -621,6 +624,7 @@ export function EmailAutomationModule() {
           totalProcessed: data.processedTotal || 0,
           insertedCount: data.insertedCount || 0,
           duplicateCount: data.duplicateCount || 0,
+          totalDirectoryCount: data.totalDirectoryCount || totalCount + (data.insertedCount || 0),
           duplicateEmails: data.duplicateEmails || [],
         })
         loadContacts()
@@ -1049,10 +1053,10 @@ export function EmailAutomationModule() {
                   </button>
                 </div>
 
-                {/* TARJETAS DE MÉTRICAS OPERATIVAS */}
+                {/* TARJETAS DE MÉTRICAS OPERATIVAS DE NEGOCIO */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-black/40 block">TOTAL ANALIZADOS</span>
+                    <span className="text-[9px] font-mono font-bold uppercase text-black/40 block">TOTAL EN LA LISTA</span>
                     <span className="text-base font-mono font-bold text-[#111]">{importSummaryReport.totalProcessed}</span>
                   </div>
 
@@ -1062,20 +1066,28 @@ export function EmailAutomationModule() {
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1">
-                    <span className="text-[9px] font-mono font-bold uppercase text-amber-800 block">OMITIDOS (DUPLICADOS)</span>
+                    <span className="text-[9px] font-mono font-bold uppercase text-amber-800 block">CORREOS YA EXISTENTES</span>
                     <span className="text-base font-mono font-bold text-amber-900">{importSummaryReport.duplicateCount}</span>
                   </div>
                 </div>
 
+                {/* BANNER DE IMPACTO EN EL DIRECTORIO ACUMULADO */}
+                <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between font-mono text-xs">
+                  <span className="text-purple-950 font-bold text-[11px]">Total Acumulado en esta Categoría del Directorio:</span>
+                  <span className="text-sm font-bold text-purple-900">
+                    {(importSummaryReport.totalDirectoryCount !== undefined ? importSummaryReport.totalDirectoryCount : totalCount).toLocaleString()} contactos
+                  </span>
+                </div>
+
                 {/* BOTÓN OFICIAL DE DESCARGA DE REPORTE CSV PARA LISTAS MASIVAS */}
-                {importSummaryReport.duplicateEmails && importSummaryReport.duplicateEmails.length > 0 ? (
+                {importSummaryReport.duplicateCount > 0 ? (
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200/80 space-y-3">
                     <div className="flex items-start gap-2.5">
                       <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="text-xs font-semibold text-amber-950">Se detectaron {importSummaryReport.duplicateEmails.length} contactos ya existentes</h4>
+                        <h4 className="text-xs font-semibold text-amber-950">Se omitieron {importSummaryReport.duplicateCount} correos que ya existían</h4>
                         <p className="text-[11px] text-amber-900/80 mt-0.5">
-                          Para evitar congelamientos de pantalla o sobrecarga de recursos en el navegador, el detalle completo de correos omitidos se exporta en un reporte ligero.
+                          Para evitar consumo de memoria en el navegador, genera el reporte en CSV con las direcciones omitidas.
                         </p>
                       </div>
                     </div>
