@@ -39,3 +39,8 @@
 ## 7. Exclusión Estricta de Esquemas `cobertura` y `dominios` en Estadísticas y Dashboard
 - **Prohibido Incluir en Métricas/Estadísticas**: Queda estrictamente prohibido incluir los esquemas o referencias a `cobertura` y `dominios` dentro de los tableros de métricas, estadísticas, gráficos o cuadros de mando (dashboards) de la aplicación.
 - **Limpieza del Dashboard**: Los cuadros de mando deben centrarse exclusivamente en las métricas operativas de agendamiento (`calendario`), ejecuciones agénticas de IA, conversiones comerciales y trazabilidad legal de Habeas Data (`calendario.prospectos`).
+
+## 8. Ubicación Oficial de Variables de Entorno en Servidor de Producción Dokploy
+- **Ubicación Exclusiva**: Todas las variables de entorno del proyecto (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `CHECK_DOMAIN_SECRET`) residen e inyectan **exclusivamente desde el panel de producción de Dokploy** (`https://smartcontacts.cloud` / Contenedor Docker).
+- **Prohibido Pedir Re-Autenticación o Llaves**: Queda estrictamente prohibido asumir falta de credenciales en producción o pedir al usuario que vuelva a ingresar llaves, descargue archivos `credentials.json` o realice inicios de sesión interactivos. Todo el código debe consumir directamente `process.env`.
+
