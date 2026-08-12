@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
+import { EmailAutomationModule } from "@/components/ui/email-automation-module"
 
 export type NavItemData = {
   id: string
@@ -574,7 +575,9 @@ export default function SidebarNavPreview() {
                 </div>
               </div>
             </>
-          ) : activeId === "calendar" || activeId === "projects" || activeId === "inbox" ? (
+          ) : activeId === "projects" ? (
+            <EmailAutomationModule />
+          ) : activeId === "calendar" || activeId === "inbox" ? (
             <>
               {/* Top Title Banner */}
               <div className="pb-4 border-b border-black/[0.08]">
