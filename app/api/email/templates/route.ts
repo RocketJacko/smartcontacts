@@ -12,7 +12,7 @@ export interface EmailTemplateItem {
 const DEFAULT_TEMPLATES: Record<string, EmailTemplateItem> = {
   confirmacion: {
     tipo: 'confirmacion',
-    mascara_remitente: 'Agendamiento Smartcontacts <asesoria@smartcontacts.cloud>',
+    mascara_remitente: 'Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>',
     asunto: '¡Asesoría Estratégica Agendada con Éxito! — Smartcontacts',
     cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
   <h2>¡Hola {{nombre}}!</h2>
@@ -23,7 +23,7 @@ const DEFAULT_TEMPLATES: Record<string, EmailTemplateItem> = {
   },
   recordatorio_8am: {
     tipo: 'recordatorio_8am',
-    mascara_remitente: 'Smartcontacts Recordatorios <recordatorios@smartcontacts.cloud>',
+    mascara_remitente: 'Smartcontacts Recordatorios <jesus.carmona966@pascualbravo.edu.co>',
     asunto: '⏰ Recordatorio de Cita para Hoy: {{titulo}} ({{hora}})',
     cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
   <h2>Hola {{nombre}},</h2>
@@ -33,7 +33,7 @@ const DEFAULT_TEMPLATES: Record<string, EmailTemplateItem> = {
   },
   recordatorio_30m: {
     tipo: 'recordatorio_30m',
-    mascara_remitente: 'Smartcontacts Alertas <alertas@smartcontacts.cloud>',
+    mascara_remitente: 'Smartcontacts Alertas <jesus.carmona966@pascualbravo.edu.co>',
     asunto: '🚀 Tu asesoría inicia en 30 minutos: {{titulo}}',
     cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
   <h2>¡Hola {{nombre}}!</h2>
@@ -50,7 +50,7 @@ export async function GET() {
     let templatesMap: Record<string, EmailTemplateItem> = { ...DEFAULT_TEMPLATES }
 
     if (url && anonKey) {
-      const res = await fetch(`${url}/rest/v1/plantillas_predeterminadas?select=*`, {
+      let res = await fetch(`${url}/rest/v1/plantillas_predeterminadas?select=*`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
@@ -58,6 +58,18 @@ export async function GET() {
         },
         cache: 'no-store',
       })
+
+      if (!res.ok) {
+        // Fallback a vista publica
+        res = await fetch(`${url}/rest/v1/plantillas_predeterminadas?select=*`, {
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          cache: 'no-store',
+        })
+      }
+
       if (res.ok) {
         const rows = await res.json()
         rows.forEach((r: EmailTemplateItem) => {
@@ -88,7 +100,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    const upsertRes = await fetch(`${url}/rest/v1/plantillas_predeterminadas`, {
+    let upsertRes = await fetch(`${url}/rest/v1/plantillas_predeterminadas`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
@@ -108,9 +120,29 @@ export async function PUT(request: Request) {
     })
 
     if (!upsertRes.ok) {
+      // Fallback a vista publica
+      upsertRes = await fetch(`${url}/rest/v1/plantillas_predeterminadas`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({
+          tipo,
+          mascara_remitente,
+          asunto,
+          cuerpo_html,
+          actualizado_en: new Date().toISOString(),
+        }),
+      })
+    }
+
+    if (!upsertRes.ok) {
       const errText = await upsertRes.text()
       console.error('[UPSERT TEMPLATE ERROR]', upsertRes.status, errText)
-      return NextResponse.json({ success: false, error: `Error en Supabase (${upsertRes.status}): ${errText}` }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'No se pudo actualizar la plantilla en Supabase.' }, { status: 400 })
     }
 
     return NextResponse.json({ success: true, message: 'Plantilla actualizada exitosamente' })

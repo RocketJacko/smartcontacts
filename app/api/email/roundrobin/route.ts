@@ -61,7 +61,8 @@ export async function POST(request: Request) {
 
     if (!res.ok) {
       const errText = await res.text()
-      return NextResponse.json({ success: false, error: `Error en Supabase (${res.status}): ${errText}` }, { status: 500 })
+      console.error('[ROUNDROBIN ERROR]', res.status, errText)
+      return NextResponse.json({ success: false, error: 'No se pudo guardar el elemento en el pool Round-Robin.' }, { status: 400 })
     }
 
     const inserted = await res.json()

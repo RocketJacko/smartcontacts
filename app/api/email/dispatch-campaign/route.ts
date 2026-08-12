@@ -11,7 +11,13 @@ export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { campana_nombre, remitente, mascara_remitente, drip_min = 3.0, drip_max = 5.0 } = body
+    const {
+      campana_nombre,
+      remitente = 'jesus.carmona966@pascualbravo.edu.co',
+      mascara_remitente = 'Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>',
+      drip_min = 3.0,
+      drip_max = 5.0,
+    } = body
 
     if (!campana_nombre || !remitente) {
       return NextResponse.json({ success: false, error: 'campana_nombre y remitente son obligatorios' }, { status: 400 })

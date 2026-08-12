@@ -19,6 +19,16 @@ import {
   Plus,
   UserCheck,
   ChevronRight,
+  AlertCircle,
+  AlertTriangle,
+  X,
+  FolderPlus,
+  FileUp,
+  FileSpreadsheet,
+  Pause,
+  Database,
+  Cpu,
+  Check,
 } from "lucide-react"
 
 export function EmailAutomationModule() {
@@ -30,15 +40,103 @@ export function EmailAutomationModule() {
   
   // State for Contact Upload & Campaign Tagging
   const [campaignName, setCampaignName] = useState("Campaña Q3 - Consultoría IA Agéntica")
+  const [campaignsList, setCampaignsList] = useState<any[]>([])
+  const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false)
+  const [newCampaignNameInput, setNewCampaignNameInput] = useState("")
+
+  // Mode & File Upload States
+  const [uploadMode, setUploadMode] = useState<"file" | "textarea">("file")
   const [rawContactsInput, setRawContactsInput] = useState("carlos@empresa1.com\nmaria@empresa2.com\njuan@empresa3.com")
   const [contactInventory, setContactInventory] = useState<any[]>([])
   const [uploadMessage, setUploadMessage] = useState("")
+  const [isTextareaConfirmOpen, setIsTextareaConfirmOpen] = useState(false)
+
+  // Progress Bar State for Multi-Tier Upload
+  const [uploadProgress, setUploadProgress] = useState<{
+    isProcessing: boolean
+    currentChunk: number
+    totalChunks: number
+    percentage: number
+    processedCount: number
+    duplicateCount: number
+    levelText: string
+    isCancelled: boolean
+  }>({
+    isProcessing: false,
+    currentChunk: 0,
+    totalChunks: 0,
+    percentage: 0,
+    processedCount: 0,
+    duplicateCount: 0,
+    levelText: "",
+    isCancelled: false,
+  })
 
   // State for Round-Robin Pool Management
   const [poolAsuntos, setPoolAsuntos] = useState<any[]>([])
   const [poolCuerpos, setPoolCuerpos] = useState<any[]>([])
   const [newAsuntoText, setNewAsuntoText] = useState("")
   const [newCuerpoText, setNewCuerpoText] = useState("")
+
+  // Limpiador y Formateador de Errores de Base de Datos para la UI
+  const formatFriendlyErrorMessage = (rawError: string | any): string => {
+    if (!rawError) return "Ocurrió un inconveniente procesando la solicitud."
+    
+    const errStr = typeof rawError === "string" ? rawError : JSON.stringify(rawError)
+
+    // Si es un error de duplicado (23505) o clave única
+    if (errStr.includes("23505") || errStr.includes("unique_email_campana") || errStr.includes("already exists")) {
+      const emailMatch = errStr.match(/Key \(email, campana_nombre\)=\(([^,]+),/i) || errStr.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+      const duplicateEmail = emailMatch ? emailMatch[1].trim() : ""
+      return duplicateEmail
+        ? `El correo ${duplicateEmail} ya se encuentra registrado en esta campaña.`
+        : "El correo electrónico ya se encuentra registrado en esta campaña."
+    }
+
+    if (errStr.includes("campanas_nombre_key")) {
+      return "Ya existe una campaña registrada con ese mismo nombre."
+    }
+    if (errStr.includes("PGRST106") || errStr.includes("Invalid schema")) {
+      return "No se pudo comunicar con el esquema de base de datos de automatización."
+    }
+
+    try {
+      const jsonMatch = errStr.match(/\{"code":.*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        if (parsed.message) {
+          if (parsed.code === "23505") {
+            const emailMatch = parsed.details?.match(/Key \(email, campana_nombre\)=\(([^,]+),/i) || parsed.details?.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+            const duplicateEmail = emailMatch ? emailMatch[1].trim() : ""
+            return duplicateEmail
+              ? `El correo ${duplicateEmail} ya se encuentra registrado en esta campaña.`
+              : "El correo ya existe en esta campaña."
+          }
+          return parsed.message
+        }
+      }
+    } catch {
+      // Ignorar
+    }
+
+    return errStr
+      .replace(/^Error:\s*/i, "")
+      .replace(/^Error en Supabase \(\d+\):\s*/i, "")
+      .replace(/\{"code":.*/i, "")
+      .trim() || "Ocurrió un error al procesar la operación."
+  }
+
+  // State for Notifications
+  const [uiNotification, setUiNotification] = useState<{
+    type: "success" | "error" | "warning"
+    title: string
+    message: string
+  } | null>(null)
+
+  const showFeedback = (type: "success" | "error" | "warning", title: string, message: string) => {
+    const cleanMessage = type === "error" ? formatFriendlyErrorMessage(message) : message
+    setUiNotification({ type, title, message: cleanMessage })
+  }
 
   // State for Dispatch & Round-Robin
   const [senderEmail, setSenderEmail] = useState("jesus.carmona966@pascualbravo.edu.co")
@@ -51,6 +149,45 @@ export function EmailAutomationModule() {
 
   const dailyQuota = senderEmail.endsWith("@pascualbravo.edu.co") ? 2000 : 500
 
+  // Fetch Campaigns List
+  const loadCampaigns = async () => {
+    try {
+      const res = await fetch("/api/email/campaigns")
+      const data = await res.json()
+      if (data.success && data.campaigns) {
+        setCampaignsList(data.campaigns)
+      }
+    } catch (err) {
+      // Silencioso
+    }
+  }
+
+  // Create New Campaign Action
+  const handleCreateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCampaignNameInput.trim()) return
+
+    try {
+      const res = await fetch("/api/email/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: newCampaignNameInput.trim() }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCampaignName(newCampaignNameInput.trim())
+        setNewCampaignNameInput("")
+        setIsCreateCampaignModalOpen(false)
+        showFeedback("success", "Campaña Creada", `La campaña "${data.campaign.nombre}" fue registrada e inscrita.`)
+        loadCampaigns()
+      } else {
+        showFeedback("error", "Error al Crear Campaña", data.error || "No se pudo registrar la campaña.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al registrar la nueva campaña.")
+    }
+  }
+
   // Fetch Templates
   const loadTemplates = async () => {
     try {
@@ -61,9 +198,11 @@ export function EmailAutomationModule() {
         if (data.templates.length > 0 && !editingTemplate) {
           setEditingTemplate(data.templates[0])
         }
+      } else {
+        showFeedback("error", "Error al Cargar Plantillas", data.error || "No se pudieron obtener las plantillas predeterminadas de Supabase.")
       }
     } catch (err) {
-      console.error("Error loading templates:", err)
+      showFeedback("error", "Conexión Supabase", "Error de red al consultar las plantillas predeterminadas.")
     }
   }
 
@@ -74,9 +213,11 @@ export function EmailAutomationModule() {
       const data = await res.json()
       if (data.success) {
         setContactInventory(data.contacts)
+      } else {
+        showFeedback("warning", "Consulta de Contactos", "No se pudo cargar el inventario de contactos.")
       }
     } catch (err) {
-      console.error("Error loading contacts:", err)
+      showFeedback("error", "Conexión Supabase", "Error de red al consultar el inventario de contactos.")
     }
   }
 
@@ -90,7 +231,7 @@ export function EmailAutomationModule() {
         setPoolCuerpos(data.cuerpos)
       }
     } catch (err) {
-      console.error("Error loading Round-Robin pools:", err)
+      // Silencioso
     }
   }
 
@@ -98,6 +239,7 @@ export function EmailAutomationModule() {
     loadTemplates()
     loadContacts()
     loadRoundRobinPools()
+    loadCampaigns()
   }, [campaignName])
 
   // Save Template Action (PUT)
@@ -112,48 +254,230 @@ export function EmailAutomationModule() {
       })
       const data = await res.json()
       if (data.success) {
-        alert("Plantilla predeterminada actualizada y guardada correctamente en Supabase.")
+        showFeedback("success", "Plantilla Actualizada", "La plantilla predeterminada se ha guardado exitosamente en Supabase.")
         loadTemplates()
       } else {
-        alert("Error: " + data.error)
+        showFeedback("error", "Error al Guardar Plantilla", data.error || "No se pudo actualizar la plantilla en Supabase.")
       }
     } catch (err) {
-      console.error("Error saving template:", err)
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al enviar actualización de plantilla.")
     }
   }
 
-  // Upload Contacts Action (POST)
-  const handleUploadContacts = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const emails = rawContactsInput
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0 && line.includes("@"))
+  // Helper Parser de Texto o CSV (Fuzzy Header Matcher)
+  const parseRawContentToContacts = (textContent: string) => {
+    const lines = textContent.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+    if (lines.length === 0) return []
 
-    if (emails.length === 0) {
-      alert("Ingresa al menos un correo válido.")
+    let delimiter = ","
+    if (lines[0].includes(";")) delimiter = ";"
+    else if (lines[0].includes("\t")) delimiter = "\t"
+
+    const headerParts = lines[0].split(delimiter).map((h) => h.trim().toLowerCase().replace(/["']/g, ""))
+    let emailIdx = -1
+    let nombreIdx = -1
+    let empresaIdx = -1
+    let telefonoIdx = -1
+
+    headerParts.forEach((part, idx) => {
+      if (["email", "correo", "e-mail", "mail", "contacto"].includes(part)) emailIdx = idx
+      else if (["nombre", "name", "full_name", "prospecto"].includes(part)) nombreIdx = idx
+      else if (["empresa", "company", "compañia", "compañía", "organization"].includes(part)) empresaIdx = idx
+      else if (["telefono", "teléfono", "phone", "celular", "whatsapp", "mobile"].includes(part)) telefonoIdx = idx
+    })
+
+    let startIndex = 0
+    if (emailIdx !== -1) {
+      startIndex = 1
+    } else {
+      emailIdx = 0
+    }
+
+    const contacts: any[] = []
+    for (let i = startIndex; i < lines.length; i++) {
+      const row = lines[i].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ""))
+      const email = row[emailIdx]
+      if (email && email.includes("@")) {
+        const cleanEmail = email.toLowerCase()
+        const nombre = nombreIdx !== -1 && row[nombreIdx] ? row[nombreIdx] : cleanEmail.split("@")[0]
+        const empresa = empresaIdx !== -1 && row[empresaIdx] ? row[empresaIdx] : "Empresa Privada"
+        const telefono = telefonoIdx !== -1 && row[telefonoIdx] ? row[telefonoIdx] : ""
+
+        contacts.push({ email: cleanEmail, nombre, empresa, telefono })
+      }
+    }
+    return contacts
+  }
+
+  // Multi-Tier Process Handler (Nivel 1, Nivel 2, Nivel 3/4)
+  const processContactsInTiers = async (contacts: any[], rawText?: string) => {
+    const count = contacts.length
+    if (count === 0) {
+      showFeedback("warning", "Validación de Correos", "No se encontraron correos válidos en la entrada.")
       return
     }
 
+    // NIVEL 1: 1 a 1,000 correos (Single insert)
+    if (count <= 1000 && !rawText) {
+      setUploadProgress({
+        isProcessing: true,
+        currentChunk: 1,
+        totalChunks: 1,
+        percentage: 50,
+        processedCount: 0,
+        duplicateCount: 0,
+        levelText: "🟢 Nivel 1: Procesando directamente en el navegador (1 lote único)",
+        isCancelled: false,
+      })
+
+      try {
+        const res = await fetch("/api/email/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campana_nombre: campaignName, contactos: contacts }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          showFeedback("success", "Carga Exitosa (Nivel 1)", data.message)
+          loadContacts()
+        } else {
+          showFeedback("error", "Error en Carga", data.error || "Fallo en la inserción de contactos.")
+        }
+      } catch (err) {
+        showFeedback("error", "Error de Servidor", "No se pudo enviar la solicitud de inserción.")
+      } finally {
+        setUploadProgress((prev) => ({ ...prev, isProcessing: false, percentage: 100 }))
+      }
+      return
+    }
+
+    // NIVEL 2: 1,001 a 10,000 correos (Chunked Loop de 1,000 en 1,000)
+    if (count <= 10000 && !rawText) {
+      const chunkSize = 1000
+      const totalChunks = Math.ceil(count / chunkSize)
+
+      setUploadProgress({
+        isProcessing: true,
+        currentChunk: 0,
+        totalChunks,
+        percentage: 0,
+        processedCount: 0,
+        duplicateCount: 0,
+        levelText: `🟡 Nivel 2: Carga por lotes en navegador (${totalChunks} lotes de ${chunkSize})`,
+        isCancelled: false,
+      })
+
+      let totalInserted = 0
+      let totalDuplicates = 0
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = contacts.slice(i * chunkSize, (i + 1) * chunkSize)
+        try {
+          const res = await fetch("/api/email/contacts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ campana_nombre: campaignName, contactos: chunk }),
+          })
+          const data = await res.json()
+          if (data.success) {
+            totalInserted += data.insertedCount || 0
+            totalDuplicates += data.duplicateCount || 0
+          }
+        } catch (err) {
+          // Continuar con el siguiente lote
+        }
+
+        const pct = Math.round(((i + 1) / totalChunks) * 100)
+        setUploadProgress((prev) => ({
+          ...prev,
+          currentChunk: i + 1,
+          percentage: pct,
+          processedCount: totalInserted,
+          duplicateCount: totalDuplicates,
+        }))
+      }
+
+      showFeedback(
+        "success",
+        "Carga Completada por Lotes (Nivel 2)",
+        `Se procesaron ${count} contactos en ${totalChunks} lotes. ${totalInserted} agregados, ${totalDuplicates} omitidos por duplicidad.`
+      )
+      loadContacts()
+      setUploadProgress((prev) => ({ ...prev, isProcessing: false }))
+      return
+    }
+
+    // NIVEL 3 & 4: Más de 10,000 correos o Streaming Servidor
+    setUploadProgress({
+      isProcessing: true,
+      currentChunk: 1,
+      totalChunks: 1,
+      percentage: 25,
+      processedCount: 0,
+      duplicateCount: 0,
+      levelText: "🟣 Nivel 3 & 4: Carga masiva servidor streaming (Cero consumo de RAM cliente)",
+      isCancelled: false,
+    })
+
     try {
-      const res = await fetch("/api/email/contacts", {
+      const res = await fetch("/api/email/contacts/process-file", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campana_nombre: campaignName,
-          contactos: emails.map((e) => ({ email: e })),
-        }),
+        body: JSON.stringify({ campana_nombre: campaignName, rawContent: rawText }),
       })
       const data = await res.json()
       if (data.success) {
-        setUploadMessage(data.message)
+        showFeedback("success", "Carga Servidor Completada (Nivel 3 & 4)", data.message)
         loadContacts()
       } else {
-        alert("Error: " + data.error)
+        showFeedback("error", "Error en Servidor", data.error || "Fallo durante el procesamiento en servidor.")
       }
     } catch (err) {
-      console.error("Error uploading contacts:", err)
+      showFeedback("error", "Error de Red", "Ocurrió una interrupción al enviar el archivo masivo.")
+    } finally {
+      setUploadProgress((prev) => ({ ...prev, isProcessing: false, percentage: 100 }))
     }
+  }
+
+  // Upload Action para Textarea (Manual)
+  const handleUploadTextarea = (e: React.FormEvent) => {
+    e.preventDefault()
+    const contacts = parseRawContentToContacts(rawContactsInput)
+
+    if (contacts.length === 0) {
+      showFeedback("warning", "Validación de Correos", "Ingresa al menos un correo electrónico válido.")
+      return
+    }
+
+    // Si supera los 50 correos, pedir confirmación antes de continuar
+    if (contacts.length > 50) {
+      setIsTextareaConfirmOpen(true)
+      return
+    }
+
+    processContactsInTiers(contacts)
+  }
+
+  // Carga de Archivo (.CSV o .TXT)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const isLargeFile = file.size > 1024 * 1024 // > 1 MB
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      if (!content) return
+
+      const parsed = parseRawContentToContacts(content)
+      if (parsed.length > 10000 || isLargeFile) {
+        processContactsInTiers(parsed, content)
+      } else {
+        processContactsInTiers(parsed)
+      }
+    }
+    reader.readAsText(file)
   }
 
   // Add Item to Round-Robin Pool (POST)
@@ -171,12 +495,13 @@ export function EmailAutomationModule() {
       if (data.success) {
         if (tipo === "asunto") setNewAsuntoText("")
         else setNewCuerpoText("")
+        showFeedback("success", "Elemento Agregado", `Se agregó una nueva variación de ${tipo} al pool Round-Robin.`)
         loadRoundRobinPools()
       } else {
-        alert("Error: " + data.error)
+        showFeedback("error", "Error en Pool", data.error || "No se pudo registrar la variación.")
       }
     } catch (err) {
-      console.error("Error adding pool item:", err)
+      showFeedback("error", "Error de Servidor", "Error de red al agregar elemento al pool Round-Robin.")
     }
   }
 
@@ -188,10 +513,13 @@ export function EmailAutomationModule() {
       })
       const data = await res.json()
       if (data.success) {
+        showFeedback("success", "Elemento Eliminado", `Se removió el elemento del pool Round-Robin.`)
         loadRoundRobinPools()
+      } else {
+        showFeedback("error", "Error al Eliminar", data.error || "No se pudo eliminar el elemento del pool.")
       }
     } catch (err) {
-      console.error("Error deleting pool item:", err)
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al eliminar elemento del pool.")
     }
   }
 
@@ -213,13 +541,17 @@ export function EmailAutomationModule() {
       const data = await res.json()
       if (data.success) {
         setSentToday(data.sentToday)
-        alert(`Campaña procesada exitosamente: ${data.enviados} enviados. ${data.motivo_corte ? `Corte: ${data.motivo_corte}` : ""}`)
+        if (data.enviados > 0) {
+          showFeedback("success", "Despacho Completado", `Campaña procesada exitosamente: ${data.enviados} correos enviados por goteo. ${data.motivo_corte ? `(Corte: ${data.motivo_corte})` : ""}`)
+        } else {
+          showFeedback("warning", "Sin Pendientes", data.message || "No hay contactos pendientes por procesar en esta campaña.")
+        }
         loadContacts()
       } else {
-        alert("Error: " + (data.error || data.message))
+        showFeedback("error", "Error en Despacho", data.error || data.message || "Fallo durante la ejecución de la campaña.")
       }
     } catch (err) {
-      console.error("Error starting dispatch:", err)
+      showFeedback("error", "Error de Ejecución", "Ocurrió una interrupción de red durante el goteo de envíos.")
     } finally {
       setIsSending(false)
     }
@@ -247,6 +579,33 @@ export function EmailAutomationModule() {
           </div>
         </div>
       </div>
+
+      {/* ── BANNER DE NOTIFICACIÓN & FEEDBACK UI (REGLA 1 & DESIGN.MD) ──────────── */}
+      {uiNotification && (
+        <div className={`p-4 rounded-2xl border flex items-start justify-between gap-3 shadow-2xs font-sans transition-all ${
+          uiNotification.type === "success"
+            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-950"
+            : uiNotification.type === "warning"
+            ? "bg-amber-500/10 border-amber-500/20 text-amber-950"
+            : "bg-red-500/10 border-red-500/20 text-red-950"
+        }`}>
+          <div className="flex items-start gap-3">
+            {uiNotification.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />}
+            {uiNotification.type === "warning" && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />}
+            {uiNotification.type === "error" && <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />}
+            <div>
+              <h4 className="text-xs font-bold font-mono uppercase tracking-wider">{uiNotification.title}</h4>
+              <p className="text-xs mt-0.5 opacity-90">{uiNotification.message}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setUiNotification(null)}
+            className="p-1 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4 opacity-50" />
+          </button>
+        </div>
+      )}
 
       {/* ── TABS DE NAVEGACIÓN LIMPIAS SEGÚN DESIGN.MD ────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs text-xs font-medium">
@@ -471,53 +830,258 @@ export function EmailAutomationModule() {
 
       {/* ── TAB 3: FUENTE DE CONTACTOS & CAMPAÑA ──────────────────────────────── */}
       {activeTab === "contacts" && (
-        <div className="space-y-6">
-          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4 font-sans text-xs">
-            <div className="border-b border-black/[0.06] pb-3">
-              <h3 className="text-sm font-semibold text-[#111]">Herramienta de Carga de Contactos & Etiquetado por Campaña</h3>
+        <div className="space-y-6 font-sans">
+          
+          {/* MODAL 1: CREAR NUEVA CAMPAÑA DINÁMICAMENTE */}
+          {isCreateCampaignModalOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
+                    <FolderPlus className="w-4 h-4 text-purple-600" />
+                    <span>Crear Nueva Campaña de Email Marketing</span>
+                  </h3>
+                  <button
+                    onClick={() => setIsCreateCampaignModalOpen(false)}
+                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateCampaign} className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Nombre Único de la Campaña *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Campaña Q4 - Préstamos Libranza"
+                      value={newCampaignNameInput}
+                      onChange={(e) => setNewCampaignNameInput(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateCampaignModalOpen(false)}
+                      className="px-3.5 py-1.5 rounded-xl border border-black/10 text-xs font-medium hover:bg-black/5 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
+                    >
+                      Crear & Seleccionar
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
+          )}
 
-            <form onSubmit={handleUploadContacts} className="space-y-3.5">
+          {/* MODAL 2: CONFIRMACIÓN PARA TEXTAREA > 50 CORREOS */}
+          {isTextareaConfirmOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4 text-xs">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#111]">Advertencia de Rendimiento (&gt; 50 Correos)</h3>
+                    <p className="text-black/70 mt-1">
+                      Has ingresado más de 50 correos manualmente. Para listas medianas o masivas, se recomienda usar la opción de **Carga por Archivo (.CSV / .TXT)** para evitar congelamientos de interfaz.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
+                  <button
+                    onClick={() => {
+                      setIsTextareaConfirmOpen(false)
+                      setUploadMode("file")
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-900 border border-purple-200 text-xs font-medium hover:bg-purple-100 cursor-pointer"
+                  >
+                    Cambiar a Subir Archivo
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsTextareaConfirmOpen(false)
+                      const contacts = parseRawContentToContacts(rawContactsInput)
+                      processContactsInTiers(contacts)
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
+                  >
+                    Continuar Inserción Manual
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TARJETA DE CONTROL DE CARGA & SELECCIÓN DE CAMPAÑA */}
+          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-5 text-xs">
+            <div className="border-b border-black/[0.06] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                  Nombre de la Campaña (Etiqueta Única) *
-                </label>
-                <input
-                  type="text"
-                  value={campaignName}
-                  onChange={(e) => setCampaignName(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
-                />
+                <h3 className="text-sm font-semibold text-[#111]">Motor Multinivel de Carga Masiva de Contactos</h3>
+                <p className="text-xs text-black/60 mt-0.5">
+                  Importa listas de cualquier volumen (.CSV / .TXT) con asignación dinámica de campañas y procesamiento por lotes.
+                </p>
               </div>
 
-              <div>
-                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                  Lista de Correos Electrónicos (Un correo por línea) *
-                </label>
-                <textarea
-                  rows={5}
-                  value={rawContactsInput}
-                  onChange={(e) => setRawContactsInput(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none"
-                />
-              </div>
+              {/* SELECCIÓN Y CREACIÓN DE CAMPAÑA */}
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-mono font-bold text-black/40 uppercase">CAMPAÑA ACTIVA *</label>
+                  <select
+                    value={campaignName}
+                    onChange={(e) => setCampaignName(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                  >
+                    {campaignsList.map((c) => (
+                      <option key={c.id || c.nombre} value={c.nombre}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                    {!campaignsList.some((c) => c.nombre === campaignName) && (
+                      <option value={campaignName}>{campaignName}</option>
+                    )}
+                  </select>
+                </div>
 
-              <div className="flex justify-between items-center pt-1">
-                {uploadMessage && (
-                  <span className="text-xs font-mono text-emerald-700 font-bold">{uploadMessage}</span>
-                )}
                 <button
-                  type="submit"
-                  className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer"
+                  onClick={() => setIsCreateCampaignModalOpen(true)}
+                  className="mt-3 px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                  title="Crear nueva etiqueta de campaña"
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Subir Contactos & Excluir Duplicados</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nueva Campaña</span>
                 </button>
               </div>
-            </form>
+            </div>
+
+            {/* BARRA DE NAVEGACIÓN DE MODO (ARCHIVO VS TEXTAREA) */}
+            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#F5F4F0] border border-black/[0.06] w-fit">
+              <button
+                type="button"
+                onClick={() => setUploadMode("file")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                  uploadMode === "file" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
+                <span>Cargar Archivo (.CSV / .TXT)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMode("textarea")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+                  uploadMode === "textarea" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Entrada Manual (Textarea)</span>
+              </button>
+            </div>
+
+            {/* MODO 1: CARGA POR ARCHIVO (CSV / TXT) */}
+            {uploadMode === "file" && (
+              <div className="space-y-3">
+                <div className="p-6 rounded-2xl border-2 border-dashed border-black/15 bg-[#F5F4F0]/50 hover:bg-[#F5F4F0] transition-colors text-center space-y-3">
+                  <FileUp className="w-8 h-8 text-purple-600 mx-auto" />
+                  <div>
+                    <h4 className="text-xs font-semibold text-[#111]">Arrastra o selecciona un archivo .CSV o .TXT</h4>
+                    <p className="text-[11px] text-black/50 mt-0.5">
+                      Soporta mapeo inteligente de columnas: <code className="font-mono bg-black/5 px-1 py-0.5 rounded">email</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">nombre</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">empresa</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">telefono</code>
+                    </p>
+                  </div>
+
+                  <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Seleccionar Archivo</span>
+                    <input
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadProgress.isProcessing}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* MODO 2: ENTRADA MANUAL EN TEXTAREA */}
+            {uploadMode === "textarea" && (
+              <form onSubmit={handleUploadTextarea} className="space-y-3.5">
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                    Lista de Correos Electrónicos (Un correo o CSV por línea) *
+                  </label>
+                  <textarea
+                    rows={5}
+                    placeholder={"juan@empresa.com\ncarlos@tecnolabs.co, Carlos Mendoza, TecnoLabs SAS\nmaria@innovacion.org"}
+                    value={rawContactsInput}
+                    onChange={(e) => setRawContactsInput(e.target.value)}
+                    className="w-full p-3.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[11px] text-black/50 font-mono">
+                    {parseRawContentToContacts(rawContactsInput).length} correos detectados
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={uploadProgress.isProcessing}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Procesar e Insertar Contactos</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* BARRA DE PROGRESO MULTINIVEL DE CARGA EN TIEMPO REAL (REGLA DE ORO) */}
+            {uploadProgress.isProcessing && (
+              <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.08] space-y-2.5 font-mono animate-in fade-in">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-[#111] flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5 text-purple-600 animate-spin" />
+                    <span>{uploadProgress.levelText}</span>
+                  </span>
+                  <span className="font-bold text-purple-700">{uploadProgress.percentage}%</span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-black/10 overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 transition-all duration-300 rounded-full"
+                    style={{ width: `${uploadProgress.percentage}%` }}
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-[10px] text-black/60 pt-0.5">
+                  <span>
+                    Lote <span className="font-bold text-[#111]">{uploadProgress.currentChunk}</span> de{" "}
+                    <span className="font-bold text-[#111]">{uploadProgress.totalChunks}</span>
+                  </span>
+                  <span>
+                    Agregados: <span className="font-bold text-emerald-700">{uploadProgress.processedCount}</span> | Omitidos:{" "}
+                    <span className="font-bold text-amber-700">{uploadProgress.duplicateCount}</span>
+                  </span>
+                </div>
+              </div>
+            )}
+
           </div>
 
-          {/* TABLA DE INVENTARIO DE CONTACTOS */}
+          {/* TABLA DE INVENTARIO DE CONTACTOS (ESTILOS DESIGN.MD) */}
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans">
             <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex justify-between items-center text-xs font-mono">
               <span className="font-bold uppercase text-black/50">INVENTARIO CARGADO: {campaignName}</span>
@@ -530,7 +1094,8 @@ export function EmailAutomationModule() {
                   <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
                     <th className="py-3 px-3.5">Correo Electrónico</th>
                     <th className="py-3 px-3.5">Nombre</th>
-                    <th className="py-3 px-3.5">Campaña</th>
+                    <th className="py-3 px-3.5">Empresa</th>
+                    <th className="py-3 px-3.5">Teléfono</th>
                     <th className="py-3 px-3.5">Estado</th>
                     <th className="py-3 px-3.5 text-right">Último Envío</th>
                   </tr>
@@ -540,8 +1105,9 @@ export function EmailAutomationModule() {
                     contactInventory.map((c) => (
                       <tr key={c.id} className="hover:bg-black/[0.02] transition-colors">
                         <td className="py-3 px-3.5 font-mono font-medium text-[#111]">{c.email}</td>
-                        <td className="py-3 px-3.5 text-black/70">{c.nombre}</td>
-                        <td className="py-3 px-3.5 font-mono text-black/50">{c.campana_nombre}</td>
+                        <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre}</td>
+                        <td className="py-3 px-3.5 text-black/60">{c.empresa}</td>
+                        <td className="py-3 px-3.5 font-mono text-black/50">{c.telefono || "—"}</td>
                         <td className="py-3 px-3.5 font-mono">
                           <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             c.estado === 'enviado' ? 'bg-emerald-500/10 text-emerald-800' : 'bg-purple-500/10 text-purple-800'
@@ -556,7 +1122,7 @@ export function EmailAutomationModule() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-black/40 font-mono">
+                      <td colSpan={6} className="py-8 text-center text-black/40 font-mono">
                         No hay contactos cargados para esta campaña.
                       </td>
                     </tr>

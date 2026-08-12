@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }))
 
     // PostgREST exige Accept-Profile y Content-Profile para esquemas personalizados (automatizacion)
-    const insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+    let insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
@@ -56,9 +56,35 @@ export async function POST(request: Request) {
     })
 
     if (!insertRes.ok) {
+      // Fallback a vista publica
+      insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation, resolution=ignore-duplicates',
+        },
+        body: JSON.stringify(payload),
+      })
+    }
+
+    if (!insertRes.ok) {
       const errText = await insertRes.text()
       console.error('[POST CONTACTS ERROR]', insertRes.status, errText)
-      return NextResponse.json({ success: false, error: `Error en Supabase (${insertRes.status}): ${errText}` }, { status: 500 })
+
+      let userError = 'No se pudo completar la carga de contactos.'
+      if (errText.includes('23505') || errText.includes('unique_email_campana') || insertRes.status === 409) {
+        const emailMatch = errText.match(/Key \(email, campana_nombre\)=\(([^,]+),/i) || errText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+        const duplicateEmail = emailMatch ? emailMatch[1].trim() : ''
+        userError = duplicateEmail 
+          ? `El correo ${duplicateEmail} ya se encuentra registrado en esta campaña.`
+          : 'El correo electrónico ya se encuentra registrado en esta campaña.'
+      } else if (errText.includes('PGRST106')) {
+        userError = 'Error de esquema de base de datos en Supabase.'
+      }
+
+      return NextResponse.json({ success: false, error: userError, code: insertRes.status }, { status: 400 })
     }
 
     const insertedRows = await insertRes.json()
@@ -95,7 +121,7 @@ export async function GET(request: Request) {
       queryUrl += `&campana_nombre=eq.${encodeURIComponent(campana)}`
     }
 
-    const res = await fetch(queryUrl, {
+    let res = await fetch(queryUrl, {
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
@@ -103,6 +129,17 @@ export async function GET(request: Request) {
       },
       cache: 'no-store',
     })
+
+    if (!res.ok) {
+      // Fallback a vista publica
+      res = await fetch(queryUrl, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        cache: 'no-store',
+      })
+    }
 
     if (!res.ok) {
       return NextResponse.json({ success: true, count: 0, contacts: [] })
