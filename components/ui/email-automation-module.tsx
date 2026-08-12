@@ -38,6 +38,7 @@ import {
   Cpu,
   Check,
   Download,
+  Users,
 } from "lucide-react"
 
 export function EmailAutomationModule({
