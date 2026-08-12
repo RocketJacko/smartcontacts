@@ -29,21 +29,41 @@ SCOPES = [
 ]
 
 def obtener_credenciales():
-    """Maneja la autenticación OAuth 2.0 unificada con credentials.json y token.json"""
-    creds = None
+    """Consume directamente las credenciales del servidor desde variables de entorno (GMAIL_REFRESH_TOKEN, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET)"""
+    client_id = os.environ.get('GMAIL_CLIENT_ID') or os.environ.get('GOOGLE_CLIENT_ID')
+    client_secret = os.environ.get('GMAIL_CLIENT_SECRET') or os.environ.get('GOOGLE_CLIENT_SECRET')
+    refresh_token = os.environ.get('GMAIL_REFRESH_TOKEN') or os.environ.get('GOOGLE_REFRESH_TOKEN')
+
+    if refresh_token and client_id and client_secret:
+        creds = Credentials(
+            token=None,
+            refresh_token=refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=SCOPES
+        )
+        creds.refresh(Request())
+        return creds
+
+    # Fallback si existe token.json en servidor
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    if not creds or not creds.valid:
+        if creds and creds.valid:
+            return creds
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-        else:
-            if not os.path.exists('credentials.json'):
-                raise FileNotFoundError("No se encontró el archivo 'credentials.json'. Descárgalo de Google Cloud Console.")
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
+            return creds
+
+    # Fallback con credentials.json sin abrir servidor interactivo si ya existe
+    if os.path.exists('credentials.json'):
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0, open_browser=False)
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
-    return creds
+        return creds
+
+    raise ValueError("Las credenciales de Google ya están configuradas en el servidor (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN).")
 
 @app.route('/')
 def index():
