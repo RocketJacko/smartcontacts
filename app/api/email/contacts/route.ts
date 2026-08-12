@@ -88,8 +88,17 @@ export async function POST(request: Request) {
     }
 
     const insertedRows = await insertRes.json()
-    const insertedCount = insertedRows.length
-    const duplicateCount = validContacts.length - insertedCount
+    const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
+    
+    // Identificar correos insertados vs omitidos por duplicidad
+    const insertedEmails = new Set(
+      Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email.toLowerCase()) : []
+    )
+    const duplicateEmails = validContacts
+      .filter((c: any) => !insertedEmails.has(c.email.toLowerCase()))
+      .map((c: any) => c.email)
+
+    const duplicateCount = duplicateEmails.length
 
     return NextResponse.json({
       success: true,
@@ -97,7 +106,8 @@ export async function POST(request: Request) {
       processedTotal: validContacts.length,
       insertedCount,
       duplicateCount,
-      message: `Carga completada: ${insertedCount} contactos agregados, ${duplicateCount} omitidos por duplicidad en la campaña.`,
+      duplicateEmails,
+      message: `Procesamiento completado: ${insertedCount} nuevos contactos registrados, ${duplicateCount} omitidos por ya existir en la categoría.`,
     })
   } catch (error: any) {
     console.error('[API CONTACTS POST ERROR]', error)

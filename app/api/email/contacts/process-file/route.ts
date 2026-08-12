@@ -96,6 +96,8 @@ export async function POST(request: Request) {
     const BATCH_SIZE = 2000
     let totalInserted = 0
 
+    const duplicateEmailList: string[] = []
+
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
@@ -128,18 +130,29 @@ export async function POST(request: Request) {
 
       if (insertRes.ok) {
         const insertedRows = await insertRes.json()
-        totalInserted += insertedRows.length
+        const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
+        totalInserted += insertedCount
+
+        const insertedEmails = new Set(
+          Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email.toLowerCase()) : []
+        )
+        batch.forEach((c: any) => {
+          if (!insertedEmails.has(c.email.toLowerCase())) {
+            duplicateEmailList.push(c.email)
+          }
+        })
       }
     }
 
-    const duplicates = parsedContacts.length - totalInserted
+    const duplicates = duplicateEmailList.length
 
     return NextResponse.json({
       success: true,
       processedTotal: parsedContacts.length,
       insertedCount: totalInserted,
       duplicateCount: duplicates,
-      message: `Procesamiento en servidor completado: ${totalInserted} contactos procesados, ${duplicates} omitidos por duplicidad en la campaña.`,
+      duplicateEmails: duplicateEmailList,
+      message: `Procesamiento en servidor completado: ${totalInserted} nuevos contactos registrados, ${duplicates} omitidos por ya existir en la categoría.`,
     })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })

@@ -38,11 +38,21 @@ export function EmailAutomationModule() {
   const [templates, setTemplates] = useState<any[]>([])
   const [editingTemplate, setEditingTemplate] = useState<any>(null)
   
-  // State for Contact Upload & Campaign Tagging
-  const [campaignName, setCampaignName] = useState("Campaña Q3 - Consultoría IA Agéntica")
+  // State for Contact Upload & Directory Category Tagging
+  const [campaignName, setCampaignName] = useState("Directorio - Universidades & Educación")
   const [campaignsList, setCampaignsList] = useState<any[]>([])
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false)
   const [newCampaignNameInput, setNewCampaignNameInput] = useState("")
+
+  // State for Import Metrics Summary Report Modal
+  const [importSummaryReport, setImportSummaryReport] = useState<{
+    isOpen: boolean
+    categoryName: string
+    totalProcessed: number
+    insertedCount: number
+    duplicateCount: number
+    duplicateEmails: string[]
+  } | null>(null)
 
   // Mode & File Upload States
   const [uploadMode, setUploadMode] = useState<"file" | "textarea">("file")
@@ -338,7 +348,15 @@ export function EmailAutomationModule() {
         })
         const data = await res.json()
         if (data.success) {
-          showFeedback("success", "Carga Exitosa (Nivel 1)", data.message)
+          showFeedback("success", "Carga Completada", data.message)
+          setImportSummaryReport({
+            isOpen: true,
+            categoryName: campaignName,
+            totalProcessed: data.processedTotal || count,
+            insertedCount: data.insertedCount || 0,
+            duplicateCount: data.duplicateCount || 0,
+            duplicateEmails: data.duplicateEmails || [],
+          })
           loadContacts()
         } else {
           showFeedback("error", "Error en Carga", data.error || "Fallo en la inserción de contactos.")
@@ -369,6 +387,7 @@ export function EmailAutomationModule() {
 
       let totalInserted = 0
       let totalDuplicates = 0
+      const accumulatedDuplicateEmails: string[] = []
 
       for (let i = 0; i < totalChunks; i++) {
         const chunk = contacts.slice(i * chunkSize, (i + 1) * chunkSize)
@@ -382,9 +401,12 @@ export function EmailAutomationModule() {
           if (data.success) {
             totalInserted += data.insertedCount || 0
             totalDuplicates += data.duplicateCount || 0
+            if (data.duplicateEmails && Array.isArray(data.duplicateEmails)) {
+              accumulatedDuplicateEmails.push(...data.duplicateEmails)
+            }
           }
         } catch (err) {
-          // Continuar con el siguiente lote
+          // Continuar con el siguiente lote sin abortar
         }
 
         const pct = Math.round(((i + 1) / totalChunks) * 100)
@@ -397,10 +419,18 @@ export function EmailAutomationModule() {
         }))
       }
 
+      setImportSummaryReport({
+        isOpen: true,
+        categoryName: campaignName,
+        totalProcessed: count,
+        insertedCount: totalInserted,
+        duplicateCount: totalDuplicates,
+        duplicateEmails: accumulatedDuplicateEmails,
+      })
       showFeedback(
         "success",
         "Carga Completada por Lotes (Nivel 2)",
-        `Se procesaron ${count} contactos en ${totalChunks} lotes. ${totalInserted} agregados, ${totalDuplicates} omitidos por duplicidad.`
+        `Se procesaron ${count} contactos. ${totalInserted} registrados, ${totalDuplicates} omitidos por ya existir.`
       )
       loadContacts()
       setUploadProgress((prev) => ({ ...prev, isProcessing: false }))
@@ -427,7 +457,15 @@ export function EmailAutomationModule() {
       })
       const data = await res.json()
       if (data.success) {
-        showFeedback("success", "Carga Servidor Completada (Nivel 3 & 4)", data.message)
+        showFeedback("success", "Carga Servidor Completada", data.message)
+        setImportSummaryReport({
+          isOpen: true,
+          categoryName: campaignName,
+          totalProcessed: data.processedTotal || 0,
+          insertedCount: data.insertedCount || 0,
+          duplicateCount: data.duplicateCount || 0,
+          duplicateEmails: data.duplicateEmails || [],
+        })
         loadContacts()
       } else {
         showFeedback("error", "Error en Servidor", data.error || "Fallo durante el procesamiento en servidor.")
@@ -828,18 +866,95 @@ export function EmailAutomationModule() {
         </div>
       )}
 
-      {/* ── TAB 3: FUENTE DE CONTACTOS & CAMPAÑA ──────────────────────────────── */}
+      {/* ── TAB 3: FUENTE DE CONTACTOS & CATEGORÍAS DEL DIRECTORIO ───────────── */}
       {activeTab === "contacts" && (
         <div className="space-y-6 font-sans">
           
-          {/* MODAL 1: CREAR NUEVA CAMPAÑA DINÁMICAMENTE */}
+          {/* MODAL 0: INFORME FINAL DE MÉTRICAS DE IMPORTACIÓN */}
+          {importSummaryReport && importSummaryReport.isOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-2xl max-w-lg w-full p-6 space-y-5 font-sans text-xs">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
+                      <Check className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#111]">Informe Final de Importación de Contactos</h3>
+                      <p className="text-[11px] text-black/50 font-mono">Categoría del Directorio: <span className="font-bold text-purple-800">{importSummaryReport.categoryName}</span></p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setImportSummaryReport(null)}
+                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* TARJETAS DE MÉTRICAS OPERATIVAS */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
+                    <span className="text-[9px] font-mono font-bold uppercase text-black/40 block">TOTAL ANALIZADOS</span>
+                    <span className="text-base font-mono font-bold text-[#111]">{importSummaryReport.totalProcessed}</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                    <span className="text-[9px] font-mono font-bold uppercase text-emerald-800 block">NUEVOS REGISTRADOS</span>
+                    <span className="text-base font-mono font-bold text-emerald-900">{importSummaryReport.insertedCount}</span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1">
+                    <span className="text-[9px] font-mono font-bold uppercase text-amber-800 block">OMITIDOS (DUPLICADOS)</span>
+                    <span className="text-base font-mono font-bold text-amber-900">{importSummaryReport.duplicateCount}</span>
+                  </div>
+                </div>
+
+                {/* LISTA DESPLEGABLE DE CORREOS OMITIDOS POR DUPLICIDAD */}
+                {importSummaryReport.duplicateEmails && importSummaryReport.duplicateEmails.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-mono font-bold uppercase text-black/50">
+                        CORREOS DUPLICADOS OMITIDOS ({importSummaryReport.duplicateEmails.length})
+                      </span>
+                      <span className="text-[10px] text-amber-800 font-mono font-medium">Subida atómica sin interrupción</span>
+                    </div>
+
+                    <div className="max-h-40 overflow-y-auto p-3 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1.5 font-mono text-[11px]">
+                      {importSummaryReport.duplicateEmails.map((email, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-black/70 py-0.5 border-b border-black/[0.03] last:border-0">
+                          <span>{email}</span>
+                          <span className="text-[9px] bg-amber-200/60 text-amber-900 px-1.5 py-0.2 rounded font-semibold">Ya Registrado</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center font-mono text-emerald-800 text-[11px]">
+                    ✓ El 100% de los contactos ingresados fueron nuevos y se registraron exitosamente.
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2 border-t border-black/[0.06]">
+                  <button
+                    onClick={() => setImportSummaryReport(null)}
+                    className="px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
+                  >
+                    Entendido & Ver Inventario
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 1: CREAR NUEVA CATEGORÍA DEL DIRECTORIO */}
           {isCreateCampaignModalOpen && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
               <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4">
                 <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
                   <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
                     <FolderPlus className="w-4 h-4 text-purple-600" />
-                    <span>Crear Nueva Campaña de Email Marketing</span>
+                    <span>Crear Nueva Categoría del Directorio</span>
                   </h3>
                   <button
                     onClick={() => setIsCreateCampaignModalOpen(false)}
@@ -852,11 +967,11 @@ export function EmailAutomationModule() {
                 <form onSubmit={handleCreateCampaign} className="space-y-3">
                   <div>
                     <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Nombre Único de la Campaña *
+                      Nombre Único de la Categoría *
                     </label>
                     <input
                       type="text"
-                      placeholder="Ej: Campaña Q4 - Préstamos Libranza"
+                      placeholder="Ej: Universidades, Docentes, Directivos Tech"
                       value={newCampaignNameInput}
                       onChange={(e) => setNewCampaignNameInput(e.target.value)}
                       className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
@@ -923,20 +1038,20 @@ export function EmailAutomationModule() {
             </div>
           )}
 
-          {/* TARJETA DE CONTROL DE CARGA & SELECCIÓN DE CAMPAÑA */}
+          {/* TARJETA DE CONTROL DE CARGA & SELECCIÓN DE CATEGORÍA */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-5 text-xs">
             <div className="border-b border-black/[0.06] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-[#111]">Motor Multinivel de Carga Masiva de Contactos</h3>
+                <h3 className="text-sm font-semibold text-[#111]">Motor de Carga Masiva al Directorio por Categorías</h3>
                 <p className="text-xs text-black/60 mt-0.5">
-                  Importa listas de cualquier volumen (.CSV / .TXT) con asignación dinámica de campañas y procesamiento por lotes.
+                  Importa listas de contactos clasificadas por categoría (.CSV / .TXT) con filtrado automático de duplicados.
                 </p>
               </div>
 
-              {/* SELECCIÓN Y CREACIÓN DE CAMPAÑA */}
+              {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA */}
               <div className="flex items-center gap-2">
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-mono font-bold text-black/40 uppercase">CAMPAÑA ACTIVA *</label>
+                  <label className="text-[9px] font-mono font-bold text-black/40 uppercase">CATEGORÍA ACTIVA *</label>
                   <select
                     value={campaignName}
                     onChange={(e) => setCampaignName(e.target.value)}
@@ -956,10 +1071,10 @@ export function EmailAutomationModule() {
                 <button
                   onClick={() => setIsCreateCampaignModalOpen(true)}
                   className="mt-3 px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
-                  title="Crear nueva etiqueta de campaña"
+                  title="Crear nueva categoría del directorio"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Nueva Campaña</span>
+                  <span>Nueva Categoría</span>
                 </button>
               </div>
             </div>
