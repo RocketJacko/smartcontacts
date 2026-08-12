@@ -19,6 +19,14 @@ import {
   Plus,
   UserCheck,
   ChevronRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
+  Search,
+  Edit,
+  UserPlus,
+  CheckSquare,
+  Square,
   AlertCircle,
   AlertTriangle,
   X,
@@ -53,6 +61,24 @@ export function EmailAutomationModule() {
     duplicateCount: number
     duplicateEmails: string[]
   } | null>(null)
+
+  // Pagination & Server-side Search States for Directory Inventory
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Selection & CRUD Modal States
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState<any | null>(null)
+  const [singleContactForm, setSingleContactForm] = useState({
+    email: "",
+    nombre: "",
+    empresa: "",
+    telefono: "",
+  })
 
   // Mode & File Upload States
   const [uploadMode, setUploadMode] = useState<"file" | "textarea">("file")
@@ -236,18 +262,126 @@ export function EmailAutomationModule() {
     }
   }
 
-  // Fetch Contact Inventory
-  const loadContacts = async () => {
+  // Fetch Contact Inventory con Paginación Server-Side y Búsqueda
+  const loadContacts = async (page = currentPage, size = pageSize, search = searchQuery) => {
     try {
-      const res = await fetch(`/api/email/contacts?campana_nombre=${encodeURIComponent(campaignName)}`)
+      let query = `/api/email/contacts?campana_nombre=${encodeURIComponent(campaignName)}&page=${page}&pageSize=${size}`
+      if (search.trim()) {
+        query += `&search=${encodeURIComponent(search.trim())}`
+      }
+
+      const res = await fetch(query)
       const data = await res.json()
       if (data.success) {
-        setContactInventory(data.contacts)
+        setContactInventory(data.contacts || [])
+        setTotalCount(data.totalCount || 0)
+        setTotalPages(data.totalPages || 1)
+        setCurrentPage(data.page || 1)
+        setSelectedContactIds([])
       } else {
         showFeedback("warning", "Consulta de Contactos", "No se pudo cargar el inventario de contactos.")
       }
     } catch (err) {
       showFeedback("error", "Conexión Supabase", "Error de red al consultar el inventario de contactos.")
+    }
+  }
+
+  // CRUD 1: Crear un contacto individual manualmente
+  const handleCreateSingleContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!singleContactForm.email.trim()) {
+      showFeedback("warning", "Campo Requerido", "Ingresa una dirección de correo válida.")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/email/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campana_nombre: campaignName,
+          contactos: [singleContactForm],
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Contacto Creado", `El contacto ${singleContactForm.email} fue agregado a la categoría "${campaignName}".`)
+        setSingleContactForm({ email: "", nombre: "", empresa: "", telefono: "" })
+        setIsAddContactModalOpen(false)
+        loadContacts(1, pageSize, searchQuery)
+      } else {
+        showFeedback("error", "Error al Crear Contacto", data.error || "No se pudo agregar el contacto.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al guardar el nuevo contacto.")
+    }
+  }
+
+  // CRUD 2: Editar un contacto existente
+  const handleUpdateContact = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingContact || !editingContact.id) return
+
+    try {
+      const res = await fetch("/api/email/contacts", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingContact),
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Contacto Actualizado", `Los datos de ${editingContact.email} se guardaron exitosamente.`)
+        setEditingContact(null)
+        loadContacts()
+      } else {
+        showFeedback("error", "Error al Actualizar", data.error || "No se pudo actualizar el contacto.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al actualizar el contacto.")
+    }
+  }
+
+  // CRUD 3: Eliminar un contacto individual
+  const handleDeleteContact = async (id: string, email: string) => {
+    if (!confirm(`¿Estás seguro de eliminar el contacto "${email}" del directorio?`)) return
+
+    try {
+      const res = await fetch(`/api/email/contacts?id=${id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Contacto Eliminado", `Se removió "${email}" del directorio.`)
+        loadContacts()
+      } else {
+        showFeedback("error", "Error al Eliminar", data.error || "No se pudo eliminar el contacto.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al eliminar el contacto.")
+    }
+  }
+
+  // CRUD 4: Eliminar selección múltiple de contactos
+  const handleBulkDeleteContacts = async () => {
+    if (selectedContactIds.length === 0) return
+    if (!confirm(`¿Estás seguro de eliminar los ${selectedContactIds.length} contactos seleccionados?`)) return
+
+    try {
+      const res = await fetch("/api/email/contacts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedContactIds }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Eliminación Masiva Completada", `Se eliminaron ${selectedContactIds.length} contactos del directorio.`)
+        setSelectedContactIds([])
+        loadContacts()
+      } else {
+        showFeedback("error", "Error en Eliminación Masiva", data.error || "No se pudieron eliminar los contactos seleccionados.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión durante la eliminación masiva.")
     }
   }
 
@@ -267,10 +401,13 @@ export function EmailAutomationModule() {
 
   useEffect(() => {
     loadTemplates()
-    loadContacts()
-    loadRoundRobinPools()
     loadCampaigns()
-  }, [campaignName])
+    loadRoundRobinPools()
+  }, [])
+
+  useEffect(() => {
+    loadContacts(currentPage, pageSize, searchQuery)
+  }, [campaignName, currentPage, pageSize, searchQuery])
 
   // Save Template Action (PUT)
   const handleSaveTemplate = async (e: React.FormEvent) => {
@@ -1218,54 +1355,411 @@ export function EmailAutomationModule() {
 
           </div>
 
-          {/* TABLA DE INVENTARIO DE CONTACTOS (ESTILOS DESIGN.MD) */}
-          <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans">
-            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex justify-between items-center text-xs font-mono">
-              <span className="font-bold uppercase text-black/50">INVENTARIO CARGADO: {campaignName}</span>
-              <span className="text-black/70 font-bold">{contactInventory.length} Contactos Registrados</span>
+          {/* MODAL 3: AGREGAR CONTACTO MANUALMENTE (CRUD CREATE) */}
+          {isAddContactModalOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
+                    <UserPlus className="w-4 h-4 text-purple-600" />
+                    <span>Agregar Nuevo Contacto al Directorio</span>
+                  </h3>
+                  <button
+                    onClick={() => setIsAddContactModalOpen(false)}
+                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateSingleContact} className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Correo Electrónico *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="ejemplo@empresa.com"
+                      value={singleContactForm.email}
+                      onChange={(e) => setSingleContactForm({ ...singleContactForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-medium text-[#111] outline-none focus:border-black/30"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Carlos Mendoza"
+                      value={singleContactForm.nombre}
+                      onChange={(e) => setSingleContactForm({ ...singleContactForm, nombre: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                        Empresa
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: TecnoLabs SAS"
+                        value={singleContactForm.empresa}
+                        onChange={(e) => setSingleContactForm({ ...singleContactForm, empresa: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                        Teléfono
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej: +57 300 1234567"
+                        value={singleContactForm.telefono}
+                        onChange={(e) => setSingleContactForm({ ...singleContactForm, telefono: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddContactModalOpen(false)}
+                      className="px-3.5 py-1.5 rounded-xl border border-black/10 text-xs font-medium hover:bg-black/5 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
+                    >
+                      Guardar Contacto
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 4: EDITAR CONTACTO EXISTENTE (CRUD UPDATE) */}
+          {editingContact && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
+                    <Edit className="w-4 h-4 text-purple-600" />
+                    <span>Editar Contacto del Directorio</span>
+                  </h3>
+                  <button
+                    onClick={() => setEditingContact(null)}
+                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateContact} className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Correo Electrónico *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={editingContact.email || ""}
+                      onChange={(e) => setEditingContact({ ...editingContact, email: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-medium text-[#111] outline-none focus:border-black/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      value={editingContact.nombre || ""}
+                      onChange={(e) => setEditingContact({ ...editingContact, nombre: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                        Empresa
+                      </label>
+                      <input
+                        type="text"
+                        value={editingContact.empresa || ""}
+                        onChange={(e) => setEditingContact({ ...editingContact, empresa: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                        Teléfono
+                      </label>
+                      <input
+                        type="text"
+                        value={editingContact.telefono || ""}
+                        onChange={(e) => setEditingContact({ ...editingContact, telefono: e.target.value })}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                      Estado del Registro *
+                    </label>
+                    <select
+                      value={editingContact.estado || "pendiente"}
+                      onChange={(e) => setEditingContact({ ...editingContact, estado: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                    >
+                      <option value="pendiente">PENDIENTE</option>
+                      <option value="enviado">ENVIADO</option>
+                      <option value="omitido_duplicado">OMITIDO DUPLICADO</option>
+                    </select>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
+                    <button
+                      type="button"
+                      onClick={() => setEditingContact(null)}
+                      className="px-3.5 py-1.5 rounded-xl border border-black/10 text-xs font-medium hover:bg-black/5 cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
+                    >
+                      Actualizar Contacto
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* TABLA DE INVENTARIO DE CONTACTOS CON BUSCADOR Y BOTONES CRUD */}
+          <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans space-y-0">
+            {/* CABECERA CON BUSCADOR Y ACCIONES MASIVAS */}
+            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold uppercase text-black/50">INVENTARIO: {campaignName}</span>
+                <span className="text-[10px] font-mono bg-black/10 text-black/70 px-2 py-0.5 rounded-full font-bold">
+                  {totalCount.toLocaleString()} Registros
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* CAJA DE BÚSQUEDA SERVER-SIDE */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-black/40 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Buscar correo, nombre o empresa..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-56 sm:w-64"
+                  />
+                </div>
+
+                {/* BOTÓN CREAR CONTACTO MANUAL */}
+                <button
+                  onClick={() => setIsAddContactModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Agregar Contacto</span>
+                </button>
+
+                {/* BOTÓN ELIMINACIÓN MASIVA */}
+                {selectedContactIds.length > 0 && (
+                  <button
+                    onClick={handleBulkDeleteContacts}
+                    className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-medium hover:bg-red-700 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar ({selectedContactIds.length})</span>
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* TABLA PRINCIPAL DE CONTACTOS */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                    <th className="py-3 px-3.5 w-8 text-center">
+                      <input
+                        type="checkbox"
+                        checked={contactInventory.length > 0 && selectedContactIds.length === contactInventory.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedContactIds(contactInventory.map((c) => c.id))
+                          } else {
+                            setSelectedContactIds([])
+                          }
+                        }}
+                        className="rounded border-black/20 cursor-pointer"
+                      />
+                    </th>
                     <th className="py-3 px-3.5">Correo Electrónico</th>
                     <th className="py-3 px-3.5">Nombre</th>
                     <th className="py-3 px-3.5">Empresa</th>
                     <th className="py-3 px-3.5">Teléfono</th>
                     <th className="py-3 px-3.5">Estado</th>
-                    <th className="py-3 px-3.5 text-right">Último Envío</th>
+                    <th className="py-3 px-3.5">Último Envío</th>
+                    <th className="py-3 px-3.5 text-right">Acciones CRUD</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.05]">
                   {contactInventory.length > 0 ? (
-                    contactInventory.map((c) => (
-                      <tr key={c.id} className="hover:bg-black/[0.02] transition-colors">
-                        <td className="py-3 px-3.5 font-mono font-medium text-[#111]">{c.email}</td>
-                        <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre}</td>
-                        <td className="py-3 px-3.5 text-black/60">{c.empresa}</td>
-                        <td className="py-3 px-3.5 font-mono text-black/50">{c.telefono || "—"}</td>
-                        <td className="py-3 px-3.5 font-mono">
-                          <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            c.estado === 'enviado' ? 'bg-emerald-500/10 text-emerald-800' : 'bg-purple-500/10 text-purple-800'
-                          }`}>
-                            {c.estado.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3.5 text-right font-mono text-black/40">
-                          {c.fecha_ultimo_envio ? new Date(c.fecha_ultimo_envio).toLocaleString('es-CO') : 'Sin envíos'}
-                        </td>
-                      </tr>
-                    ))
+                    contactInventory.map((c) => {
+                      const isSelected = selectedContactIds.includes(c.id)
+                      return (
+                        <tr key={c.id} className={`hover:bg-black/[0.02] transition-colors ${isSelected ? "bg-purple-500/5" : ""}`}>
+                          <td className="py-3 px-3.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedContactIds((prev) => [...prev, c.id])
+                                } else {
+                                  setSelectedContactIds((prev) => prev.filter((id) => id !== c.id))
+                                }
+                              }}
+                              className="rounded border-black/20 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-3 px-3.5 font-mono font-medium text-[#111]">{c.email}</td>
+                          <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre}</td>
+                          <td className="py-3 px-3.5 text-black/60">{c.empresa}</td>
+                          <td className="py-3 px-3.5 font-mono text-black/50">{c.telefono || "—"}</td>
+                          <td className="py-3 px-3.5 font-mono">
+                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              c.estado === 'enviado' ? 'bg-emerald-500/10 text-emerald-800' : 'bg-purple-500/10 text-purple-800'
+                            }`}>
+                              {c.estado.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 font-mono text-black/40">
+                            {c.fecha_ultimo_envio ? new Date(c.fecha_ultimo_envio).toLocaleString('es-CO') : 'Sin envíos'}
+                          </td>
+                          <td className="py-3 px-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => setEditingContact(c)}
+                                className="p-1.5 rounded-lg text-black/60 hover:bg-black/5 hover:text-[#111] transition-colors cursor-pointer"
+                                title="Editar contacto"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteContact(c.id, c.email)}
+                                className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                title="Eliminar contacto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-black/40 font-mono">
-                        No hay contactos cargados para esta campaña.
+                      <td colSpan={8} className="py-8 text-center text-black/40 font-mono">
+                        {searchQuery ? `No se encontraron contactos que coincidan con "${searchQuery}".` : "No hay contactos cargados para esta categoría."}
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* ELEMENTO INDEPENDIENTE DE PAGINACIÓN SERVER-SIDE (STANDALONE PAGINATOR) */}
+          <div className="p-4 rounded-2xl border border-black/[0.07] bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+            {/* IZQUIERDA: CONTADOR DE REGISTROS */}
+            <div className="text-black/60 text-[11px]">
+              Mostrando <span className="font-bold text-[#111]">{totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> a{" "}
+              <span className="font-bold text-[#111]">{Math.min(currentPage * pageSize, totalCount)}</span> de{" "}
+              <span className="font-bold text-purple-700">{totalCount.toLocaleString()}</span> contactos registrados
+            </div>
+
+            {/* CENTRO: CONTROLES DE NAVEGACIÓN DE PÁGINAS */}
+            <div className="flex items-center gap-1.5 justify-center">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-black/10 text-black/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                title="Primera página"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-black/10 text-black/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                title="Página anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <span className="px-3 py-1 rounded-lg bg-[#F5F4F0] border border-black/10 font-bold text-[#111] text-[11px]">
+                Página {currentPage} de {totalPages}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-1.5 rounded-lg border border-black/10 text-black/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                title="Página siguiente"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage >= totalPages}
+                className="p-1.5 rounded-lg border border-black/10 text-black/70 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                title="Última página"
+              >
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* DERECHA: SELECTOR DE REGISTROS POR PÁGINA */}
+            <div className="flex items-center gap-2 justify-end">
+              <span className="text-black/50 text-[10px] uppercase font-bold">Por página:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(parseInt(e.target.value, 10))
+                  setCurrentPage(1)
+                }}
+                className="px-2.5 py-1 rounded-lg bg-[#F5F4F0] border border-black/10 text-xs font-bold text-[#111] outline-none focus:border-black/30"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={250}>250</option>
+              </select>
             </div>
           </div>
         </div>

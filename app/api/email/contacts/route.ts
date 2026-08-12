@@ -155,20 +155,30 @@ export async function POST(request: Request) {
   }
 }
 
-// GET: Consultar inventario de contactos por campaña
+// GET: Consultar inventario de contactos con paginación server-side y búsqueda
 export async function GET(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const { searchParams } = new URL(request.url)
     const campana = searchParams.get('campana_nombre')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const pageSize = Math.max(1, Math.min(500, parseInt(searchParams.get('pageSize') || '50', 10)))
+    const search = searchParams.get('search')?.trim()
 
     if (!url || !anonKey) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    let queryUrl = `${url}/rest/v1/inventario_contactos?select=*&order=creado_en.desc`
+    const offset = (page - 1) * pageSize
+    let queryUrl = `${url}/rest/v1/inventario_contactos?select=*&order=creado_en.desc&limit=${pageSize}&offset=${offset}`
+    
     if (campana) {
       queryUrl += `&campana_nombre=eq.${encodeURIComponent(campana)}`
+    }
+
+    if (search) {
+      // Filtrar por email, nombre o empresa
+      queryUrl += `&or=(email.ilike.*${encodeURIComponent(search)}*,nombre.ilike.*${encodeURIComponent(search)}*,empresa.ilike.*${encodeURIComponent(search)}*)`
     }
 
     let res = await fetch(queryUrl, {
@@ -176,6 +186,7 @@ export async function GET(request: Request) {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Accept-Profile': 'automatizacion',
+        Prefer: 'count=exact',
       },
       cache: 'no-store',
     })
@@ -186,19 +197,161 @@ export async function GET(request: Request) {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          Prefer: 'count=exact',
         },
         cache: 'no-store',
       })
     }
 
     if (!res.ok) {
-      return NextResponse.json({ success: true, count: 0, contacts: [] })
+      return NextResponse.json({ success: true, count: 0, totalCount: 0, page, pageSize, totalPages: 0, contacts: [] })
+    }
+
+    const contentRange = res.headers.get('content-range')
+    let totalCount = 0
+    if (contentRange) {
+      const parts = contentRange.split('/')
+      if (parts.length > 1) {
+        totalCount = parseInt(parts[1], 10) || 0
+      }
     }
 
     const contacts = await res.json()
-    return NextResponse.json({ success: true, count: contacts.length, contacts })
+    const totalPages = Math.ceil(totalCount / pageSize) || 1
+
+    return NextResponse.json({
+      success: true,
+      contacts,
+      count: contacts.length,
+      totalCount: totalCount || contacts.length,
+      page,
+      pageSize,
+      totalPages,
+    })
   } catch (error: any) {
     console.error('[API CONTACTS GET ERROR]', error)
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+// PUT: Editar un contacto existente (Nombre, Empresa, Teléfono, Estado, etc.)
+export async function PUT(request: Request) {
+  try {
+    const { url, anonKey } = getSupabaseConfig()
+    const body = await request.json()
+    const { id, email, nombre, empresa, telefono, estado } = body
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'El ID del contacto es obligatorio' }, { status: 400 })
+    }
+
+    if (!url || !anonKey) {
+      return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
+    }
+
+    const updatePayload: any = {}
+    if (email) updatePayload.email = email.trim().toLowerCase()
+    if (nombre !== undefined) updatePayload.nombre = nombre.trim()
+    if (empresa !== undefined) updatePayload.empresa = empresa.trim()
+    if (telefono !== undefined) updatePayload.telefono = telefono.trim()
+    if (estado) updatePayload.estado = estado
+
+    let res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+        'Accept-Profile': 'automatizacion',
+        'Content-Profile': 'automatizacion',
+        Prefer: 'return=representation',
+      },
+      body: JSON.stringify(updatePayload),
+    })
+
+    if (!res.ok) {
+      res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify(updatePayload),
+      })
+    }
+
+    if (!res.ok) {
+      const errText = await res.text()
+      return NextResponse.json({ success: false, error: `No se pudo actualizar el contacto: ${errText}` }, { status: 400 })
+    }
+
+    const updatedRows = await res.json()
+    return NextResponse.json({ success: true, contact: updatedRows[0] || updatePayload })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+// DELETE: Eliminar un contacto individual o eliminación masiva por IDs
+export async function DELETE(request: Request) {
+  try {
+    const { url, anonKey } = getSupabaseConfig()
+    const { searchParams } = new URL(request.url)
+    let id = searchParams.get('id')
+    let ids: string[] = []
+
+    try {
+      const body = await request.json()
+      if (body.id) id = body.id
+      if (body.ids && Array.isArray(body.ids)) ids = body.ids
+    } catch {
+      // Petición query param únicamente
+    }
+
+    if (!id && ids.length === 0) {
+      return NextResponse.json({ success: false, error: 'Debe especificar el ID o lista de IDs a eliminar' }, { status: 400 })
+    }
+
+    if (!url || !anonKey) {
+      return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
+    }
+
+    let deleteFilter = ''
+    if (ids.length > 0) {
+      deleteFilter = `id=in.(${ids.join(',')})`
+    } else {
+      deleteFilter = `id=eq.${id}`
+    }
+
+    let res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'automatizacion',
+        'Content-Profile': 'automatizacion',
+      },
+    })
+
+    if (!res.ok) {
+      res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
+        method: 'DELETE',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+      })
+    }
+
+    if (!res.ok) {
+      const errText = await res.text()
+      return NextResponse.json({ success: false, error: `No se pudo eliminar el contacto: ${errText}` }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Contacto(s) eliminado(s) exitosamente' })
+  } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
