@@ -127,7 +127,7 @@ export async function GET() {
     }
 
     const showUpRate = totalEventos > 0 ? Number(((estadoCounts.cumplida / totalEventos) * 100).toFixed(1)) : 0
-    const habeasDataPercentage = totalProspectos > 0 ? Number(((habeasDataAceptados / totalProspectos) * 100).toFixed(1)) : 100
+    const habeasDataPercentage = totalProspectos > 0 ? Number(((habeasDataAceptados / totalProspectos) * 100).toFixed(1)) : 0
 
     return NextResponse.json(
       {

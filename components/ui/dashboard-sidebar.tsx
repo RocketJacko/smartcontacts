@@ -521,14 +521,14 @@ export default function SidebarNavPreview() {
                   <ShieldCheck className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="text-3xl font-bold text-[#111] tracking-tight">
-                  {metrics?.overview?.habeasDataPercentage ?? 100}%
+                  {metrics?.overview?.habeasDataPercentage ?? 0}%
                 </div>
                 <p className="text-xs text-black/70 mt-1 font-sans font-medium">Consentimiento Legal Registrado</p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
                 <span>TRAZABILIDAD IP</span>
                 <span className="text-blue-700 font-bold flex items-center gap-0.5">
-                  <CheckCircle2 className="w-3 h-3" /> {metrics?.overview?.habeasDataAceptados ?? 0} Auditados
+                  <CheckCircle2 className="w-3 h-3" /> {metrics?.overview?.habeasDataAceptados ?? 0} Auditados con IP
                 </span>
               </div>
             </div>
