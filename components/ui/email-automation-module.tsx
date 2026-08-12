@@ -86,14 +86,7 @@ export function EmailAutomationModule({
 
   // Selection & CRUD Modal States
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
-  const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<any | null>(null)
-  const [singleContactForm, setSingleContactForm] = useState({
-    email: "",
-    nombre: "",
-    empresa: "",
-    telefono: "",
-  })
 
   // Mode & File Upload States
   const [uploadMode, setUploadMode] = useState<"file" | "textarea">("file")
@@ -307,44 +300,7 @@ export function EmailAutomationModule({
     }
   }
 
-  // CRUD 1: Crear un contacto individual manualmente
-  const handleCreateSingleContact = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!singleContactForm.email.trim()) {
-      showFeedback("warning", "Campo Requerido", "Ingresa una dirección de correo válida.")
-      return
-    }
 
-    try {
-      const res = await fetch("/api/email/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campana_nombre: campaignName,
-          contactos: [singleContactForm],
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setImportSummaryReport({
-          isOpen: true,
-          categoryName: campaignName,
-          totalProcessed: data.processedTotal !== undefined ? data.processedTotal : 1,
-          insertedCount: data.insertedCount !== undefined ? data.insertedCount : 0,
-          duplicateCount: data.duplicateCount !== undefined ? data.duplicateCount : 0,
-          totalDirectoryCount: data.totalDirectoryCount !== undefined ? data.totalDirectoryCount : totalCount + (data.insertedCount || 0),
-          duplicateEmails: data.duplicateEmails || [],
-        })
-        setSingleContactForm({ email: "", nombre: "", empresa: "", telefono: "" })
-        setIsAddContactModalOpen(false)
-        loadContacts(1, pageSize, searchQuery)
-      } else {
-        showFeedback("error", "Error al Crear Contacto", data.error || "No se pudo agregar el contacto.")
-      }
-    } catch (err) {
-      showFeedback("error", "Error de Servidor", "Fallo de conexión al guardar el nuevo contacto.")
-    }
-  }
 
   // CRUD 2: Editar un contacto existente
   const handleUpdateContact = async (e: React.FormEvent) => {
@@ -1520,14 +1476,7 @@ export function EmailAutomationModule({
                   <span>Importar Lista Masiva</span>
                 </button>
 
-                {/* BOTÓN CREAR CONTACTO MANUAL */}
-                <button
-                  onClick={() => setIsAddContactModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Agregar Contacto</span>
-                </button>
+
 
                 {/* BOTÓN ELIMINACIÓN MASIVA */}
                 {selectedContactIds.length > 0 && (
