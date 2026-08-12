@@ -15,10 +15,10 @@ import {
   Layers,
   FileText,
   Save,
-  Check,
-  Ban,
+  Trash2,
+  Plus,
   UserCheck,
-  SlidersHorizontal,
+  ChevronRight,
 } from "lucide-react"
 
 export function EmailAutomationModule() {
@@ -34,6 +34,12 @@ export function EmailAutomationModule() {
   const [contactInventory, setContactInventory] = useState<any[]>([])
   const [uploadMessage, setUploadMessage] = useState("")
 
+  // State for Round-Robin Pool Management
+  const [poolAsuntos, setPoolAsuntos] = useState<any[]>([])
+  const [poolCuerpos, setPoolCuerpos] = useState<any[]>([])
+  const [newAsuntoText, setNewAsuntoText] = useState("")
+  const [newCuerpoText, setNewCuerpoText] = useState("")
+
   // State for Dispatch & Round-Robin
   const [senderEmail, setSenderEmail] = useState("jesus.carmona966@pascualbravo.edu.co")
   const [senderMask, setSenderMask] = useState("Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>")
@@ -41,7 +47,6 @@ export function EmailAutomationModule() {
   const [dripMax, setDripMax] = useState(5.0)
 
   const [isSending, setIsSending] = useState(false)
-  const [logs, setLogs] = useState<Array<{ timestamp: string; email: string; delay: string; status: "success" | "pending" | "error" }>>([])
   const [sentToday, setSentToday] = useState(0)
 
   const dailyQuota = senderEmail.endsWith("@pascualbravo.edu.co") ? 2000 : 500
@@ -75,9 +80,24 @@ export function EmailAutomationModule() {
     }
   }
 
+  // Fetch Round-Robin Pools
+  const loadRoundRobinPools = async () => {
+    try {
+      const res = await fetch("/api/email/roundrobin")
+      const data = await res.json()
+      if (data.success) {
+        setPoolAsuntos(data.asuntos)
+        setPoolCuerpos(data.cuerpos)
+      }
+    } catch (err) {
+      console.error("Error loading Round-Robin pools:", err)
+    }
+  }
+
   useEffect(() => {
     loadTemplates()
     loadContacts()
+    loadRoundRobinPools()
   }, [campaignName])
 
   // Save Template Action (PUT)
@@ -92,7 +112,7 @@ export function EmailAutomationModule() {
       })
       const data = await res.json()
       if (data.success) {
-        alert("Plantilla predeterminada actualizada y guardada correctamente.")
+        alert("Plantilla predeterminada actualizada y guardada correctamente en Supabase.")
         loadTemplates()
       } else {
         alert("Error: " + data.error)
@@ -136,10 +156,48 @@ export function EmailAutomationModule() {
     }
   }
 
+  // Add Item to Round-Robin Pool (POST)
+  const handleAddPoolItem = async (tipo: "asunto" | "cuerpo") => {
+    const text = tipo === "asunto" ? newAsuntoText : newCuerpoText
+    if (!text.trim()) return
+
+    try {
+      const res = await fetch("/api/email/roundrobin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo, texto: text }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        if (tipo === "asunto") setNewAsuntoText("")
+        else setNewCuerpoText("")
+        loadRoundRobinPools()
+      } else {
+        alert("Error: " + data.error)
+      }
+    } catch (err) {
+      console.error("Error adding pool item:", err)
+    }
+  }
+
+  // Delete Item from Round-Robin Pool (DELETE)
+  const handleDeletePoolItem = async (id: string, tipo: "asunto" | "cuerpo") => {
+    try {
+      const res = await fetch(`/api/email/roundrobin?id=${encodeURIComponent(id)}&tipo=${tipo}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (data.success) {
+        loadRoundRobinPools()
+      }
+    } catch (err) {
+      console.error("Error deleting pool item:", err)
+    }
+  }
+
   // Start Campaign Dispatch Action (POST)
   const handleStartDispatch = async () => {
     setIsSending(true)
-    setLogs([])
     try {
       const res = await fetch("/api/email/dispatch-campaign", {
         method: "POST",
@@ -155,7 +213,7 @@ export function EmailAutomationModule() {
       const data = await res.json()
       if (data.success) {
         setSentToday(data.sentToday)
-        alert(`Campaña procesada: ${data.enviados} enviados. ${data.motivo_corte ? `Corte: ${data.motivo_corte}` : ""}`)
+        alert(`Campaña procesada exitosamente: ${data.enviados} enviados. ${data.motivo_corte ? `Corte: ${data.motivo_corte}` : ""}`)
         loadContacts()
       } else {
         alert("Error: " + (data.error || data.message))
@@ -229,15 +287,13 @@ export function EmailAutomationModule() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Pool Round-Robin Anti-Spam</span>
+          <span>Pool Round-Robin Configurable</span>
         </button>
       </div>
 
       {/* ── TAB 1: DESPACHO & GOTEO EN VIVO ───────────────────────────────────── */}
       {activeTab === "dispatch" && (
         <div className="space-y-6">
-          
-          {/* STATS CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-1">
               <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
@@ -270,7 +326,6 @@ export function EmailAutomationModule() {
             </div>
           </div>
 
-          {/* DESPACHADOR & CONTROLES */}
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
             <div className="border-b border-black/[0.06] pb-3 flex justify-between items-center">
               <h3 className="text-sm font-semibold text-[#111]">Despacho de Campaña por Goteo (Round-Robin)</h3>
@@ -330,7 +385,6 @@ export function EmailAutomationModule() {
               </div>
             </div>
           </div>
-
         </div>
       )}
 
@@ -368,7 +422,7 @@ export function EmailAutomationModule() {
                 </h3>
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Guardar Plantilla</span>
@@ -401,7 +455,7 @@ export function EmailAutomationModule() {
 
               <div>
                 <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                  Cuerpo del Mensaje (HTML & Variables Dinámicas: &#123;&#123;nombre&#125;&#125;, &#123;&#123;fecha&#125;&#125;, &#123;&#123;hora&#125;&#125;, &#123;&#123;meetLink&#125;&#125;)
+                  Cuerpo del Mensaje (HTML & Variables: &#123;&#123;nombre&#125;&#125;, &#123;&#123;fecha&#125;&#125;, &#123;&#123;hora&#125;&#125;, &#123;&#123;meetLink&#125;&#125;)
                 </label>
                 <textarea
                   rows={8}
@@ -514,37 +568,96 @@ export function EmailAutomationModule() {
         </div>
       )}
 
-      {/* ── TAB 4: POOL ROUND-ROBIN ANTI-SPAM ───────────────────────────────── */}
+      {/* ── TAB 4: POOL ROUND-ROBIN ANTI-SPAM (CONFIGURABLE FULL CRUD) ───────── */}
       {activeTab === "roundrobin" && (
-        <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4 font-sans text-xs">
-          <div className="border-b border-black/[0.06] pb-3">
-            <h3 className="text-sm font-semibold text-[#111]">Gestor de Rotación Round-Robin Anti-Spam</h3>
-            <p className="text-xs text-black/60 mt-0.5">
-              Rotación secuencial de **Pool de Asuntos** y **Pool de Cuerpos** para romper patrones repetitivos y garantizar 0% Spam Score.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2">
-              <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
-                POOL DE ASUNTOS ALTERNATIVOS
-              </span>
-              <ul className="space-y-1.5 text-xs text-black/80 font-mono">
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">1. Asesoría Consultiva en IA Agéntica — Smartcontacts</li>
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">2. Nueva Unidad Agéntica de Crecimiento Comercial</li>
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">3. Estrategia de Prospección y Automatizaciones 45M</li>
-              </ul>
+        <div className="space-y-6 font-sans text-xs">
+          
+          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+            <div className="border-b border-black/[0.06] pb-3">
+              <h3 className="text-sm font-semibold text-[#111]">Administrador de Pool Round-Robin Anti-Spam (100% Configurable)</h3>
+              <p className="text-xs text-black/60 mt-0.5">
+                Agrega y elimina variaciones de Asuntos y Cuerpos HTML. El motor rotará secuencialmente cada par para garantizar 0% Spam Score.
+              </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2">
-              <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
-                POOL DE CUERPOS HTML ALTERNATIVOS
-              </span>
-              <ul className="space-y-1.5 text-xs text-black/80 font-mono">
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">1. Variación A: Énfasis en Consultoría e IA</li>
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">2. Variación B: Énfasis en Automatización n8n</li>
-                <li className="p-2 rounded-lg bg-white border border-black/[0.04]">3. Variación C: Invitación Directa a Reserva</li>
-              </ul>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* 1. POOL DE ASUNTOS CONFIGURABLE */}
+              <div className="space-y-3 p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06]">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  POOL DE ASUNTOS CONFIGURABLES ({poolAsuntos.length})
+                </span>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newAsuntoText}
+                    onChange={(e) => setNewAsuntoText(e.target.value)}
+                    placeholder="Escribir nuevo asunto de prueba..."
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs outline-none focus:border-black/30 font-medium"
+                  />
+                  <button
+                    onClick={() => handleAddPoolItem("asunto")}
+                    className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {poolAsuntos.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-black/[0.04]">
+                      <span className="font-mono text-black/80">{item.asunto}</span>
+                      <button
+                        onClick={() => handleDeletePoolItem(item.id, "asunto")}
+                        className="p-1 rounded-lg text-red-600 hover:bg-red-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. POOL DE CUERPOS HTML CONFIGURABLE */}
+              <div className="space-y-3 p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06]">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  POOL DE CUERPOS HTML CONFIGURABLES ({poolCuerpos.length})
+                </span>
+
+                <div className="flex gap-2">
+                  <textarea
+                    rows={2}
+                    value={newCuerpoText}
+                    onChange={(e) => setNewCuerpoText(e.target.value)}
+                    placeholder="Escribir nueva variación HTML..."
+                    className="flex-1 p-2 rounded-xl bg-white border border-black/10 text-xs font-mono outline-none focus:border-black/30 resize-none"
+                  />
+                  <button
+                    onClick={() => handleAddPoolItem("cuerpo")}
+                    className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer h-fit"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {poolCuerpos.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between p-2.5 rounded-xl bg-white border border-black/[0.04]">
+                      <span className="font-mono text-black/70 text-[11px] line-clamp-2">{item.cuerpo_html}</span>
+                      <button
+                        onClick={() => handleDeletePoolItem(item.id, "cuerpo")}
+                        className="p-1 rounded-lg text-red-600 hover:bg-red-50 cursor-pointer shrink-0 ml-2"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
