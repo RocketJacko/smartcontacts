@@ -63,6 +63,7 @@ export function EmailAutomationModule({
   const [campaignsList, setCampaignsList] = useState<any[]>([])
   const [isCreateCampaignModalOpen, setIsCreateCampaignModalOpen] = useState(false)
   const [newCampaignNameInput, setNewCampaignNameInput] = useState("")
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
   // State for Import Metrics Summary Report Modal
   const [importSummaryReport, setImportSummaryReport] = useState<{
@@ -530,6 +531,7 @@ export function EmailAutomationModule({
         })
         const data = await res.json()
         if (data.success) {
+          setIsUploadModalOpen(false)
           showFeedback("success", "Carga Completada", data.message)
           setImportSummaryReport({
             isOpen: true,
@@ -602,6 +604,7 @@ export function EmailAutomationModule({
         }))
       }
 
+      setIsUploadModalOpen(false)
       setImportSummaryReport({
         isOpen: true,
         categoryName: campaignName,
@@ -641,6 +644,7 @@ export function EmailAutomationModule({
       })
       const data = await res.json()
       if (data.success) {
+        setIsUploadModalOpen(false)
         showFeedback("success", "Carga Servidor Completada", data.message)
         setImportSummaryReport({
           isOpen: true,
@@ -1225,24 +1229,47 @@ export function EmailAutomationModule({
             </div>
           )}
 
-          {/* TARJETA DE CONTROL DE CARGA & SELECCIÓN DE CATEGORÍA */}
-          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-5 text-xs">
-            <div className="border-b border-black/[0.06] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[#111]">Motor de Carga Masiva al Directorio por Categorías</h3>
-                <p className="text-xs text-black/60 mt-0.5">
-                  Importa listas de contactos clasificadas por categoría (.CSV / .TXT) con filtrado automático de duplicados.
-                </p>
-              </div>
+          {/* MODAL 1.5: CARGA MASIVA E IMPORTACIÓN DE CONTACTOS AL DIRECTORIO */}
+          {isUploadModalOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-2xl max-w-lg w-full p-6 space-y-4 font-sans text-xs max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#111]">Cargar e Importar Lista Masiva al Directorio</h3>
+                      <p className="text-[11px] text-black/50">Clasifica contactos por categoría con deduplicación atómica en DB.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsUploadModalOpen(false)}
+                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-              {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA */}
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col">
-                  <label className="text-[9px] font-mono font-bold text-black/40 uppercase">CATEGORÍA ACTIVA *</label>
+                {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA */}
+                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase">
+                      Categoría del Directorio Destino *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateCampaignModalOpen(true)}
+                      className="text-[11px] font-medium text-purple-700 hover:text-purple-900 flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Nueva Categoría</span>
+                    </button>
+                  </div>
                   <select
                     value={campaignName}
                     onChange={(e) => setCampaignName(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
                   >
                     {campaignsList.map((c) => (
                       <option key={c.id || c.nombre} value={c.nombre}>
@@ -1255,344 +1282,150 @@ export function EmailAutomationModule({
                   </select>
                 </div>
 
-                <button
-                  onClick={() => setIsCreateCampaignModalOpen(true)}
-                  className="mt-3 px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
-                  title="Crear nueva categoría del directorio"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Nueva Categoría</span>
-                </button>
-              </div>
-            </div>
-
-            {/* BARRA DE NAVEGACIÓN DE MODO (ARCHIVO VS TEXTAREA) */}
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-[#F5F4F0] border border-black/[0.06] w-fit">
-              <button
-                type="button"
-                onClick={() => setUploadMode("file")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  uploadMode === "file" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
-                }`}
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
-                <span>Cargar Archivo (.CSV / .TXT)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadMode("textarea")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  uploadMode === "textarea" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Entrada Manual (Textarea)</span>
-              </button>
-            </div>
-
-            {/* MODO 1: CARGA POR ARCHIVO (CSV / TXT) */}
-            {uploadMode === "file" && (
-              <div className="space-y-3">
-                <div className="p-6 rounded-2xl border-2 border-dashed border-black/15 bg-[#F5F4F0]/50 hover:bg-[#F5F4F0] transition-colors text-center space-y-3">
-                  <FileUp className="w-8 h-8 text-purple-600 mx-auto" />
-                  <div>
-                    <h4 className="text-xs font-semibold text-[#111]">Arrastra o selecciona un archivo .CSV o .TXT</h4>
-                    <p className="text-[11px] text-black/50 mt-0.5">
-                      Soporta mapeo inteligente de columnas: <code className="font-mono bg-black/5 px-1 py-0.5 rounded">email</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">nombre</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">empresa</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">telefono</code>
-                    </p>
-                  </div>
-
-                  <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Seleccionar Archivo</span>
-                    <input
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={uploadProgress.isProcessing}
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* MODO 2: ENTRADA MANUAL EN TEXTAREA */}
-            {uploadMode === "textarea" && (
-              <form onSubmit={handleUploadTextarea} className="space-y-3.5">
-                <div>
-                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                    Lista de Correos Electrónicos (Un correo o CSV por línea) *
-                  </label>
-                  <textarea
-                    rows={5}
-                    placeholder={"juan@empresa.com\ncarlos@tecnolabs.co, Carlos Mendoza, TecnoLabs SAS\nmaria@innovacion.org"}
-                    value={rawContactsInput}
-                    onChange={(e) => setRawContactsInput(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none"
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-[11px] text-black/50 font-mono">
-                    {parseRawContentToContacts(rawContactsInput).length} correos detectados
-                  </span>
+                {/* BARRA DE SELECCIÓN DE MODO (ARCHIVO VS TEXTAREA) */}
+                <div className="flex items-center gap-2 p-1 rounded-xl bg-[#F5F4F0] border border-black/[0.06] w-full">
                   <button
-                    type="submit"
-                    disabled={uploadProgress.isProcessing}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                    type="button"
+                    onClick={() => setUploadMode("file")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all cursor-pointer ${
+                      uploadMode === "file" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                    }`}
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Procesar e Insertar Contactos</span>
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Cargar Archivo (.CSV / .TXT)</span>
                   </button>
-                </div>
-              </form>
-            )}
-
-            {/* BARRA DE PROGRESO MULTINIVEL DE CARGA EN TIEMPO REAL (REGLA DE ORO) */}
-            {uploadProgress.isProcessing && (
-              <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.08] space-y-2.5 font-mono animate-in fade-in">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-[#111] flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5 text-purple-600 animate-spin" />
-                    <span>{uploadProgress.levelText}</span>
-                  </span>
-                  <span className="font-bold text-purple-700">{uploadProgress.percentage}%</span>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full h-2 rounded-full bg-black/10 overflow-hidden">
-                  <div
-                    className="h-full bg-purple-600 transition-all duration-300 rounded-full"
-                    style={{ width: `${uploadProgress.percentage}%` }}
-                  />
-                </div>
-
-                <div className="flex justify-between items-center text-[10px] text-black/60 pt-0.5">
-                  <span>
-                    Lote <span className="font-bold text-[#111]">{uploadProgress.currentChunk}</span> de{" "}
-                    <span className="font-bold text-[#111]">{uploadProgress.totalChunks}</span>
-                  </span>
-                  <span>
-                    Agregados: <span className="font-bold text-emerald-700">{uploadProgress.processedCount}</span> | Omitidos:{" "}
-                    <span className="font-bold text-amber-700">{uploadProgress.duplicateCount}</span>
-                  </span>
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* MODAL 3: AGREGAR CONTACTO MANUALMENTE (CRUD CREATE) */}
-          {isAddContactModalOpen && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
-                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
-                  <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-purple-600" />
-                    <span>Agregar Nuevo Contacto al Directorio</span>
-                  </h3>
                   <button
-                    onClick={() => setIsAddContactModalOpen(false)}
-                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                    type="button"
+                    onClick={() => setUploadMode("textarea")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all cursor-pointer ${
+                      uploadMode === "textarea" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                    }`}
                   >
-                    <X className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Entrada Manual (Textarea)</span>
                   </button>
                 </div>
 
-                <form onSubmit={handleCreateSingleContact} className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Correo Electrónico *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="ejemplo@empresa.com"
-                      value={singleContactForm.email}
-                      onChange={(e) => setSingleContactForm({ ...singleContactForm, email: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-medium text-[#111] outline-none focus:border-black/30"
-                      autoFocus
-                    />
-                  </div>
+                {/* MODO 1: CARGA POR ARCHIVO (CSV / TXT) */}
+                {uploadMode === "file" && (
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-black/15 bg-[#F5F4F0]/50 hover:bg-[#F5F4F0] transition-colors text-center space-y-3">
+                    <FileUp className="w-8 h-8 text-purple-600 mx-auto" />
+                    <div>
+                      <h4 className="text-xs font-semibold text-[#111]">Arrastra o selecciona un archivo .CSV o .TXT</h4>
+                      <p className="text-[11px] text-black/50 mt-0.5">
+                        Columnas soportadas: <code className="font-mono bg-black/5 px-1 py-0.5 rounded">email</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">nombre</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">empresa</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">telefono</code>
+                      </p>
+                    </div>
 
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Nombre Completo
+                    <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Seleccionar Archivo</span>
+                      <input
+                        type="file"
+                        accept=".csv,.txt"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        disabled={uploadProgress.isProcessing}
+                      />
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Ej: Carlos Mendoza"
-                      value={singleContactForm.nombre}
-                      onChange={(e) => setSingleContactForm({ ...singleContactForm, nombre: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
-                    />
                   </div>
+                )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                {/* MODO 2: ENTRADA MANUAL EN TEXTAREA */}
+                {uploadMode === "textarea" && (
+                  <form onSubmit={handleUploadTextarea} className="space-y-3">
                     <div>
                       <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                        Empresa
+                        Lista de Correos (Un correo o CSV por línea) *
                       </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: TecnoLabs SAS"
-                        value={singleContactForm.empresa}
-                        onChange={(e) => setSingleContactForm({ ...singleContactForm, empresa: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                      <textarea
+                        rows={5}
+                        placeholder={"juan@empresa.com\ncarlos@tecnolabs.co, Carlos Mendoza, TecnoLabs SAS\nmaria@innovacion.org"}
+                        value={rawContactsInput}
+                        onChange={(e) => setRawContactsInput(e.target.value)}
+                        className="w-full p-3 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none"
                       />
                     </div>
 
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                        Teléfono
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: +57 300 1234567"
-                        value={singleContactForm.telefono}
-                        onChange={(e) => setSingleContactForm({ ...singleContactForm, telefono: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
-                      />
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="text-[11px] text-black/50 font-mono">
+                        {parseRawContentToContacts(rawContactsInput).length} correos detectados
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={uploadProgress.isProcessing}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Procesar e Importar Contactos</span>
+                      </button>
                     </div>
-                  </div>
+                  </form>
+                )}
 
-                  <div className="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
-                    <button
-                      type="button"
-                      onClick={() => setIsAddContactModalOpen(false)}
-                      className="px-3.5 py-1.5 rounded-xl border border-black/10 text-xs font-medium hover:bg-black/5 cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
-                    >
-                      Guardar Contacto
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
+                {/* BARRA DE PROGRESO DE CARGA */}
+                {uploadProgress.isProcessing && (
+                  <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] space-y-2 font-mono animate-in fade-in text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[#111] flex items-center gap-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 text-purple-600 animate-spin" />
+                        <span>{uploadProgress.levelText}</span>
+                      </span>
+                      <span className="font-bold text-purple-700">{uploadProgress.percentage}%</span>
+                    </div>
 
-          {/* MODAL 4: EDITAR CONTACTO EXISTENTE (CRUD UPDATE) */}
-          {editingContact && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-              <div className="bg-white rounded-2xl border border-black/10 shadow-xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
-                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
-                  <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
-                    <Edit className="w-4 h-4 text-purple-600" />
-                    <span>Editar Contacto del Directorio</span>
-                  </h3>
-                  <button
-                    onClick={() => setEditingContact(null)}
-                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleUpdateContact} className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Correo Electrónico *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={editingContact.email || ""}
-                      onChange={(e) => setEditingContact({ ...editingContact, email: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-medium text-[#111] outline-none focus:border-black/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Nombre Completo
-                    </label>
-                    <input
-                      type="text"
-                      value={editingContact.nombre || ""}
-                      onChange={(e) => setEditingContact({ ...editingContact, nombre: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                        Empresa
-                      </label>
-                      <input
-                        type="text"
-                        value={editingContact.empresa || ""}
-                        onChange={(e) => setEditingContact({ ...editingContact, empresa: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-medium text-[#111] outline-none focus:border-black/30"
+                    <div className="w-full h-2 rounded-full bg-black/10 overflow-hidden">
+                      <div
+                        className="h-full bg-purple-600 transition-all duration-300 rounded-full"
+                        style={{ width: `${uploadProgress.percentage}%` }}
                       />
                     </div>
 
-                    <div>
-                      <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                        Teléfono
-                      </label>
-                      <input
-                        type="text"
-                        value={editingContact.telefono || ""}
-                        onChange={(e) => setEditingContact({ ...editingContact, telefono: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
-                      />
+                    <div className="flex justify-between items-center text-[10px] text-black/60 pt-0.5">
+                      <span>
+                        Lote <span className="font-bold text-[#111]">{uploadProgress.currentChunk}</span> de{" "}
+                        <span className="font-bold text-[#111]">{uploadProgress.totalChunks}</span>
+                      </span>
+                      <span>
+                        Agregados: <span className="font-bold text-emerald-700">{uploadProgress.processedCount}</span> | Omitidos:{" "}
+                        <span className="font-bold text-amber-700">{uploadProgress.duplicateCount}</span>
+                      </span>
                     </div>
                   </div>
-
-                  <div>
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                      Estado del Registro *
-                    </label>
-                    <select
-                      value={editingContact.estado || "pendiente"}
-                      onChange={(e) => setEditingContact({ ...editingContact, estado: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
-                    >
-                      <option value="pendiente">PENDIENTE</option>
-                      <option value="enviado">ENVIADO</option>
-                      <option value="omitido_duplicado">OMITIDO DUPLICADO</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
-                    <button
-                      type="button"
-                      onClick={() => setEditingContact(null)}
-                      className="px-3.5 py-1.5 rounded-xl border border-black/10 text-xs font-medium hover:bg-black/5 cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 cursor-pointer shadow-xs"
-                    >
-                      Actualizar Contacto
-                    </button>
-                  </div>
-                </form>
+                )}
               </div>
             </div>
           )}
 
           {/* TABLA DE INVENTARIO DE CONTACTOS CON BUSCADOR Y BOTONES CRUD */}
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans space-y-0">
-            {/* CABECERA CON BUSCADOR Y ACCIONES MASIVAS */}
-            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-bold uppercase text-black/50">INVENTARIO: {campaignName}</span>
-                <span className="text-[10px] font-mono bg-black/10 text-black/70 px-2 py-0.5 rounded-full font-bold">
-                  {totalCount.toLocaleString()} Registros
+            {/* CABECERA CON BUSCADOR, CATEGORÍA Y ACCIONES MASIVAS */}
+            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+              {/* IZQUIERDA: FILTRO Y SELECCIÓN DE CATEGORÍA ACTIVA */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono font-bold uppercase text-black/50 text-[10px]">CATEGORÍA:</span>
+                <select
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                >
+                  {campaignsList.map((c) => (
+                    <option key={c.id || c.nombre} value={c.nombre}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                  {!campaignsList.some((c) => c.nombre === campaignName) && (
+                    <option value={campaignName}>{campaignName}</option>
+                  )}
+                </select>
+
+                <span className="text-[10px] font-mono bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full font-bold">
+                  {totalCount.toLocaleString()} Contactos
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* DERECHA: CAJA DE BÚSQUEDA Y BOTONES DE ACCIÓN */}
+              <div className="flex flex-wrap items-center gap-2">
                 {/* CAJA DE BÚSQUEDA SERVER-SIDE */}
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 text-black/40 absolute left-3 top-2.5" />
@@ -1601,14 +1434,24 @@ export function EmailAutomationModule({
                     placeholder="Buscar correo, nombre o empresa..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-56 sm:w-64"
+                    className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-52 sm:w-60"
                   />
                 </div>
+
+                {/* BOTÓN IMPORTAR LISTA MASIVA (.CSV / .TXT) */}
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                  title="Importar lista masiva desde archivo CSV o Textarea"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Importar Lista Masiva</span>
+                </button>
 
                 {/* BOTÓN CREAR CONTACTO MANUAL */}
                 <button
                   onClick={() => setIsAddContactModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>Agregar Contacto</span>
