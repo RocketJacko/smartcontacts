@@ -34,7 +34,11 @@ export class GoogleQuotaStore {
       const { url, anonKey } = getSupabaseConfig()
       if (url && anonKey) {
         const res = await fetch(`${url}/rest/v1/limites_aprendidos?dominio=eq.${encodeURIComponent(domain)}`, {
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Accept-Profile': 'automatizacion',
+          },
           cache: 'no-store',
         })
         if (res.ok) {
@@ -66,6 +70,8 @@ export class GoogleQuotaStore {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
           'Content-Type': 'application/json',
+          'Accept-Profile': 'automatizacion',
+          'Content-Profile': 'automatizacion',
           Prefer: 'resolution=merge-duplicates',
         },
         body: JSON.stringify({
@@ -91,7 +97,11 @@ export class GoogleQuotaStore {
       const res = await fetch(
         `${url}/rest/v1/control_envios?sender_email=eq.${encodeURIComponent(senderEmail)}&fecha=eq.${today}`,
         {
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Accept-Profile': 'automatizacion',
+          },
           cache: 'no-store',
         }
       )
@@ -124,6 +134,8 @@ export class GoogleQuotaStore {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
             'Content-Type': 'application/json',
+            'Accept-Profile': 'automatizacion',
+            'Content-Profile': 'automatizacion',
             Prefer: 'resolution=merge-duplicates',
           },
           body: JSON.stringify({

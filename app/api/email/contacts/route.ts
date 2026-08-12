@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    // Filter valid emails
+    // Filtrar correos válidos
     const validContacts: ContactInput[] = contactos.filter(
       (c: any) => c.email && typeof c.email === 'string' && c.email.includes('@')
     )
@@ -32,7 +32,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos' }, { status: 400 })
     }
 
-    // Insert contacts with campaign tag. PostgREST ignore duplicates via ON CONFLICT (email, campana_nombre) DO NOTHING
     const payload = validContacts.map((c) => ({
       email: c.email.trim().toLowerCase(),
       nombre: c.nombre || c.email.split('@')[0],
@@ -42,12 +41,15 @@ export async function POST(request: Request) {
       estado: 'pendiente',
     }))
 
+    // PostgREST exige Accept-Profile y Content-Profile para esquemas personalizados (automatizacion)
     const insertRes = await fetch(`${url}/rest/v1/inventario_contactos`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
+        'Accept-Profile': 'automatizacion',
+        'Content-Profile': 'automatizacion',
         Prefer: 'return=representation, resolution=ignore-duplicates',
       },
       body: JSON.stringify(payload),
@@ -55,8 +57,8 @@ export async function POST(request: Request) {
 
     if (!insertRes.ok) {
       const errText = await insertRes.text()
-      console.error('[POST CONTACTS ERROR]', errText)
-      return NextResponse.json({ success: false, error: 'Error guardando contactos en Supabase' }, { status: 500 })
+      console.error('[POST CONTACTS ERROR]', insertRes.status, errText)
+      return NextResponse.json({ success: false, error: `Error en Supabase (${insertRes.status}): ${errText}` }, { status: 500 })
     }
 
     const insertedRows = await insertRes.json()
@@ -94,7 +96,11 @@ export async function GET(request: Request) {
     }
 
     const res = await fetch(queryUrl, {
-      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'automatizacion',
+      },
       cache: 'no-store',
     })
 

@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     try {
       const resAsuntos = await fetch(`${url}/rest/v1/pool_asuntos?select=asunto&activo=eq.true`, {
-        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
       })
       if (resAsuntos.ok) {
         const rows = await resAsuntos.json()
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       }
 
       const resCuerpos = await fetch(`${url}/rest/v1/pool_cuerpos?select=cuerpo_html&activo=eq.true`, {
-        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
       })
       if (resCuerpos.ok) {
         const rows = await resCuerpos.json()
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     const contactsRes = await fetch(
       `${url}/rest/v1/inventario_contactos?campana_nombre=eq.${encodeURIComponent(campana_nombre)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
       {
-        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
         cache: 'no-store',
       }
     )
@@ -127,7 +127,13 @@ export async function POST(request: Request) {
         // Actualizar estado del contacto a 'enviado'
         await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${contacto.id}`, {
           method: 'PATCH',
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+            'Accept-Profile': 'automatizacion',
+            'Content-Profile': 'automatizacion',
+          },
           body: JSON.stringify({ estado: 'enviado', fecha_ultimo_envio: new Date().toISOString() }),
         })
 
@@ -138,7 +144,13 @@ export async function POST(request: Request) {
         // Registrar en log_despachos
         await fetch(`${url}/rest/v1/log_despachos`, {
           method: 'POST',
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+            'Accept-Profile': 'automatizacion',
+            'Content-Profile': 'automatizacion',
+          },
           body: JSON.stringify({
             contacto_id: contacto.id,
             campana_nombre,
@@ -160,7 +172,13 @@ export async function POST(request: Request) {
         fallidosCount++
         await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${contacto.id}`, {
           method: 'PATCH',
-          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+            'Accept-Profile': 'automatizacion',
+            'Content-Profile': 'automatizacion',
+          },
           body: JSON.stringify({ estado: 'fallido' }),
         })
       }

@@ -51,7 +51,11 @@ export async function GET() {
 
     if (url && anonKey) {
       const res = await fetch(`${url}/rest/v1/plantillas_predeterminadas?select=*`, {
-        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'automatizacion',
+        },
         cache: 'no-store',
       })
       if (res.ok) {
@@ -90,6 +94,8 @@ export async function PUT(request: Request) {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
+        'Accept-Profile': 'automatizacion',
+        'Content-Profile': 'automatizacion',
         Prefer: 'resolution=merge-duplicates',
       },
       body: JSON.stringify({
@@ -103,8 +109,8 @@ export async function PUT(request: Request) {
 
     if (!upsertRes.ok) {
       const errText = await upsertRes.text()
-      console.error('[UPSERT TEMPLATE ERROR]', errText)
-      return NextResponse.json({ success: false, error: 'Error guardando plantilla en Supabase' }, { status: 500 })
+      console.error('[UPSERT TEMPLATE ERROR]', upsertRes.status, errText)
+      return NextResponse.json({ success: false, error: `Error en Supabase (${upsertRes.status}): ${errText}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: 'Plantilla actualizada exitosamente' })
