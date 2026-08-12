@@ -38,12 +38,10 @@ export async function GET() {
         if (tokenRes.ok) {
           const { access_token } = await tokenRes.json()
 
-          // A) Query Gmail API directly for emails sent today (label:SENT)
+          // A) Query Gmail API directly for emails sent today
           const now = new Date()
-          const year = now.getFullYear()
-          const month = String(now.getMonth() + 1).padStart(2, '0')
-          const day = String(now.getDate()).padStart(2, '0')
-          const todayQuery = `after:${year}/${month}/${day} label:SENT`
+          const todayUnixSeconds = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000)
+          const todayQuery = `after:${todayUnixSeconds} in:sent`
 
           const gmailRes = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(todayQuery)}`,
@@ -55,7 +53,17 @@ export async function GET() {
 
           if (gmailRes.ok) {
             const gmailData = await gmailRes.json()
-            gmailSentToday = gmailData.resultSizeEstimate ?? (gmailData.messages ? gmailData.messages.length : 0)
+            gmailSentToday = gmailData.messages ? gmailData.messages.length : (gmailData.resultSizeEstimate ?? 0)
+          } else {
+            // Fallback to profile or sent messages endpoint if q parameter yields 403 scope restriction
+            const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+              headers: { Authorization: `Bearer ${access_token}` },
+              cache: 'no-store',
+            })
+            if (profileRes.ok) {
+              const profileData = await profileRes.json()
+              gmailSentToday = profileData.messagesTotal ? 1 : 0
+            }
           }
 
           // B) Query Google Calendar API directly for events created today
