@@ -266,6 +266,64 @@ export function EmailAutomationModule({
     }
   }
 
+  // Handler para invocar al Agente Especialista en Email Marketing
+  const handleGenerateAiCampaign = async () => {
+    if (!aiObjectiveInput.trim()) {
+      showFeedback("warning", "Campo Requerido", "Ingresa un objetivo comercial para el Agente de IA.")
+      return
+    }
+
+    setIsAiGenerating(true)
+    try {
+      const res = await fetch("/api/email/campaigns/strategy-and-validation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category_code: campaignName,
+          objective: aiObjectiveInput,
+          is_synthetic: false,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setAiGeneratedCampaign(data)
+        showFeedback("success", "Estrategia & Validador Exitoso", "Agente de Estrategia + Validador Determinista ejecutados. Release congelado con hash SHA-256.")
+      } else {
+        showFeedback("error", "Fallo del Validador", data.error || "El Validador Determinista rechazó la propuesta de contenido.")
+      }
+    } catch {
+      showFeedback("error", "Error de Servidor", "Fallo de comunicación con la API del Agente de Estrategia.")
+    } finally {
+      setIsAiGenerating(false)
+    }
+  }
+
+  // Handler para probar la simulación del circuito cerrado de autoaprendizaje
+  const handleSimulateClosedLoopCycle = async () => {
+    setIsSimulatingCycle(true)
+    try {
+      const res = await fetch("/api/email/simulation-cycle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campana_nombre: campaignName,
+          objetivo_comercial: aiObjectiveInput,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSimulationResult(data.circuit_simulation)
+        showFeedback("success", "Simulación de Circuito Cerrado Exitosa", "Se ejecutó el ciclo completo: RAG -> Release -> Envíos Sintéticos -> Candidato -> Promoción RPC.")
+      } else {
+        showFeedback("error", "Error en Simulación", data.error || "Fallo durante la prueba del circuito cerrado.")
+      }
+    } catch {
+      showFeedback("error", "Error de Servidor", "No se pudo conectar con la API de simulación.")
+    } finally {
+      setIsSimulatingCycle(false)
+    }
+  }
+
   // Fetch Templates
   const loadTemplates = async () => {
     try {
@@ -1166,6 +1224,157 @@ export function EmailAutomationModule({
                     Continuar Inserción Manual
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: AGENTE ESPECIALISTA EN EMAIL MARKETING & AUTOAPRENDIZAJE OPERACIONAL */}
+          {isAiAgentModalOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+              <div className="bg-white rounded-2xl border border-black/10 shadow-2xl max-w-4xl w-full p-6 space-y-5 font-sans text-xs max-h-[92vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-purple-900 flex items-center justify-center text-white font-bold shrink-0 shadow-xs">
+                      <Sparkles className="w-5 h-5 text-purple-200" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[#111]">Agente Especialista en Email Marketing (SmartContacts Orchestrator)</h3>
+                      <p className="text-[11px] text-black/50">Autoaprendizaje Operacional sin Fine-Tuning | RAG + RRF + Release Inmutable + Human-in-the-Loop</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsAiAgentModalOpen(false)}
+                    className="p-1.5 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* PASO 1 & 2: CONSTRUCCIÓN Y OBJETIVO COMERCIAL */}
+                <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono font-bold text-black/50 uppercase tracking-widest">
+                      CATEGORÍA ACTIVA: <span className="text-purple-800 font-bold">{campaignName}</span>
+                    </span>
+                    <button
+                      onClick={handleSimulateClosedLoopCycle}
+                      disabled={isSimulatingCycle}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-[11px] font-semibold hover:bg-emerald-800 flex items-center gap-1.5 cursor-pointer shadow-2xs self-start sm:self-auto disabled:opacity-50"
+                    >
+                      <BrainCircuit className="w-3.5 h-3.5" />
+                      <span>{isSimulatingCycle ? "Simulando Circuito..." : "🧪 Probar Simulación Circuito Cerrado (Observe -> Learn)"}</span>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#111] block mb-1">
+                      Objetivo Comercial de la Campaña (Prompt de Estrategia para el Agente):
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={aiObjectiveInput}
+                      onChange={(e) => setAiObjectiveInput(e.target.value)}
+                      placeholder="Ej: Presentar la propuesta de automatización agéntica para el proceso de admisiones universitarias en Colombia..."
+                      className="w-full p-3 rounded-xl bg-white border border-black/10 text-xs font-sans text-[#111] outline-none focus:border-purple-600 resize-none shadow-2xs"
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-[10px] font-mono text-black/50">
+                      Instrucción del Agente alineada con CONTEXT.md y Habeas Data Ley 1581
+                    </span>
+                    <button
+                      onClick={handleGenerateAiCampaign}
+                      disabled={isAiGenerating}
+                      className="px-4 py-2 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                    >
+                      <Bot className="w-4 h-4" />
+                      <span>{isAiGenerating ? "Razonando & Consultando RAG..." : "🤖 Generar Estrategia & 5 Variaciones"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* RESULTADO DE SIMULACIÓN DE CIRCUITO CERRADO */}
+                {simulationResult && (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 font-mono text-xs space-y-1 animate-in fade-in">
+                    <div className="font-bold flex items-center gap-1.5 text-emerald-800">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Circuito Cerrado de Simulación Verificado Exitosamente</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800">
+                      ID Campaña Sintética: <span className="font-bold">{simulationResult.campaign_id}</span> | Eventos Sintéticos: <span className="font-bold">{simulationResult.synthetic_events_logged}</span> | Candidato Evaluado: <span className="font-bold">{simulationResult.learning_candidate_id}</span>
+                    </p>
+                    <p className="text-[10px] text-emerald-700">
+                      ✓ Promoción RPC completada (is_synthetic = true). La memoria de producción permanece 100% aislada.
+                    </p>
+                  </div>
+                )}
+
+                {/* VISOR ESTRUCTURADO DE LAS 5 VARIACIONES GENERADAS (HUMAN-IN-THE-LOOP) */}
+                {aiGeneratedCampaign && aiGeneratedCampaign.variants && (
+                  <div className="space-y-4 animate-in fade-in">
+                    <div className="flex items-center justify-between border-b border-black/[0.08] pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#111]">5 Variaciones Comerciales Congeladas (Release Version 1.0)</span>
+                        <span className="text-[10px] font-mono bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full font-bold">
+                          RAG Casos Recuperados: {aiGeneratedCampaign.memory_cases_retrieved}
+                        </span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setIsApprovingRelease(true)
+                          try {
+                            const res = await fetch(`/api/email/campaigns`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                nombre: `Campaña ${campaignName}`,
+                                descripcion: aiObjectiveInput,
+                              }),
+                            })
+                            showFeedback("success", "Release Aprobado & Congelado", "La campaña fue aprobada por el operador humano. Lista para despacho de goteo antispam.")
+                          } catch {
+                            // Continuar
+                          } finally {
+                            setIsApprovingRelease(false)
+                          }
+                        }}
+                        disabled={isApprovingRelease}
+                        className="px-4 py-2 rounded-xl bg-emerald-800 text-white text-xs font-bold hover:bg-emerald-900 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Aprobar y Activar Release Inmutable</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {aiGeneratedCampaign.variants.map((v: any) => (
+                        <div key={v.variant_index} className="p-3.5 rounded-xl bg-white border border-black/[0.08] shadow-2xs space-y-2 font-sans">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">
+                              Variante #{v.variant_index}: {v.angle}
+                            </span>
+                            <span className="text-[10px] font-mono text-black/40">Idempotente</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-mono font-bold text-black/50 block">ASUNTO:</span>
+                            <p className="text-xs font-bold text-[#111]">{v.subject}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-mono font-bold text-black/50 block">PREENCABEZADO:</span>
+                            <p className="text-[11px] text-black/70 italic">{v.preheader}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-mono font-bold text-black/50 block">CTA DESTINO:</span>
+                            <a href={v.cta_url} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-purple-700 underline truncate block">
+                              {v.cta_url}
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
