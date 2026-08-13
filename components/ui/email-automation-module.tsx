@@ -28,6 +28,9 @@ import {
   CheckSquare,
   Square,
   AlertCircle,
+  Sparkles,
+  Bot,
+  BrainCircuit,
   AlertTriangle,
   X,
   FolderPlus,
@@ -121,6 +124,15 @@ export function EmailAutomationModule({
   const [poolCuerpos, setPoolCuerpos] = useState<any[]>([])
   const [newAsuntoText, setNewAsuntoText] = useState("")
   const [newCuerpoText, setNewCuerpoText] = useState("")
+
+  // AI Agent & Closed-Loop Simulation States
+  const [isAiAgentModalOpen, setIsAiAgentModalOpen] = useState(false)
+  const [aiObjectiveInput, setAiObjectiveInput] = useState("Presentar la propuesta de valor de SmartContacts para la automatización de prospección B2B y agendamiento comercial")
+  const [isAiGenerating, setIsAiGenerating] = useState(false)
+  const [aiGeneratedCampaign, setAiGeneratedCampaign] = useState<any | null>(null)
+  const [isApprovingRelease, setIsApprovingRelease] = useState(false)
+  const [isSimulatingCycle, setIsSimulatingCycle] = useState(false)
+  const [simulationResult, setSimulationResult] = useState<any | null>(null)
 
   // Limpiador y Formateador de Errores de Base de Datos para la UI
   const formatFriendlyErrorMessage = (rawError: string | any): string => {
@@ -1454,14 +1466,14 @@ export function EmailAutomationModule({
                   />
                 </div>
 
-                {/* BOTÓN IMPORTAR LISTA MASIVA (.CSV / .TXT) */}
+                {/* BOTÓN AGENTE IA MARKETING ESPECIALISTA */}
                 <button
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
-                  title="Importar lista masiva desde archivo CSV o Textarea"
+                  onClick={() => setIsAiAgentModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-900 to-indigo-900 text-white text-xs font-semibold hover:from-purple-950 hover:to-indigo-950 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs transition-all"
+                  title="Agente IA Especialista en Email Marketing & Autoaprendizaje Operacional"
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Importar Lista Masiva</span>
+                  <Sparkles className="w-3.5 h-3.5 text-purple-300 animate-pulse" />
+                  <span>Agente IA Marketing</span>
                 </button>
 
 
