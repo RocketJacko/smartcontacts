@@ -32,16 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos' }, { status: 400 })
     }
 
-    const payload = validContacts.map((c) => ({
-      email: c.email.trim().toLowerCase(),
-      nombre: c.nombre || c.email.split('@')[0],
-      empresa: c.empresa || 'Empresa Privada',
-      telefono: c.telefono || '',
-      campana_nombre: campana_nombre.trim(),
-      estado: 'pendiente',
-    }))
+    const cleanCategory = campana_nombre.trim()
 
-    // Auto-registrar la categoría en la tabla automatizacion.campanas de forma resiliente
+    // 1. Auto-registrar la categoría en la tabla public.campanas
     try {
       await fetch(`${url}/rest/v1/campanas`, {
         method: 'POST',
@@ -49,12 +42,10 @@ export async function POST(request: Request) {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
           'Content-Type': 'application/json',
-          'Accept-Profile': 'automatizacion',
-          'Content-Profile': 'automatizacion',
           Prefer: 'resolution=ignore-duplicates',
         },
         body: JSON.stringify({
-          nombre: campana_nombre.trim(),
+          nombre: cleanCategory,
           descripcion: 'Categoría auto-registrada desde inserción de contactos',
           estado: 'activa',
         }),
@@ -63,43 +54,25 @@ export async function POST(request: Request) {
       // Silencioso
     }
 
-    // Invocar la función almacenada PL/pgSQL en Supabase para procesamiento 100% atómico en DB
-    let rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+    // 2. Invocar la función RPC atómica en Supabase public.insertar_contactos_masivos
+    const rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
-        'Accept-Profile': 'automatizacion',
-        'Content-Profile': 'automatizacion',
       },
       body: JSON.stringify({
-        p_campana_nombre: campana_nombre.trim(),
+        p_campana_nombre: cleanCategory,
         p_contactos: validContacts,
       }),
     })
-
-    if (!rpcRes.ok) {
-      // Fallback a esquema public
-      rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          p_campana_nombre: campana_nombre.trim(),
-          p_contactos: validContacts,
-        }),
-      })
-    }
 
     if (rpcRes.ok) {
       const result = await rpcRes.json()
       return NextResponse.json({
         success: true,
-        campana_nombre,
+        campana_nombre: cleanCategory,
         processedTotal: result.procesados !== undefined ? result.procesados : validContacts.length,
         insertedCount: result.insertados !== undefined ? result.insertados : 0,
         duplicateCount: result.omitidos !== undefined ? result.omitidos : 0,
@@ -109,32 +82,26 @@ export async function POST(request: Request) {
       })
     }
 
-    // Fallback de inserción directa PostgREST con ON CONFLICT atómico
-    let insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
+    // Fallback de inserción directa PostgREST a public.inventario_contactos
+    const payload = validContacts.map((c) => ({
+      email: c.email.trim().toLowerCase(),
+      nombre: c.nombre || c.email.split('@')[0],
+      empresa: c.empresa || 'Empresa Privada',
+      telefono: c.telefono || '',
+      campana_nombre: cleanCategory,
+      estado: 'pendiente',
+    }))
+
+    const insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
-        'Accept-Profile': 'automatizacion',
-        'Content-Profile': 'automatizacion',
         Prefer: 'resolution=ignore-duplicates,return=representation',
       },
       body: JSON.stringify(payload),
     })
-
-    if (!insertRes.ok) {
-      insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
-        method: 'POST',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-          'Content-Type': 'application/json',
-          Prefer: 'resolution=ignore-duplicates,return=representation',
-        },
-        body: JSON.stringify(payload),
-      })
-    }
 
     let insertedRows: any[] = []
     if (insertRes.ok) {
@@ -153,16 +120,14 @@ export async function POST(request: Request) {
       .filter((c: any) => !insertedEmails.has(c.email.toLowerCase()))
       .map((c: any) => c.email)
 
-    const duplicateCount = duplicateEmails.length
-
     return NextResponse.json({
       success: true,
-      campana_nombre,
+      campana_nombre: cleanCategory,
       processedTotal: validContacts.length,
       insertedCount,
-      duplicateCount,
+      duplicateCount: duplicateEmails.length,
       duplicateEmails,
-      message: `Procesamiento completado: ${insertedCount} nuevos contactos registrados, ${duplicateCount} omitidos por ya existir en la categoría.`,
+      message: `Procesamiento completado: ${insertedCount} nuevos contactos registrados.`,
     })
   } catch (error: any) {
     console.error('[API CONTACTS POST ERROR]', error)
@@ -188,37 +153,25 @@ export async function GET(request: Request) {
     let queryUrl = `${url}/rest/v1/inventario_contactos?select=*&order=creado_en.desc&limit=${pageSize}&offset=${offset}`
     
     if (campana) {
-      queryUrl += `&campana_nombre=eq.${encodeURIComponent(campana)}`
+      queryUrl += `&campana_nombre=eq.${encodeURIComponent(campana.trim())}`
     }
 
     if (search) {
-      // Filtrar por email, nombre o empresa
       queryUrl += `&or=(email.ilike.*${encodeURIComponent(search)}*,nombre.ilike.*${encodeURIComponent(search)}*,empresa.ilike.*${encodeURIComponent(search)}*)`
     }
 
-    let res = await fetch(queryUrl, {
+    const res = await fetch(queryUrl, {
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
-        'Accept-Profile': 'automatizacion',
         Prefer: 'count=exact',
       },
       cache: 'no-store',
     })
 
     if (!res.ok) {
-      // Fallback a vista publica
-      res = await fetch(queryUrl, {
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-          Prefer: 'count=exact',
-        },
-        cache: 'no-store',
-      })
-    }
-
-    if (!res.ok) {
+      const errText = await res.text()
+      console.error('[API CONTACTS GET FAIL]', res.status, errText)
       return NextResponse.json({ success: true, count: 0, totalCount: 0, page, pageSize, totalPages: 0, contacts: [] })
     }
 
@@ -271,31 +224,16 @@ export async function PUT(request: Request) {
     if (telefono !== undefined) updatePayload.telefono = telefono.trim()
     if (estado) updatePayload.estado = estado
 
-    let res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
+    const res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
       method: 'PATCH',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
-        'Accept-Profile': 'automatizacion',
-        'Content-Profile': 'automatizacion',
         Prefer: 'return=representation',
       },
       body: JSON.stringify(updatePayload),
     })
-
-    if (!res.ok) {
-      res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        body: JSON.stringify(updatePayload),
-      })
-    }
 
     if (!res.ok) {
       const errText = await res.text()
@@ -322,7 +260,7 @@ export async function DELETE(request: Request) {
       if (body.id) id = body.id
       if (body.ids && Array.isArray(body.ids)) ids = body.ids
     } catch {
-      // Petición query param únicamente
+      // Query param únicamente
     }
 
     if (!id && ids.length === 0) {
@@ -340,25 +278,13 @@ export async function DELETE(request: Request) {
       deleteFilter = `id=eq.${id}`
     }
 
-    let res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
+    const res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
       method: 'DELETE',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
-        'Accept-Profile': 'automatizacion',
-        'Content-Profile': 'automatizacion',
       },
     })
-
-    if (!res.ok) {
-      res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
-        method: 'DELETE',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-      })
-    }
 
     if (!res.ok) {
       const errText = await res.text()

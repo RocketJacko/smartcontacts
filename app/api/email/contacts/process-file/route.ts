@@ -21,7 +21,6 @@ export async function POST(request: Request) {
     let textContent = ''
 
     if (fileUrl) {
-      // Descargar el archivo almacenado en Supabase Storage
       const fetchFileRes = await fetch(fileUrl)
       if (!fetchFileRes.ok) {
         return NextResponse.json({ success: false, error: 'No se pudo descargar el archivo desde Supabase Storage' }, { status: 400 })
@@ -33,15 +32,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Se requiere fileUrl o rawContent' }, { status: 400 })
     }
 
-    // Dividir en líneas
     const lines = textContent.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
     if (lines.length === 0) {
       return NextResponse.json({ success: false, error: 'El archivo está vacío' }, { status: 400 })
     }
 
-    // Detección de encabezados (Fuzzy matching)
     let startIndex = 0
-    const firstLineLower = lines[0].toLowerCase()
     let delimiter = ','
     if (lines[0].includes(';')) delimiter = ';'
     else if (lines[0].includes('\t')) delimiter = '\t'
@@ -61,12 +57,13 @@ export async function POST(request: Request) {
     })
 
     if (emailIdx !== -1) {
-      startIndex = 1 // Hay encabezado
+      startIndex = 1
     } else {
-      emailIdx = 0 // Asumir primera columna es email
+      emailIdx = 0
     }
 
     const parsedContacts: any[] = []
+    const cleanCategory = campana_nombre.trim()
 
     for (let i = startIndex; i < lines.length; i++) {
       const row = lines[i].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ''))
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
           nombre,
           empresa,
           telefono,
-          campana_nombre: campana_nombre.trim(),
+          campana_nombre: cleanCategory,
           estado: 'pendiente',
         })
       }
@@ -92,7 +89,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron registros de correos electrónicos válidos en el archivo' }, { status: 400 })
     }
 
-    // Auto-registrar la categoría en la tabla automatizacion.campanas de forma resiliente
+    // Auto-registrar la categoría en public.campanas
     try {
       await fetch(`${url}/rest/v1/campanas`, {
         method: 'POST',
@@ -100,12 +97,10 @@ export async function POST(request: Request) {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
           'Content-Type': 'application/json',
-          'Accept-Profile': 'automatizacion',
-          'Content-Profile': 'automatizacion',
           Prefer: 'resolution=ignore-duplicates',
         },
         body: JSON.stringify({
-          nombre: campana_nombre.trim(),
+          nombre: cleanCategory,
           descripcion: 'Categoría auto-registrada desde archivo masivo',
           estado: 'activa',
         }),
@@ -114,7 +109,6 @@ export async function POST(request: Request) {
       // Silencioso
     }
 
-    // Inserción en servidor en bloques de 2,000 llamando a la función RPC atómica de Supabase
     const BATCH_SIZE = 2000
     let totalInserted = 0
     let totalDuplicates = 0
@@ -124,35 +118,18 @@ export async function POST(request: Request) {
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      let rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+      const rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
           'Content-Type': 'application/json',
-          'Accept-Profile': 'automatizacion',
-          'Content-Profile': 'automatizacion',
         },
         body: JSON.stringify({
-          p_campana_nombre: campana_nombre.trim(),
+          p_campana_nombre: cleanCategory,
           p_contactos: batch,
         }),
       })
-
-      if (!rpcRes.ok) {
-        rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
-          method: 'POST',
-          headers: {
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            p_campana_nombre: campana_nombre.trim(),
-            p_contactos: batch,
-          }),
-        })
-      }
 
       if (rpcRes.ok) {
         const result = await rpcRes.json()
