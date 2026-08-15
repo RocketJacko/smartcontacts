@@ -154,12 +154,9 @@ export async function GET(request: Request) {
     const offset = (page - 1) * pageSize
     let queryUrl = `${url}/rest/v1/email?select=*&order=creado_en.desc&limit=${pageSize}&offset=${offset}`
     
-    if (directorio && directorio.trim() && directorio.trim() !== 'Todas') {
+    if (directorio && directorio.trim() && directorio.trim() !== 'Todas' && directorio.trim() !== 'Todos los Directorios') {
       const cleanDir = directorio.trim()
-      const words = cleanDir.split(/\s+/).filter((w: string) => w.length > 2 && !['and', '&', '-', 'de', 'y', 'la', 'el'].includes(w.toLowerCase()))
-      if (words.length > 0) {
-        queryUrl += `&directorio_nombre=ilike.${encodeURIComponent('*' + words[0] + '*')}`
-      }
+      queryUrl += `&directorio_nombre=eq.${encodeURIComponent(cleanDir)}`
     }
 
     if (search) {

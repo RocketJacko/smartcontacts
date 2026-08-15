@@ -184,9 +184,7 @@ export async function POST(request: Request) {
     // Obtener total exacto acumulado en el directorio
     let finalTotalDirectory = totalInserted
     try {
-      const words = cleanDirectory.split(/\s+/).filter((w: string) => w.length > 2 && !['and', '&', '-', 'de', 'y', 'la', 'el'].includes(w.toLowerCase()))
-      const filterParam = words.length > 0 ? `&directorio_nombre=ilike.${encodeURIComponent('*' + words[0] + '*')}` : ''
-      const countRes = await fetch(`${url}/rest/v1/email?select=id${filterParam}`, {
+      const countRes = await fetch(`${url}/rest/v1/email?select=id&directorio_nombre=eq.${encodeURIComponent(cleanDirectory)}`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
