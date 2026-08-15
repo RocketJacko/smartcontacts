@@ -3,15 +3,17 @@ import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client
 
 export const maxDuration = 300 // 5 minutos de tiempo de ejecución para cargas masivas en servidor
 
-// POST: Procesar archivo de contactos en servidor por lotes de 2,000 registros
+// POST: Procesar archivo de contactos (1 o 2 columnas) por lotes de 1,000 registros
 export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { fileUrl, rawContent, campana_nombre } = body
+    const { campana_nombre, directorio_nombre, fileUrl, rawContent, emailColumnIndex } = body
 
-    if (!campana_nombre) {
-      return NextResponse.json({ success: false, error: 'campana_nombre es obligatorio' }, { status: 400 })
+    const cleanDirectory = (directorio_nombre || campana_nombre || '').trim()
+
+    if (!cleanDirectory) {
+      return NextResponse.json({ success: false, error: 'El nombre del directorio es obligatorio' }, { status: 400 })
     }
 
     if (!url || !anonKey) {
@@ -44,64 +46,69 @@ export async function POST(request: Request) {
 
     const headerParts = lines[0].split(delimiter).map((h) => h.trim().toLowerCase().replace(/["']/g, ''))
     
-    let emailIdx = -1
+    let emailIdx = typeof emailColumnIndex === 'number' ? emailColumnIndex : -1
     let nombreIdx = -1
-    let empresaIdx = -1
-    let telefonoIdx = -1
 
     headerParts.forEach((part, idx) => {
-      if (['email', 'correo', 'e-mail', 'mail', 'contacto'].includes(part)) emailIdx = idx
-      else if (['nombre', 'name', 'full_name', 'prospecto'].includes(part)) nombreIdx = idx
-      else if (['empresa', 'company', 'compañia', 'compañía', 'organization'].includes(part)) empresaIdx = idx
-      else if (['telefono', 'teléfono', 'phone', 'celular', 'whatsapp', 'mobile'].includes(part)) telefonoIdx = idx
+      if (emailIdx === -1 && ['email', 'correo', 'e-mail', 'mail', 'contacto'].includes(part)) emailIdx = idx
+      else if (['nombre', 'name', 'full_name', 'prospecto', 'contacto_nombre'].includes(part)) nombreIdx = idx
     })
 
     if (emailIdx !== -1) {
       startIndex = 1
-    } else {
-      emailIdx = 0
     }
 
     const parsedContacts: any[] = []
-    const cleanCategory = campana_nombre.trim()
 
     for (let i = startIndex; i < lines.length; i++) {
       const row = lines[i].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ''))
-      const email = row[emailIdx]
+      
+      // Buscar el correo en el índice especificado o en la celda con '@'
+      let email = emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : row.find((cell) => cell.includes('@'))
+      
       if (email && email.includes('@')) {
         const cleanEmail = email.toLowerCase()
-        const nombre = nombreIdx !== -1 && row[nombreIdx] ? row[nombreIdx] : cleanEmail.split('@')[0]
-        const empresa = empresaIdx !== -1 && row[empresaIdx] ? row[empresaIdx] : 'Empresa Privada'
-        const telefono = telefonoIdx !== -1 && row[telefonoIdx] ? row[telefonoIdx] : ''
+        let nombreVal: string | null = null
+
+        // Si hay 2 columnas o se detectó la columna nombre
+        if (nombreIdx !== -1 && row[nombreIdx]) {
+          nombreVal = row[nombreIdx]
+        } else if (row.length === 2) {
+          // Formato 2 columnas: (nombre, email) o (email, nombre)
+          const otherCol = row[0].includes('@') ? row[1] : row[0]
+          if (otherCol && !otherCol.includes('@')) {
+            nombreVal = otherCol
+          }
+        }
 
         parsedContacts.push({
           email: cleanEmail,
-          nombre,
-          empresa,
-          telefono,
-          campana_nombre: cleanCategory,
+          nombre: nombreVal ? nombreVal.trim() : null,
+          directorio_nombre: cleanDirectory,
           estado: 'pendiente',
         })
       }
     }
 
     if (parsedContacts.length === 0) {
-      return NextResponse.json({ success: false, error: 'No se encontraron registros de correos electrónicos válidos en el archivo' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos en el archivo.' }, { status: 400 })
     }
 
-    // Auto-registrar la categoría en public.campanas
+    // Auto-registrar el directorio en emailmarketing.campanas
     try {
       await fetch(`${url}/rest/v1/campanas`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
           'Content-Type': 'application/json',
           Prefer: 'resolution=ignore-duplicates',
         },
         body: JSON.stringify({
-          nombre: cleanCategory,
-          descripcion: 'Categoría auto-registrada desde archivo masivo',
+          nombre: cleanDirectory,
+          descripcion: 'Directorio auto-registrado desde archivo masivo',
           estado: 'activa',
         }),
       })
@@ -109,39 +116,96 @@ export async function POST(request: Request) {
       // Silencioso
     }
 
-    const BATCH_SIZE = 2000
+    const BATCH_SIZE = 1000
     let totalInserted = 0
     let totalDuplicates = 0
     const duplicateEmailList: string[] = []
-    let finalTotalDirectory = 0
 
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      const rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+      const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
           'Content-Type': 'application/json',
+          Prefer: 'resolution=ignore-duplicates,return=representation',
         },
-        body: JSON.stringify({
-          p_campana_nombre: cleanCategory,
-          p_contactos: batch,
-        }),
+        body: JSON.stringify(batch),
       })
 
-      if (rpcRes.ok) {
-        const result = await rpcRes.json()
-        totalInserted += result.insertados || 0
-        totalDuplicates += result.omitidos || 0
-        if (result.duplicados && Array.isArray(result.duplicados)) {
-          duplicateEmailList.push(...result.duplicados)
+      if (insertRes.ok) {
+        const insertedData = await insertRes.json()
+        const insertedRows = Array.isArray(insertedData) ? insertedData : []
+        const numInserted = insertedRows.length
+        totalInserted += numInserted
+        const numDuplicates = batch.length - numInserted
+        totalDuplicates += numDuplicates
+        
+        if (numDuplicates > 0) {
+          const insertedEmailsSet = new Set(insertedRows.map((r: any) => r.email))
+          batch.forEach((item: any) => {
+            if (!insertedEmailsSet.has(item.email)) {
+              duplicateEmailList.push(item.email)
+            }
+          })
         }
-        if (result.total_directorio) {
-          finalTotalDirectory = result.total_directorio
+      } else {
+        // Fallback RPC
+        const rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Accept-Profile': 'emailmarketing',
+            'Content-Profile': 'emailmarketing',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            p_campana_nombre: cleanDirectory,
+            p_contactos: batch,
+          }),
+        })
+
+        if (rpcRes.ok) {
+          const result = await rpcRes.json()
+          totalInserted += result.insertados || 0
+          totalDuplicates += result.omitidos || 0
+          if (result.duplicados && Array.isArray(result.duplicados)) {
+            duplicateEmailList.push(...result.duplicados)
+          }
         }
       }
+    }
+
+    // Obtener total exacto acumulado en el directorio
+    let finalTotalDirectory = totalInserted
+    try {
+      const words = cleanDirectory.split(/\s+/).filter((w: string) => w.length > 2 && !['and', '&', '-', 'de', 'y', 'la', 'el'].includes(w.toLowerCase()))
+      const filterParam = words.length > 0 ? `&directorio_nombre=ilike.${encodeURIComponent('*' + words[0] + '*')}` : ''
+      const countRes = await fetch(`${url}/rest/v1/email?select=id${filterParam}`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
+          Prefer: 'count=exact',
+        },
+      })
+      if (countRes.ok) {
+        const contentRange = countRes.headers.get('content-range')
+        if (contentRange) {
+          const total = parseInt(contentRange.split('/')[1] || '0', 10)
+          if (!isNaN(total) && total > 0) {
+            finalTotalDirectory = total
+          }
+        }
+      }
+    } catch {
+      // Silencioso
     }
 
     return NextResponse.json({
@@ -151,7 +215,7 @@ export async function POST(request: Request) {
       duplicateCount: totalDuplicates,
       totalDirectoryCount: finalTotalDirectory,
       duplicateEmails: duplicateEmailList,
-      message: `Procesamiento en servidor completado: ${totalInserted} nuevos contactos registrados, ${totalDuplicates} omitidos por ya existir en la categoría.`,
+      message: `Procesamiento en servidor completado: ${totalInserted} nuevos contactos registrados en el directorio, ${totalDuplicates} omitidos por ya existir.`,
     })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Error en servidor' }, { status: 500 })

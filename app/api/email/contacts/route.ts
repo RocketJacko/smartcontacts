@@ -4,19 +4,19 @@ import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client
 export interface ContactInput {
   email: string
   nombre?: string
-  empresa?: string
-  telefono?: string
 }
 
-// POST: Carga masiva de contactos con asignación de campaña y exclusión de duplicados
+// POST: Carga masiva de contactos (1 o 2 columnas) asignados a un directorio
 export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { contactos, campana_nombre } = body
+    const { contactos, campana_nombre, directorio_nombre } = body
 
-    if (!campana_nombre || !contactos || !Array.isArray(contactos) || contactos.length === 0) {
-      return NextResponse.json({ success: false, error: 'campana_nombre y contactos (array) son obligatorios' }, { status: 400 })
+    const cleanDirectory = (directorio_nombre || campana_nombre || '').trim()
+
+    if (!cleanDirectory || !contactos || !Array.isArray(contactos) || contactos.length === 0) {
+      return NextResponse.json({ success: false, error: 'El nombre del directorio y la lista de contactos son obligatorios' }, { status: 400 })
     }
 
     if (!url || !anonKey) {
@@ -32,21 +32,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos' }, { status: 400 })
     }
 
-    const cleanCategory = campana_nombre.trim()
-
-    // 1. Auto-registrar la categoría en la tabla public.campanas
+    // 1. Auto-registrar el directorio en emailmarketing.campanas
     try {
       await fetch(`${url}/rest/v1/campanas`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
           'Content-Type': 'application/json',
           Prefer: 'resolution=ignore-duplicates',
         },
         body: JSON.stringify({
-          nombre: cleanCategory,
-          descripcion: 'Categoría auto-registrada desde inserción de contactos',
+          nombre: cleanDirectory,
+          descripcion: 'Directorio auto-registrado',
           estado: 'activa',
         }),
       })
@@ -54,16 +54,18 @@ export async function POST(request: Request) {
       // Silencioso
     }
 
-    // 2. Invocar la función RPC atómica en Supabase public.insertar_contactos_masivos
+    // 2. Invocar la función RPC atómica emailmarketing.insertar_contactos_masivos
     const rpcRes = await fetch(`${url}/rest/v1/rpc/insertar_contactos_masivos`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        p_campana_nombre: cleanCategory,
+        p_campana_nombre: cleanDirectory,
         p_contactos: validContacts,
       }),
     })
@@ -72,31 +74,31 @@ export async function POST(request: Request) {
       const result = await rpcRes.json()
       return NextResponse.json({
         success: true,
-        campana_nombre: cleanCategory,
+        directorio_nombre: cleanDirectory,
         processedTotal: result.procesados !== undefined ? result.procesados : validContacts.length,
         insertedCount: result.insertados !== undefined ? result.insertados : 0,
         duplicateCount: result.omitidos !== undefined ? result.omitidos : 0,
         totalDirectoryCount: result.total_directorio !== undefined ? result.total_directorio : 0,
         duplicateEmails: result.duplicados || [],
-        message: `Procesamiento en base de datos completado: ${result.insertados} nuevos contactos registrados, ${result.omitidos} omitidos por ya existir en la categoría.`,
+        message: `Procesamiento completado: ${result.insertados} nuevos contactos registrados en el directorio.`,
       })
     }
 
-    // Fallback de inserción directa PostgREST a public.inventario_contactos
+    // Fallback de inserción directa PostgREST a emailmarketing.email
     const payload = validContacts.map((c) => ({
       email: c.email.trim().toLowerCase(),
-      nombre: c.nombre || c.email.split('@')[0],
-      empresa: c.empresa || 'Empresa Privada',
-      telefono: c.telefono || '',
-      campana_nombre: cleanCategory,
+      nombre: c.nombre ? c.nombre.trim() : null,
+      directorio_nombre: cleanDirectory,
       estado: 'pendiente',
     }))
 
-    const insertRes = await fetch(`${url}/rest/v1/inventario_contactos?on_conflict=email,campana_nombre`, {
+    const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
         'Content-Type': 'application/json',
         Prefer: 'resolution=ignore-duplicates,return=representation',
       },
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      campana_nombre: cleanCategory,
+      directorio_nombre: cleanDirectory,
       processedTotal: validContacts.length,
       insertedCount,
       duplicateCount: duplicateEmails.length,
@@ -135,12 +137,12 @@ export async function POST(request: Request) {
   }
 }
 
-// GET: Consultar inventario de contactos con paginación server-side y búsqueda
+// GET: Consultar inventario de contactos por directorio con paginación y búsqueda
 export async function GET(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const { searchParams } = new URL(request.url)
-    const campana = searchParams.get('campana_nombre')
+    const directorio = searchParams.get('directorio_nombre') || searchParams.get('campana_nombre')
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
     const pageSize = Math.max(1, Math.min(500, parseInt(searchParams.get('pageSize') || '50', 10)))
     const search = searchParams.get('search')?.trim()
@@ -150,20 +152,26 @@ export async function GET(request: Request) {
     }
 
     const offset = (page - 1) * pageSize
-    let queryUrl = `${url}/rest/v1/inventario_contactos?select=*&order=creado_en.desc&limit=${pageSize}&offset=${offset}`
+    let queryUrl = `${url}/rest/v1/email?select=*&order=creado_en.desc&limit=${pageSize}&offset=${offset}`
     
-    if (campana) {
-      queryUrl += `&campana_nombre=eq.${encodeURIComponent(campana.trim())}`
+    if (directorio && directorio.trim() && directorio.trim() !== 'Todas') {
+      const cleanDir = directorio.trim()
+      const words = cleanDir.split(/\s+/).filter((w: string) => w.length > 2 && !['and', '&', '-', 'de', 'y', 'la', 'el'].includes(w.toLowerCase()))
+      if (words.length > 0) {
+        queryUrl += `&directorio_nombre=ilike.${encodeURIComponent('*' + words[0] + '*')}`
+      }
     }
 
     if (search) {
-      queryUrl += `&or=(email.ilike.*${encodeURIComponent(search)}*,nombre.ilike.*${encodeURIComponent(search)}*,empresa.ilike.*${encodeURIComponent(search)}*)`
+      queryUrl += `&or=(email.ilike.*${encodeURIComponent(search)}*,nombre.ilike.*${encodeURIComponent(search)}*)`
     }
 
     const res = await fetch(queryUrl, {
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
         Prefer: 'count=exact',
       },
       cache: 'no-store',
@@ -202,12 +210,12 @@ export async function GET(request: Request) {
   }
 }
 
-// PUT: Editar un contacto existente (Nombre, Empresa, Teléfono, Estado, etc.)
+// PUT: Editar un contacto existente (Email, Nombre, Estado)
 export async function PUT(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { id, email, nombre, empresa, telefono, estado } = body
+    const { id, email, nombre, estado } = body
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'El ID del contacto es obligatorio' }, { status: 400 })
@@ -219,16 +227,16 @@ export async function PUT(request: Request) {
 
     const updatePayload: any = {}
     if (email) updatePayload.email = email.trim().toLowerCase()
-    if (nombre !== undefined) updatePayload.nombre = nombre.trim()
-    if (empresa !== undefined) updatePayload.empresa = empresa.trim()
-    if (telefono !== undefined) updatePayload.telefono = telefono.trim()
+    if (nombre !== undefined) updatePayload.nombre = nombre ? nombre.trim() : null
     if (estado) updatePayload.estado = estado
 
-    const res = await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${id}`, {
+    const res = await fetch(`${url}/rest/v1/email?id=eq.${id}`, {
       method: 'PATCH',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
         'Content-Type': 'application/json',
         Prefer: 'return=representation',
       },
@@ -247,28 +255,60 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE: Eliminar un contacto individual o eliminación masiva por IDs
+// DELETE: Eliminar un contacto individual, selección masiva o vaciar directorio
 export async function DELETE(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const { searchParams } = new URL(request.url)
     let id = searchParams.get('id')
     let ids: string[] = []
+    let removeAll = searchParams.get('removeAll') === 'true'
+    let directorioNombre = searchParams.get('directorio_nombre') || searchParams.get('campana_nombre')
 
     try {
       const body = await request.json()
       if (body.id) id = body.id
       if (body.ids && Array.isArray(body.ids)) ids = body.ids
+      if (body.removeAll) removeAll = true
+      if (body.directorio_nombre || body.campana_nombre) {
+        directorioNombre = body.directorio_nombre || body.campana_nombre
+      }
     } catch {
-      // Query param únicamente
-    }
-
-    if (!id && ids.length === 0) {
-      return NextResponse.json({ success: false, error: 'Debe especificar el ID o lista de IDs a eliminar' }, { status: 400 })
+      // Query params únicamente
     }
 
     if (!url || !anonKey) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
+    }
+
+    // Vaciar todo el directorio o un directorio específico
+    if (removeAll || directorioNombre) {
+      const rpcRes = await fetch(`${url}/rest/v1/rpc/vaciar_directorio_contactos`, {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          p_campana_nombre: removeAll ? '__ALL__' : (directorioNombre || '__ALL__'),
+        }),
+      })
+
+      if (rpcRes.ok) {
+        const result = await rpcRes.json()
+        return NextResponse.json({
+          success: true,
+          deletedCount: result.eliminados || 0,
+          message: result.mensaje || 'Directorio vaciado exitosamente.',
+        })
+      }
+    }
+
+    if (!id && ids.length === 0) {
+      return NextResponse.json({ success: false, error: 'Debe especificar el ID, lista de IDs o directorio a vaciar' }, { status: 400 })
     }
 
     let deleteFilter = ''
@@ -278,11 +318,13 @@ export async function DELETE(request: Request) {
       deleteFilter = `id=eq.${id}`
     }
 
-    const res = await fetch(`${url}/rest/v1/inventario_contactos?${deleteFilter}`, {
+    const res = await fetch(`${url}/rest/v1/email?${deleteFilter}`, {
       method: 'DELETE',
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
       },
     })
 

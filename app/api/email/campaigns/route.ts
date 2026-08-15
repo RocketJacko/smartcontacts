@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
-// GET: Obtener lista de campañas y categorías activas (Unificando campanas e inventario_contactos en esquema public)
+// GET: Obtener lista de campañas y categorías activas (Esquema emailmarketing)
 export async function GET() {
   try {
     const { url, anonKey } = getSupabaseConfig()
@@ -9,13 +9,15 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    // 1. Consultar tabla campanas en esquema public
+    // 1. Consultar tabla campanas en esquema emailmarketing
     let campaigns: any[] = []
     try {
       const res = await fetch(`${url}/rest/v1/campanas?select=*&order=creado_en.desc`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
         },
         cache: 'no-store',
       })
@@ -26,13 +28,15 @@ export async function GET() {
       campaigns = []
     }
 
-    // 2. Consultar categorías distintas presentes en inventario_contactos en esquema public
+    // 2. Consultar categorías distintas presentes en emailmarketing.email
     let contactRows: any[] = []
     try {
-      const contactsRes = await fetch(`${url}/rest/v1/inventario_contactos?select=campana_nombre`, {
+      const contactsRes = await fetch(`${url}/rest/v1/email?select=campana_nombre`, {
         headers: {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing',
         },
         cache: 'no-store',
       })
@@ -71,7 +75,7 @@ export async function GET() {
   }
 }
 
-// POST: Crear una nueva campaña dinámicamente en esquema public
+// POST: Crear una nueva campaña dinámicamente en esquema emailmarketing
 export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
@@ -98,6 +102,8 @@ export async function POST(request: Request) {
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,
+        'Accept-Profile': 'emailmarketing',
+        'Content-Profile': 'emailmarketing',
         'Content-Type': 'application/json',
         Prefer: 'return=representation, resolution=ignore-duplicates',
       },

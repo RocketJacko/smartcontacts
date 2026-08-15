@@ -375,6 +375,50 @@ export function EmailAutomationModule({
     }
   }
 
+  // CRUD 5: Vaciar toda la categoría activa
+  const handlePurgeCurrentCategory = async () => {
+    if (!campaignName) return
+    if (!confirm(`¿Estás seguro de vaciar TODOS los contactos de la categoría "${campaignName}"? Esta acción no se puede deshacer.`)) return
+
+    try {
+      const res = await fetch(`/api/email/contacts?campana_nombre=${encodeURIComponent(campaignName)}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Categoría Vaciada", data.message || `Se eliminaron todos los contactos de "${campaignName}".`)
+        setSelectedContactIds([])
+        loadContacts()
+      } else {
+        showFeedback("error", "Error al Vaciar Categoría", data.error || "No se pudo vaciar la categoría.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al vaciar la categoría.")
+    }
+  }
+
+  // CRUD 6: Vaciar TODO el directorio de emailmarketing.email
+  const handlePurgeEntireDirectory = async () => {
+    if (!confirm("⚠️ ALERTA MÁXIMA: ¿Estás seguro de vaciar por completo TODO EL DIRECTORIO DE EMAILS? Se eliminarán absolutamente todos los contactos de la base de datos.")) return
+
+    try {
+      const res = await fetch("/api/email/contacts?removeAll=true", {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (data.success) {
+        showFeedback("success", "Directorio Vaciado", data.message || "Se eliminaron todos los contactos de la base de datos.")
+        setSelectedContactIds([])
+        loadContacts()
+        loadCampaigns()
+      } else {
+        showFeedback("error", "Error al Vaciar Directorio", data.error || "No se pudo vaciar el directorio.")
+      }
+    } catch (err) {
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al vaciar el directorio.")
+    }
+  }
+
   // Fetch Round-Robin Pools
   const loadRoundRobinPools = async () => {
     try {
@@ -421,49 +465,116 @@ export function EmailAutomationModule({
     }
   }
 
-  // Helper Parser de Texto o CSV (Fuzzy Header Matcher)
-  const parseRawContentToContacts = (textContent: string) => {
-    const lines = textContent.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+  // Column Selection Modal State for Multi-Column Files
+  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false)
+  const [pendingFileContent, setPendingFileContent] = useState<string>("")
+  const [detectedColumns, setDetectedColumns] = useState<
+    { index: number; header: string; sample: string; emailCount: number }[]
+  >([])
+  const [selectedEmailColumnIdx, setSelectedEmailColumnIdx] = useState<number>(0)
+
+  // Helper Parser de Texto o CSV con Columna Específica Seleccionada
+  const parseContentWithSelectedColumn = (content: string, colIndex: number) => {
+    const lines = content.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
     if (lines.length === 0) return []
 
     let delimiter = ","
     if (lines[0].includes(";")) delimiter = ";"
     else if (lines[0].includes("\t")) delimiter = "\t"
 
-    const headerParts = lines[0].split(delimiter).map((h) => h.trim().toLowerCase().replace(/["']/g, ""))
-    let emailIdx = -1
-    let nombreIdx = -1
-    let empresaIdx = -1
-    let telefonoIdx = -1
-
-    headerParts.forEach((part, idx) => {
-      if (["email", "correo", "e-mail", "mail", "contacto"].includes(part)) emailIdx = idx
-      else if (["nombre", "name", "full_name", "prospecto"].includes(part)) nombreIdx = idx
-      else if (["empresa", "company", "compañia", "compañía", "organization"].includes(part)) empresaIdx = idx
-      else if (["telefono", "teléfono", "phone", "celular", "whatsapp", "mobile"].includes(part)) telefonoIdx = idx
-    })
-
-    let startIndex = 0
-    if (emailIdx !== -1) {
-      startIndex = 1
-    } else {
-      emailIdx = 0
-    }
-
+    const firstRow = lines[0].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ""))
+    const hasHeader = firstRow.some((col) => ["email", "correo", "mail", "nombre", "empresa"].includes(col.toLowerCase()))
+    
+    const startIndex = hasHeader ? 1 : 0
     const contacts: any[] = []
+
     for (let i = startIndex; i < lines.length; i++) {
       const row = lines[i].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ""))
-      const email = row[emailIdx]
+      const email = row[colIndex] || row.find((cell) => cell.includes("@"))
       if (email && email.includes("@")) {
         const cleanEmail = email.toLowerCase()
-        const nombre = nombreIdx !== -1 && row[nombreIdx] ? row[nombreIdx] : cleanEmail.split("@")[0]
-        const empresa = empresaIdx !== -1 && row[empresaIdx] ? row[empresaIdx] : "Empresa Privada"
-        const telefono = telefonoIdx !== -1 && row[telefonoIdx] ? row[telefonoIdx] : ""
-
-        contacts.push({ email: cleanEmail, nombre, empresa, telefono })
+        const nombre = cleanEmail.split("@")[0]
+        contacts.push({ email: cleanEmail, nombre, empresa: "Empresa Privada", telefono: "" })
       }
     }
     return contacts
+  }
+
+  // Alias para previsualización directa en la interfaz
+  const parseRawContentToContacts = (textContent: string) => {
+    return parseContentWithSelectedColumn(textContent, 0)
+  }
+
+  // Analizar archivo o texto: si tiene 1 columna procesa directo, si tiene >1 columna abre modal interactivo
+  const analyzeAndProcessFileContent = (content: string) => {
+    const lines = content.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+    if (lines.length === 0) {
+      showFeedback("warning", "Validación de Correos", "El archivo no contiene texto válidos.")
+      return
+    }
+
+    let delimiter = ","
+    if (lines[0].includes(";")) delimiter = ";"
+    else if (lines[0].includes("\t")) delimiter = "\t"
+
+    const firstRow = lines[0].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ""))
+
+    // Si tiene 1 sola columna, procesar directamente
+    if (firstRow.length <= 1) {
+      const contacts = parseContentWithSelectedColumn(content, 0)
+      if (contacts.length === 0) {
+        showFeedback("warning", "Validación de Correos", "No se encontraron correos electrónicos válidos en el archivo.")
+        return
+      }
+      processContactsInTiers(contacts, content.length > 1024 * 1024 ? content : undefined)
+      return
+    }
+
+    // Si tiene MÁS DE 1 columna, analizar cada columna y abrir modal para que el usuario elija
+    const hasHeader = firstRow.some((col) => ["email", "correo", "mail", "nombre", "empresa"].includes(col.toLowerCase()))
+    const sampleRow = hasHeader && lines.length > 1 
+      ? lines[1].split(delimiter).map((col) => col.trim().replace(/^["']|["']$/g, ""))
+      : firstRow
+
+    let defaultEmailColIdx = 0
+    let maxEmailFound = -1
+
+    const columnsInfo = firstRow.map((headerOrVal, idx) => {
+      let count = 0
+      const limit = Math.min(lines.length, 100)
+      for (let i = hasHeader ? 1 : 0; i < limit; i++) {
+        const r = lines[i].split(delimiter).map((cell) => cell.trim().replace(/^["']|["']$/g, ""))
+        if (r[idx] && r[idx].includes("@")) count++
+      }
+      if (count > maxEmailFound) {
+        maxEmailFound = count
+        defaultEmailColIdx = idx
+      }
+
+      return {
+        index: idx,
+        header: hasHeader ? headerOrVal : `Columna ${idx + 1}`,
+        sample: sampleRow[idx] || "Vacío",
+        emailCount: count,
+      }
+    })
+
+    setPendingFileContent(content)
+    setDetectedColumns(columnsInfo)
+    setSelectedEmailColumnIdx(defaultEmailColIdx)
+    setIsColumnSelectorOpen(true)
+  }
+
+  // Confirmar selección del modal de columnas
+  const handleConfirmColumnSelection = () => {
+    setIsColumnSelectorOpen(false)
+    if (!pendingFileContent) return
+    const contacts = parseContentWithSelectedColumn(pendingFileContent, selectedEmailColumnIdx)
+    if (contacts.length === 0) {
+      showFeedback("warning", "Validación de Correos", "No se encontraron correos electrónicos válidos en la columna seleccionada.")
+      return
+    }
+    processContactsInTiers(contacts, pendingFileContent.length > 1024 * 1024 ? pendingFileContent : undefined)
   }
 
   // Multi-Tier Process Handler (Nivel 1, Nivel 2, Nivel 3/4)
@@ -603,10 +714,15 @@ export function EmailAutomationModule({
     })
 
     try {
+      const payloadContent = rawText || contacts.map((c) => c.email).join("\n")
       const res = await fetch("/api/email/contacts/process-file", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campana_nombre: campaignName, rawContent: rawText }),
+        body: JSON.stringify({
+          campana_nombre: campaignName,
+          rawContent: payloadContent,
+          emailColumnIndex: selectedEmailColumnIdx,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -615,7 +731,7 @@ export function EmailAutomationModule({
         setImportSummaryReport({
           isOpen: true,
           categoryName: campaignName,
-          totalProcessed: data.processedTotal || 0,
+          totalProcessed: data.processedTotal || contacts.length,
           insertedCount: data.insertedCount || 0,
           duplicateCount: data.duplicateCount || 0,
           totalDirectoryCount: data.totalDirectoryCount || totalCount + (data.insertedCount || 0),
@@ -636,20 +752,11 @@ export function EmailAutomationModule({
   // Upload Action para Textarea (Manual)
   const handleUploadTextarea = (e: React.FormEvent) => {
     e.preventDefault()
-    const contacts = parseRawContentToContacts(rawContactsInput)
-
-    if (contacts.length === 0) {
+    if (!rawContactsInput.trim()) {
       showFeedback("warning", "Validación de Correos", "Ingresa al menos un correo electrónico válido.")
       return
     }
-
-    // Si supera los 50 correos, pedir confirmación antes de continuar
-    if (contacts.length > 50) {
-      setIsTextareaConfirmOpen(true)
-      return
-    }
-
-    processContactsInTiers(contacts)
+    analyzeAndProcessFileContent(rawContactsInput)
   }
 
   // Carga de Archivo (.CSV o .TXT)
@@ -657,19 +764,11 @@ export function EmailAutomationModule({
     const file = e.target.files?.[0]
     if (!file) return
 
-    const isLargeFile = file.size > 1024 * 1024 // > 1 MB
-
     const reader = new FileReader()
     reader.onload = (event) => {
       const content = event.target?.result as string
       if (!content) return
-
-      const parsed = parseRawContentToContacts(content)
-      if (parsed.length > 10000 || isLargeFile) {
-        processContactsInTiers(parsed, content)
-      } else {
-        processContactsInTiers(parsed)
-      }
+      analyzeAndProcessFileContent(content)
     }
     reader.readAsText(file)
   }
@@ -1163,66 +1262,65 @@ export function EmailAutomationModule({
             </div>
           )}
 
-
-
           {/* MODAL 1.5: CARGA MASIVA E IMPORTACIÓN DE CONTACTOS AL DIRECTORIO */}
           {isUploadModalOpen && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-              <div className="bg-white rounded-2xl border border-black/10 shadow-2xl max-w-lg w-full p-6 space-y-4 font-sans text-xs max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center border-b border-black/[0.08] pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
-                      <Upload className="w-4 h-4" />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+              <div className="bg-white rounded-3xl border border-black/10 shadow-2xl max-w-lg w-full p-6 space-y-5 font-sans text-xs max-h-[92vh] overflow-y-auto">
+                {/* CABECERA DEL MODAL */}
+                <div className="flex justify-between items-start border-b border-black/[0.06] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-purple-900 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+                      <Upload className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-[#111]">Cargar e Importar Lista Masiva al Directorio</h3>
-                      <p className="text-[11px] text-black/50">Clasifica contactos por categoría con deduplicación atómica en DB.</p>
+                      <h3 className="text-sm font-bold text-[#111] font-sans">Importar Correos al Directorio</h3>
+                      <p className="text-[11px] text-black/50 mt-0.5">Deduplicación atómica y validación sintáctica directa</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setIsUploadModalOpen(false)}
-                    className="p-1 rounded-lg hover:bg-black/5 text-black/50 cursor-pointer"
+                    className="p-2 rounded-xl hover:bg-black/5 text-black/40 hover:text-[#111] transition-colors cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* SELECCIÓN Y CREACIÓN DE CATEGORÍA INLINE */}
-                <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-2 font-sans">
+                {/* SELECCIÓN Y CREACIÓN DE DIRECTORIO INLINE */}
+                <div className="p-4 rounded-2xl bg-[#F5F4F0] border border-black/[0.06] space-y-2.5 font-sans">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-mono font-bold text-black/50 uppercase">
-                      Categoría del Directorio Destino *
+                    <label className="text-[10px] font-mono font-bold text-black/60 uppercase tracking-wider">
+                      DIRECTORIO DESTINO *
                     </label>
                     {!isCreatingCategory && (
                       <button
                         type="button"
                         onClick={() => setIsCreatingCategory(true)}
-                        className="text-[11px] font-semibold text-purple-700 hover:text-purple-900 flex items-center gap-0.5 cursor-pointer"
+                        className="text-[11px] font-bold text-purple-900 hover:text-purple-950 flex items-center gap-1 cursor-pointer"
                       >
-                        <Plus className="w-3 h-3" />
-                        <span>+ Nueva Categoría</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Nuevo Directorio</span>
                       </button>
                     )}
                   </div>
 
                   {isCreatingCategory ? (
-                    <div className="flex items-center gap-1.5 animate-in fade-in">
+                    <div className="flex items-center gap-2 animate-in fade-in">
                       <input
                         type="text"
-                        placeholder="Nombre de la nueva categoría..."
+                        placeholder="Nombre del nuevo directorio..."
                         value={newCampaignNameInput}
                         onChange={(e) => setNewCampaignNameInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleCreateCampaign()
                           if (e.key === "Escape") setIsCreatingCategory(false)
                         }}
-                        className="flex-1 px-3 py-1.5 rounded-xl bg-white border border-purple-300 text-xs font-semibold text-[#111] outline-none focus:border-purple-600 shadow-2xs"
+                        className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-purple-400 text-xs font-semibold text-[#111] outline-none focus:border-purple-700 shadow-2xs"
                         autoFocus
                       />
                       <button
                         type="button"
                         onClick={() => handleCreateCampaign()}
-                        className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs shrink-0"
+                        className="px-3.5 py-2 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs shrink-0"
                       >
                         <Check className="w-3.5 h-3.5" />
                         <span>Guardar</span>
@@ -1233,7 +1331,7 @@ export function EmailAutomationModule({
                           setIsCreatingCategory(false)
                           setNewCampaignNameInput("")
                         }}
-                        className="px-2 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-black/60 cursor-pointer shrink-0"
+                        className="px-2.5 py-2 rounded-xl bg-black/5 hover:bg-black/10 text-black/60 cursor-pointer shrink-0"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1248,7 +1346,7 @@ export function EmailAutomationModule({
                           setCampaignName(e.target.value)
                         }
                       }}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30 shadow-2xs"
                     >
                       {campaignsList.map((c) => (
                         <option key={c.id || c.nombre} value={c.nombre}>
@@ -1258,48 +1356,56 @@ export function EmailAutomationModule({
                       {!campaignsList.some((c) => c.nombre === campaignName) && (
                         <option value={campaignName}>{campaignName}</option>
                       )}
-                      <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
+                      <option value="__NEW_CATEGORY__">+ Crear Nuevo Directorio...</option>
                     </select>
                   )}
                 </div>
 
                 {/* BARRA DE SELECCIÓN DE MODO (ARCHIVO VS TEXTAREA) */}
-                <div className="flex items-center gap-2 p-1 rounded-xl bg-[#F5F4F0] border border-black/[0.06] w-full">
+                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#F5F4F0] border border-black/[0.06] w-full">
                   <button
                     type="button"
                     onClick={() => setUploadMode("file")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all cursor-pointer ${
-                      uploadMode === "file" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                      uploadMode === "file" ? "bg-white text-[#111] shadow-2xs" : "text-black/50 hover:text-[#111]"
                     }`}
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
+                    <FileSpreadsheet className="w-4 h-4 text-purple-700" />
                     <span>Cargar Archivo (.CSV / .TXT)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setUploadMode("textarea")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all cursor-pointer ${
-                      uploadMode === "textarea" ? "bg-white text-[#111] shadow-2xs" : "text-black/60 hover:text-[#111]"
+                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                      uploadMode === "textarea" ? "bg-white text-[#111] shadow-2xs" : "text-black/50 hover:text-[#111]"
                     }`}
                   >
-                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Entrada Manual (Textarea)</span>
+                    <FileText className="w-4 h-4 text-emerald-700" />
+                    <span>Entrada Manual</span>
                   </button>
                 </div>
 
                 {/* MODO 1: CARGA POR ARCHIVO (CSV / TXT) */}
                 {uploadMode === "file" && (
-                  <div className="p-6 rounded-2xl border-2 border-dashed border-black/15 bg-[#F5F4F0]/50 hover:bg-[#F5F4F0] transition-colors text-center space-y-3">
-                    <FileUp className="w-8 h-8 text-purple-600 mx-auto" />
-                    <div>
-                      <h4 className="text-xs font-semibold text-[#111]">Arrastra o selecciona un archivo .CSV o .TXT</h4>
-                      <p className="text-[11px] text-black/50 mt-0.5">
-                        Columnas soportadas: <code className="font-mono bg-black/5 px-1 py-0.5 rounded">email</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">nombre</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">empresa</code>, <code className="font-mono bg-black/5 px-1 py-0.5 rounded">telefono</code>
-                      </p>
+                  <div className="p-7 rounded-3xl border-2 border-dashed border-purple-900/20 bg-purple-50/30 hover:bg-purple-50/60 transition-colors text-center space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 flex items-center justify-center mx-auto shadow-2xs">
+                      <FileUp className="w-6 h-6" />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-[#111]">Arrastra o selecciona un archivo .CSV o .TXT</h4>
+                      <div className="flex items-center justify-center gap-2 pt-1">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 text-[10px] font-mono font-semibold text-black/60">
+                          1 Columna: <code className="text-purple-900 font-bold">email</code>
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 text-[10px] font-mono font-semibold text-black/60">
+                          2 Columnas: <code className="text-purple-900 font-bold">nombre, email</code>
+                        </span>
+                      </div>
                     </div>
 
-                    <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs">
-                      <Upload className="w-3.5 h-3.5" />
+                    <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 transition-all cursor-pointer shadow-sm active:scale-95">
+                      <Upload className="w-4 h-4" />
                       <span>Seleccionar Archivo</span>
                       <input
                         type="file"
@@ -1317,14 +1423,14 @@ export function EmailAutomationModule({
                   <form onSubmit={handleUploadTextarea} className="space-y-3">
                     <div>
                       <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                        Lista de Correos (Un correo o CSV por línea) *
+                        Lista de Correos (Un correo o par nombre,email por línea) *
                       </label>
                       <textarea
                         rows={5}
-                        placeholder={"juan@empresa.com\ncarlos@tecnolabs.co, Carlos Mendoza, TecnoLabs SAS\nmaria@innovacion.org"}
+                        placeholder={"juan@empresa.com\nCarlos Mendoza, carlos@tecnolabs.co\nmaria@innovacion.org"}
                         value={rawContactsInput}
                         onChange={(e) => setRawContactsInput(e.target.value)}
-                        className="w-full p-3 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none"
+                        className="w-full p-3.5 rounded-2xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30 resize-none shadow-2xs"
                       />
                     </div>
 
@@ -1335,9 +1441,9 @@ export function EmailAutomationModule({
                       <button
                         type="submit"
                         disabled={uploadProgress.isProcessing}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                       >
-                        <Upload className="w-3.5 h-3.5" />
+                        <Upload className="w-4 h-4" />
                         <span>Procesar e Importar Contactos</span>
                       </button>
                     </div>
@@ -1377,6 +1483,61 @@ export function EmailAutomationModule({
               </div>
             </div>
           )}
+
+          {/* GRUPO DE FASES Y TAREAS DE EMAIL MARKETING (REGLA 1 & REGLA 3 AGENTS.MD) */}
+          <div className="bg-white rounded-2xl border border-black/[0.08] p-5 space-y-4 shadow-2xs font-sans">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-800 font-bold shrink-0">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-[#111] uppercase tracking-wider font-mono">
+                    PANEL DE FASES & TAREAS AGÉNTICAS (`emailmarketing.email`)
+                  </h3>
+                  <p className="text-[11px] text-black/50">
+                    Unidad de Crecimiento & Prospección Comercial con IA (+200k contactos)
+                  </p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 text-[10px] font-mono font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Base de Datos Activa</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* FASE 1 */}
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">01</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 1: Ingesta & Limpieza</p>
+                  <p className="text-[10px] text-black/40 font-mono truncate">Esquema: `emailmarketing.email`</p>
+                </div>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
+              </div>
+
+              {/* FASE 2 */}
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">02</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 2: Segmentación & Búsqueda</p>
+                  <p className="text-[10px] text-black/40 font-mono truncate">Directorio: {campaignName}</p>
+                </div>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500/60 group-hover:bg-blue-500 transition-colors" />
+              </div>
+
+              {/* FASE 3 */}
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
+                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">03</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 3: Execution & Looping</p>
+                  <p className="text-[10px] text-black/40 font-mono truncate">Lotes streaming de 1,000 en 1,000</p>
+                </div>
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500/60 group-hover:bg-purple-500 transition-colors" />
+              </div>
+            </div>
+          </div>
 
           {/* TABLA DE INVENTARIO DE CONTACTOS CON BUSCADOR Y BOTONES CRUD */}
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans space-y-0">
@@ -1454,7 +1615,7 @@ export function EmailAutomationModule({
                   <Search className="w-3.5 h-3.5 text-black/40 absolute left-3 top-2.5" />
                   <input
                     type="text"
-                    placeholder="Buscar correo, nombre o empresa..."
+                    placeholder="Buscar correo o nombre..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-52 sm:w-60"
@@ -1472,6 +1633,25 @@ export function EmailAutomationModule({
                 </button>
 
 
+
+                {/* BOTONES VACIAR CATEGORÍA Y VACIAR TODO */}
+                <button
+                  onClick={handlePurgeCurrentCategory}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-900 border border-amber-500/20 text-xs font-medium hover:bg-amber-500/20 flex items-center gap-1 cursor-pointer shrink-0"
+                  title="Eliminar todos los contactos de la categoría activa"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Vaciar Categoría</span>
+                </button>
+
+                <button
+                  onClick={handlePurgeEntireDirectory}
+                  className="px-3 py-1.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium hover:bg-red-100 flex items-center gap-1 cursor-pointer shrink-0"
+                  title="⚠️ ALERTA: Eliminar TODOS los contactos del directorio en Supabase"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Vaciar Todo</span>
+                </button>
 
                 {/* BOTÓN ELIMINACIÓN MASIVA */}
                 {selectedContactIds.length > 0 && (
@@ -1507,11 +1687,9 @@ export function EmailAutomationModule({
                     </th>
                     <th className="py-3 px-3.5">Correo Electrónico</th>
                     <th className="py-3 px-3.5">Nombre</th>
-                    <th className="py-3 px-3.5">Empresa</th>
-                    <th className="py-3 px-3.5">Teléfono</th>
                     <th className="py-3 px-3.5">Estado</th>
                     <th className="py-3 px-3.5">Último Envío</th>
-                    <th className="py-3 px-3.5 text-right">Acciones CRUD</th>
+                    <th className="py-3 px-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.05]">
@@ -1535,18 +1713,16 @@ export function EmailAutomationModule({
                             />
                           </td>
                           <td className="py-3 px-3.5 font-mono font-medium text-[#111]">{c.email}</td>
-                          <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre}</td>
-                          <td className="py-3 px-3.5 text-black/60">{c.empresa}</td>
-                          <td className="py-3 px-3.5 font-mono text-black/50">{c.telefono || "—"}</td>
+                          <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre || "—"}</td>
                           <td className="py-3 px-3.5 font-mono">
                             <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                               c.estado === 'enviado' ? 'bg-emerald-500/10 text-emerald-800' : 'bg-purple-500/10 text-purple-800'
                             }`}>
-                              {c.estado.toUpperCase()}
+                              {(c.estado || 'PENDIENTE').toUpperCase()}
                             </span>
                           </td>
                           <td className="py-3 px-3.5 font-mono text-black/40">
-                            {c.fecha_ultimo_envio ? new Date(c.fecha_ultimo_envio).toLocaleString('es-CO') : 'Sin envíos'}
+                            {c.ultimo_envio || c.fecha_ultimo_envio ? new Date(c.ultimo_envio || c.fecha_ultimo_envio).toLocaleString('es-CO') : 'Sin envíos'}
                           </td>
                           <td className="py-3 px-3.5 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -1742,6 +1918,93 @@ export function EmailAutomationModule({
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INTERACTIVO DE SELECCIÓN DE COLUMNA DE CORREOS */}
+      {isColumnSelectorOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#111111] text-white border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold tracking-wide text-white">Selecciona la Columna de Correos</h3>
+                  <p className="text-xs text-white/50">Detectamos un archivo con {detectedColumns.length} columnas</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="text-white/40 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-white/70 leading-relaxed">
+              Indica cuál de las siguientes columnas contiene las direcciones de email a importar en la categoría <strong className="text-blue-400">"{campaignName}"</strong>:
+            </p>
+
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              {detectedColumns.map((col) => {
+                const isSelected = selectedEmailColumnIdx === col.index
+                return (
+                  <div
+                    key={col.index}
+                    onClick={() => setSelectedEmailColumnIdx(col.index)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? "bg-blue-500/15 border-blue-500/50 shadow-lg shadow-blue-500/10"
+                        : "bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        isSelected ? "border-blue-400 bg-blue-500" : "border-white/30"
+                      }`}>
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-semibold text-white truncate">
+                            {col.header}
+                          </span>
+                          {col.emailCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-green-500/20 text-green-400 text-[10px] font-mono">
+                              {col.emailCount} correos detectados
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] font-mono text-white/40 truncate mt-0.5">
+                          Muestra: <span className="text-white/70">{col.sample}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setIsColumnSelectorOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmColumnSelection}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-all shadow-md shadow-blue-600/30 flex items-center gap-2 cursor-pointer"
+              >
+                <span>Importar Correos de la Columna</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
