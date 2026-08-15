@@ -870,30 +870,27 @@ export function EmailAutomationModule({
         </div>
       </div>
 
-      {/* ── BANNER DE NOTIFICACIÓN & FEEDBACK UI (REGLA 1 & DESIGN.MD) ──────────── */}
+      {/* ── TOAST NOTIFICACIÓN FLOTANTE DISCRETO (ESQUINA INFERIOR DERECHA) ────── */}
       {uiNotification && (
-        <div className={`p-4 rounded-2xl border flex items-start justify-between gap-3 shadow-2xs font-sans transition-all ${
-          uiNotification.type === "success"
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-950"
-            : uiNotification.type === "warning"
-            ? "bg-amber-500/10 border-amber-500/20 text-amber-950"
-            : "bg-red-500/10 border-red-500/20 text-red-950"
-        }`}>
-          <div className="flex items-start gap-3">
-            {uiNotification.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />}
-            {uiNotification.type === "warning" && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />}
-            {uiNotification.type === "error" && <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />}
-            <div>
-              <h4 className="text-xs font-bold font-mono uppercase tracking-wider">{uiNotification.title}</h4>
-              <p className="text-xs mt-0.5 opacity-90">{uiNotification.message}</p>
-            </div>
+        <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-3 fade-in duration-200">
+          <div className={`px-4 py-3 rounded-xl border flex items-center gap-3 shadow-lg font-sans text-xs max-w-md ${
+            uiNotification.type === "success"
+              ? "bg-white border-emerald-200 text-emerald-950"
+              : uiNotification.type === "warning"
+              ? "bg-white border-amber-200 text-amber-950"
+              : "bg-white border-red-200 text-red-950"
+          }`}>
+            {uiNotification.type === "success" && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+            {uiNotification.type === "warning" && <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />}
+            {uiNotification.type === "error" && <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />}
+            <span className="font-medium text-[#111] flex-1">{uiNotification.message}</span>
+            <button
+              onClick={() => setUiNotification(null)}
+              className="p-1 rounded-lg hover:bg-black/5 text-black/40 hover:text-[#111] transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <button
-            onClick={() => setUiNotification(null)}
-            className="p-1 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4 opacity-50" />
-          </button>
         </div>
       )}
 
