@@ -68,24 +68,30 @@ export async function POST(request: Request) {
       console.warn('[POOL FETCH WARN]', poolErr)
     }
 
-    // 3. Consultar contactos pendientes en la campaña
+    // 3. Consultar contactos pendientes en el directorio
+    const cleanDirectory = campana_nombre.trim()
     const contactsRes = await fetch(
-      `${url}/rest/v1/inventario_contactos?campana_nombre=eq.${encodeURIComponent(campana_nombre)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
+      `${url}/rest/v1/email?directorio_nombre=eq.${encodeURIComponent(cleanDirectory)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
       {
-        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
+        headers: { 
+          apikey: anonKey, 
+          Authorization: `Bearer ${anonKey}`, 
+          'Accept-Profile': 'emailmarketing',
+          'Content-Profile': 'emailmarketing'
+        },
         cache: 'no-store',
       }
     )
 
     if (!contactsRes.ok) {
-      return NextResponse.json({ success: false, error: 'Error al consultar inventario de contactos' }, { status: 500 })
+      return NextResponse.json({ success: false, error: 'Error al consultar inventario de contactos del directorio' }, { status: 500 })
     }
 
     const pendingContacts = await contactsRes.json()
     if (pendingContacts.length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'No hay contactos pendientes por procesar en esta campaña.',
+        message: 'No hay contactos pendientes por procesar en este directorio.',
         enviados: 0,
         omitidos_duplicado: 0,
         fallidos: 0,
@@ -110,13 +116,9 @@ export async function POST(request: Request) {
       const rawAsunto = poolAsuntos[i % poolAsuntos.length]
       const rawCuerpo = poolCuerpos[i % poolCuerpos.length]
 
-      // Reemplazo de variables dinámicas
-      const asuntoFinal = rawAsunto
-        .replace(/{{nombre}}/g, contacto.nombre || 'Cliente')
-        .replace(/{{empresa}}/g, contacto.empresa || 'Empresa Privada')
-      const cuerpoFinal = rawCuerpo
-        .replace(/{{nombre}}/g, contacto.nombre || 'Cliente')
-        .replace(/{{empresa}}/g, contacto.empresa || 'Empresa Privada')
+      // Reemplazo de variables dinámicas (solo nombre si existe, o reemplazo limpio)
+      const asuntoFinal = rawAsunto.replace(/{{nombre}}/g, contacto.nombre || '')
+      const cuerpoFinal = rawCuerpo.replace(/{{nombre}}/g, contacto.nombre || '')
 
       // Intento de envío vía Gmail API
       const result = await sendGmailCustomEmail({
@@ -130,42 +132,22 @@ export async function POST(request: Request) {
         enviadosCount++
         sentToday = await GoogleQuotaStore.incrementarEnviadosHoy(remitente)
 
-        // Actualizar estado del contacto a 'enviado'
-        await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${contacto.id}`, {
+        // Actualizar estado del contacto a 'enviado' en emailmarketing.email
+        await fetch(`${url}/rest/v1/email?id=eq.${contacto.id}`, {
           method: 'PATCH',
           headers: {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
             'Content-Type': 'application/json',
-            'Accept-Profile': 'automatizacion',
-            'Content-Profile': 'automatizacion',
+            'Accept-Profile': 'emailmarketing',
+            'Content-Profile': 'emailmarketing',
           },
-          body: JSON.stringify({ estado: 'enviado', fecha_ultimo_envio: new Date().toISOString() }),
+          body: JSON.stringify({ estado: 'enviado', ultimo_envio: new Date().toISOString() }),
         })
 
         // Goteo Aleatorio Antispam (3.0s a 5.0s)
         const delaySeconds = parseFloat((Math.random() * (drip_max - drip_min) + drip_min).toFixed(2))
         await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000))
-
-        // Registrar en log_despachos
-        await fetch(`${url}/rest/v1/log_despachos`, {
-          method: 'POST',
-          headers: {
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-            'Content-Type': 'application/json',
-            'Accept-Profile': 'automatizacion',
-            'Content-Profile': 'automatizacion',
-          },
-          body: JSON.stringify({
-            contacto_id: contacto.id,
-            campana_nombre,
-            asunto_usado: asuntoFinal,
-            cuerpo_usado: cuerpoFinal,
-            message_id: result.messageId || 'g-msg-ok',
-            drip_delay_aplicado: delaySeconds,
-          }),
-        })
       } else {
         // Detectar si el error fue por exceso de cuota HTTP 429/403
         if (result.error && (result.error.includes('quotaExceeded') || result.error.includes('dailyLimitExceeded'))) {
@@ -176,14 +158,14 @@ export async function POST(request: Request) {
         }
 
         fallidosCount++
-        await fetch(`${url}/rest/v1/inventario_contactos?id=eq.${contacto.id}`, {
+        await fetch(`${url}/rest/v1/email?id=eq.${contacto.id}`, {
           method: 'PATCH',
           headers: {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
             'Content-Type': 'application/json',
-            'Accept-Profile': 'automatizacion',
-            'Content-Profile': 'automatizacion',
+            'Accept-Profile': 'emailmarketing',
+            'Content-Profile': 'emailmarketing',
           },
           body: JSON.stringify({ estado: 'fallido' }),
         })
