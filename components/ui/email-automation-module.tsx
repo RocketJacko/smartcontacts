@@ -1484,86 +1484,109 @@ export function EmailAutomationModule({
             </div>
           )}
 
-          {/* GRUPO DE FASES Y TAREAS DE EMAIL MARKETING (REGLA 1 & REGLA 3 AGENTS.MD) */}
-          <div className="bg-white rounded-2xl border border-black/[0.08] p-5 space-y-4 shadow-2xs font-sans">
-            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-800 font-bold shrink-0">
-                  <Layers className="w-4 h-4" />
+          {/* GRUPO DE FASES Y TAREAS DE EMAIL MARKETING */}
+          <div className="bg-white rounded-3xl border border-black/[0.08] p-5 space-y-4 shadow-2xs font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.06] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-purple-900 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                  <Layers className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-[#111] uppercase tracking-wider font-mono">
-                    PANEL DE FASES & TAREAS AGÉNTICAS (`emailmarketing.email`)
-                  </h3>
+                  <h2 className="text-sm font-bold text-[#111] font-sans">
+                    Fases Operativas de Ingesta & Prospección
+                  </h2>
                   <p className="text-[11px] text-black/50">
-                    Unidad de Crecimiento & Prospección Comercial con IA (+200k contactos)
+                    Unidad agéntica de prospección comercial (+200k contactos)
                   </p>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 text-[10px] font-mono font-bold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Base de Datos Activa</span>
-              </span>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {contactInventory.some((c) => c.email.includes("test")) && (
+                  <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-[11px] font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Entorno de Prueba</span>
+                  </span>
+                )}
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px] font-semibold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Base de Datos Activa</span>
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* FASE 1 */}
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">01</span>
+              <div
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#F5F4F0]/60 hover:bg-[#F5F4F0] transition-colors border border-black/[0.05] group cursor-pointer"
+                title="Fase 1: Ingesta limpia y validación sintáctica directa en el esquema emailmarketing.email"
+              >
+                <span className="text-xs font-mono font-bold text-black/30 min-w-[18px]">01</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 1: Ingesta & Limpieza</p>
-                  <p className="text-[10px] text-black/40 font-mono truncate">Esquema: `emailmarketing.email`</p>
+                  <p className="text-xs font-bold text-[#111] truncate">1. Ingesta & Limpieza</p>
+                  <p className="text-[11px] text-black/50 truncate font-mono">emailmarketing.email</p>
                 </div>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500/80 group-hover:bg-emerald-500 transition-colors shrink-0" />
               </div>
 
               {/* FASE 2 */}
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">02</span>
+              <div
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#F5F4F0]/60 hover:bg-[#F5F4F0] transition-colors border border-black/[0.05] group cursor-pointer"
+                title={`Fase 2: Segmentación y búsqueda atómica en el directorio "${campaignName}"`}
+              >
+                <span className="text-xs font-mono font-bold text-black/30 min-w-[18px]">02</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 2: Segmentación & Búsqueda</p>
-                  <p className="text-[10px] text-black/40 font-mono truncate">Directorio: {campaignName}</p>
+                  <p className="text-xs font-bold text-[#111] truncate">2. Segmentación & Filtros</p>
+                  <p className="text-[11px] text-black/50 truncate">{campaignName}</p>
                 </div>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500/60 group-hover:bg-blue-500 transition-colors" />
+                <span className="w-2 h-2 rounded-full bg-blue-500/80 group-hover:bg-blue-500 transition-colors shrink-0" />
               </div>
 
-              {/* FASE 3 */}
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
-                <span className="text-[10px] text-black/25 font-mono min-w-[16px]">03</span>
+              {/* FASE 3 CON CUOTA DIARIA INTEGRADA */}
+              <div
+                className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#F5F4F0]/60 hover:bg-[#F5F4F0] transition-colors border border-black/[0.05] group cursor-pointer"
+                title="Fase 3: Ejecución de envíos en lotes streaming de 1,000 en 1,000 con rotación anti-spam Round-Robin"
+              >
+                <span className="text-xs font-mono font-bold text-black/30 min-w-[18px]">03</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-black/70 font-semibold truncate">Fase 3: Execution & Looping</p>
-                  <p className="text-[10px] text-black/40 font-mono truncate">Lotes streaming de 1,000 en 1,000</p>
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs font-bold text-[#111] truncate">3. Envíos & Round-Robin</p>
+                    <span className="text-[10px] font-mono font-bold text-purple-900 bg-purple-100 px-1.5 py-0.5 rounded">
+                      Cuota: {dailyQuota}/2000
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-black/50 truncate">Lotes streaming de 1,000</p>
                 </div>
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500/60 group-hover:bg-purple-500 transition-colors" />
+                <span className="w-2 h-2 rounded-full bg-purple-500/80 group-hover:bg-purple-500 transition-colors shrink-0" />
               </div>
             </div>
           </div>
 
           {/* TABLA DE INVENTARIO DE CONTACTOS CON BUSCADOR Y BOTONES CRUD */}
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs font-sans space-y-0">
-            {/* CABECERA CON BUSCADOR, CATEGORÍA Y ACCIONES MASIVAS */}
-            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
-              {/* IZQUIERDA: FILTRO Y SELECCIÓN DE CATEGORÍA ACTIVA INLINE */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono font-bold uppercase text-black/50 text-[10px]">CATEGORÍA:</span>
+            {/* CABECERA CON BUSCADOR, DIRECTORIO Y ACCIONES */}
+            <div className="p-4 border-b border-black/[0.07] bg-[#F5F4F0] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs font-sans">
+              {/* IZQUIERDA: SELECCIÓN DE DIRECTORIO ACTIVO INLINE */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-semibold text-black/60 text-xs">Directorio:</span>
                 {isCreatingCategory ? (
                   <div className="flex items-center gap-1.5 animate-in fade-in">
                     <input
                       type="text"
-                      placeholder="Nombre de la nueva categoría..."
+                      placeholder="Nombre del nuevo directorio..."
                       value={newCampaignNameInput}
                       onChange={(e) => setNewCampaignNameInput(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleCreateCampaign()
                         if (e.key === "Escape") setIsCreatingCategory(false)
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white border border-purple-300 text-xs font-semibold text-[#111] outline-none focus:border-purple-600 shadow-2xs"
+                      className="px-3.5 py-1.5 rounded-xl bg-white border border-purple-300 text-xs font-semibold text-[#111] outline-none focus:border-purple-600 shadow-2xs"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={() => handleCreateCampaign()}
-                      className="px-2.5 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs"
+                      className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 flex items-center gap-1 cursor-pointer shadow-2xs"
                     >
                       <Check className="w-3.5 h-3.5" />
                       <span>Guardar</span>
@@ -1589,7 +1612,7 @@ export function EmailAutomationModule({
                         setCampaignName(e.target.value)
                       }
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                    className="px-3.5 py-1.5 rounded-xl bg-white border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30 shadow-2xs"
                   >
                     {campaignsList.map((c) => (
                       <option key={c.id || c.nombre} value={c.nombre}>
@@ -1599,12 +1622,12 @@ export function EmailAutomationModule({
                     {!campaignsList.some((c) => c.nombre === campaignName) && (
                       <option value={campaignName}>{campaignName}</option>
                     )}
-                    <option value="__NEW_CATEGORY__">+ Crear Nueva Categoría...</option>
+                    <option value="__NEW_CATEGORY__">+ Crear Nuevo Directorio...</option>
                   </select>
                 )}
 
-                <span className="text-[10px] font-mono bg-purple-100 text-purple-900 px-2.5 py-1 rounded-full font-bold">
-                  {totalCount.toLocaleString()} Contactos
+                <span className="text-xs font-sans font-semibold bg-purple-50 text-purple-900 border border-purple-200/60 px-3 py-1 rounded-full">
+                  {totalCount.toLocaleString()} contactos
                 </span>
               </div>
 
@@ -1618,46 +1641,44 @@ export function EmailAutomationModule({
                     placeholder="Buscar correo o nombre..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-52 sm:w-60"
+                    className="pl-8 pr-3 py-1.5 rounded-xl bg-white border border-black/10 text-xs text-[#111] outline-none focus:border-black/30 w-52 sm:w-60 shadow-2xs"
                   />
                 </div>
 
-                {/* BOTÓN IMPORTAR LISTA MASIVA (.CSV / .TXT) */}
+                {/* BOTÓN IMPORTAR LISTA MASIVA */}
                 <button
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-medium hover:bg-purple-950 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
-                  title="Importar lista masiva desde archivo CSV o Textarea"
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-900 text-white text-xs font-semibold hover:bg-purple-950 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                  title="Importar lista masiva desde archivo CSV o Entrada Manual"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Importar Lista Masiva</span>
+                  <span>Importar Lista</span>
                 </button>
 
-
-
-                {/* BOTONES VACIAR CATEGORÍA Y VACIAR TODO */}
+                {/* BOTONES VACIAR DIRECTORIO ACTIVO (GHOST AMBER) Y VACIAR TODO (SOLID RED) */}
                 <button
                   onClick={handlePurgeCurrentCategory}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-900 border border-amber-500/20 text-xs font-medium hover:bg-amber-500/20 flex items-center gap-1 cursor-pointer shrink-0"
-                  title="Eliminar todos los contactos de la categoría activa"
+                  className="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50/50 text-amber-900 text-xs font-medium hover:bg-amber-100/60 flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
+                  title="Eliminar únicamente los contactos del directorio activo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Vaciar Categoría</span>
+                  <span>Vaciar Directorio</span>
                 </button>
 
                 <button
                   onClick={handlePurgeEntireDirectory}
-                  className="px-3 py-1.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium hover:bg-red-100 flex items-center gap-1 cursor-pointer shrink-0"
-                  title="⚠️ ALERTA: Eliminar TODOS los contactos del directorio en Supabase"
+                  className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold hover:bg-red-700 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-colors"
+                  title="⚠️ ALERTA CRÍTICA: Eliminar TODOS los contactos de la base de datos"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Vaciar Todo</span>
                 </button>
 
-                {/* BOTÓN ELIMINACIÓN MASIVA */}
+                {/* BOTÓN ELIMINACIÓN MASIVA SELECCIÓN */}
                 {selectedContactIds.length > 0 && (
                   <button
                     onClick={handleBulkDeleteContacts}
-                    className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-medium hover:bg-red-700 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                    className="px-3 py-1.5 rounded-xl bg-red-700 text-white text-xs font-semibold hover:bg-red-800 flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Eliminar ({selectedContactIds.length})</span>
@@ -1668,9 +1689,9 @@ export function EmailAutomationModule({
 
             {/* TABLA PRINCIPAL DE CONTACTOS */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs font-sans">
                 <thead>
-                  <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                  <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-xs font-semibold text-black/60">
                     <th className="py-3 px-3.5 w-8 text-center">
                       <input
                         type="checkbox"
@@ -1685,11 +1706,11 @@ export function EmailAutomationModule({
                         className="rounded border-black/20 cursor-pointer"
                       />
                     </th>
-                    <th className="py-3 px-3.5">Correo Electrónico</th>
-                    <th className="py-3 px-3.5">Nombre</th>
-                    <th className="py-3 px-3.5">Estado</th>
-                    <th className="py-3 px-3.5">Último Envío</th>
-                    <th className="py-3 px-3.5 text-right">Acciones</th>
+                    <th className="py-3 px-3.5 font-semibold">Correo Electrónico</th>
+                    <th className="py-3 px-3.5 font-semibold">Nombre</th>
+                    <th className="py-3 px-3.5 font-semibold">Estado</th>
+                    <th className="py-3 px-3.5 font-semibold">Último Envío</th>
+                    <th className="py-3 px-3.5 text-right font-semibold">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[0.05]">
@@ -1714,14 +1735,14 @@ export function EmailAutomationModule({
                           </td>
                           <td className="py-3 px-3.5 font-mono font-medium text-[#111]">{c.email}</td>
                           <td className="py-3 px-3.5 text-black/80 font-medium">{c.nombre || "—"}</td>
-                          <td className="py-3 px-3.5 font-mono">
-                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          <td className="py-3 px-3.5">
+                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full ${
                               c.estado === 'enviado' ? 'bg-emerald-500/10 text-emerald-800' : 'bg-purple-500/10 text-purple-800'
                             }`}>
                               {(c.estado || 'PENDIENTE').toUpperCase()}
                             </span>
                           </td>
-                          <td className="py-3 px-3.5 font-mono text-black/40">
+                          <td className="py-3 px-3.5 text-black/50">
                             {c.ultimo_envio || c.fecha_ultimo_envio ? new Date(c.ultimo_envio || c.fecha_ultimo_envio).toLocaleString('es-CO') : 'Sin envíos'}
                           </td>
                           <td className="py-3 px-3.5 text-right">
@@ -1747,8 +1768,16 @@ export function EmailAutomationModule({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-black/40 font-mono">
-                        {searchQuery ? `No se encontraron contactos que coincidan con "${searchQuery}".` : "No hay contactos cargados para esta categoría."}
+                      <td colSpan={6} className="py-10 text-center font-sans">
+                        <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                          <div className="w-10 h-10 rounded-2xl bg-black/[0.04] text-black/40 flex items-center justify-center">
+                            <Users className="w-5 h-5" />
+                          </div>
+                          <p className="text-xs font-semibold text-[#111]">Directorio sin contactos</p>
+                          <p className="text-[11px] text-black/50">
+                            {searchQuery ? `No se encontraron coincidencias para "${searchQuery}".` : "Usa el botón de Importar Lista para ingresar correos a este directorio."}
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -1757,13 +1786,13 @@ export function EmailAutomationModule({
             </div>
           </div>
 
-          {/* ELEMENTO INDEPENDIENTE DE PAGINACIÓN SERVER-SIDE (STANDALONE PAGINATOR) */}
-          <div className="p-4 rounded-2xl border border-black/[0.07] bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+          {/* ELEMENTO INDEPENDIENTE DE PAGINACIÓN SERVER-SIDE */}
+          <div className="p-4 rounded-2xl border border-black/[0.07] bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-sans">
             {/* IZQUIERDA: CONTADOR DE REGISTROS */}
-            <div className="text-black/60 text-[11px]">
-              Mostrando <span className="font-bold text-[#111]">{totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> a{" "}
-              <span className="font-bold text-[#111]">{Math.min(currentPage * pageSize, totalCount)}</span> de{" "}
-              <span className="font-bold text-purple-700">{totalCount.toLocaleString()}</span> contactos registrados
+            <div className="text-black/60 text-xs font-sans">
+              Mostrando <span className="font-semibold text-[#111]">{totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> a{" "}
+              <span className="font-semibold text-[#111]">{Math.min(currentPage * pageSize, totalCount)}</span> de{" "}
+              <span className="font-semibold text-purple-900">{totalCount.toLocaleString()}</span> contactos registrados
             </div>
 
             {/* CENTRO: CONTROLES DE NAVEGACIÓN DE PÁGINAS */}

@@ -194,9 +194,9 @@ function NavItem({
         className={`group flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 select-none
           ${
             isActive && !hasChildren
-              ? "bg-black text-white font-medium shadow-sm"
+              ? "bg-purple-900 text-white font-medium shadow-2xs"
               : isActive && hasChildren
-              ? "bg-black/5 text-[#111] font-semibold"
+              ? "bg-purple-50 text-purple-950 font-semibold"
               : "text-black/70 hover:bg-black/[0.04] hover:text-[#111]"
           }
         `}
@@ -287,7 +287,7 @@ export function SidebarNav({
           return (
             <div key={idx} className="flex flex-col gap-0.5">
               {headingText && (
-                <span className="px-3 mb-1 text-[10px] font-mono font-bold tracking-widest text-black/40 uppercase">
+                <span className="px-3 mb-1.5 text-[11px] font-semibold text-black/50 tracking-tight font-sans">
                   {headingText}
                 </span>
               )}
