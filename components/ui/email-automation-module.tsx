@@ -602,7 +602,7 @@ export function EmailAutomationModule({
         const res = await fetch("/api/email/contacts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ campana_nombre: campaignName, contactos: contacts }),
+          body: JSON.stringify({ directorio_nombre: campaignName, campana_nombre: campaignName, contactos: contacts }),
         })
         const data = await res.json()
         if (data.success) {
@@ -656,7 +656,7 @@ export function EmailAutomationModule({
           const res = await fetch("/api/email/contacts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ campana_nombre: campaignName, contactos: chunk }),
+            body: JSON.stringify({ directorio_nombre: campaignName, campana_nombre: campaignName, contactos: chunk }),
           })
           const data = await res.json()
           if (data.success) {

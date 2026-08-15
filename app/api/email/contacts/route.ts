@@ -80,25 +80,59 @@ export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { email, nombre, directorio_nombre } = body
 
-    if (!email || !directorio_nombre) {
+    // Sostener compatibilidad multi-formato (directorio_nombre, campana_nombre, categoryName)
+    const targetDirectory = body.directorio_nombre || body.campana_nombre || body.categoryName
+
+    if (!targetDirectory || !targetDirectory.trim()) {
+      return NextResponse.json({ success: false, error: 'El nombre del directorio (o campana_nombre) es requerido' }, { status: 400 })
+    }
+
+    if (!url || !anonKey) {
+      return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
+    }
+
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
+    }
+
+    const cleanDirectory = targetDirectory.trim()
+
+    // CASO A: Envío de arreglo de contactos ({ contactos: [...] })
+    if (body.contactos && Array.isArray(body.contactos)) {
+      let count = 0
+      for (const item of body.contactos) {
+        if (!item || !item.email) continue
+        await fetch(`${url}/rest/v1/rpc/ingestar_contacto`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            p_email: item.email,
+            p_nombre: item.nombre || null,
+            p_directorio_nombre: cleanDirectory,
+          }),
+        })
+        count++
+      }
+      return NextResponse.json({ success: true, count, insertedCount: count, totalCount: count })
+    }
+
+    // CASO B: Envío de contacto único ({ email, nombre, directorio_nombre })
+    if (!body.email) {
       return NextResponse.json({ success: false, error: 'email y directorio_nombre son requeridos' }, { status: 400 })
     }
 
     const res = await fetch(`${url}/rest/v1/rpc/ingestar_contacto`, {
       method: 'POST',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-        'Accept-Profile': 'emailmarketing',
-        'Content-Profile': 'emailmarketing',
-      },
+      headers,
       body: JSON.stringify({
-        p_email: email,
-        p_nombre: nombre || null,
-        p_directorio_nombre: directorio_nombre,
+        p_email: body.email,
+        p_nombre: body.nombre || null,
+        p_directorio_nombre: cleanDirectory,
       }),
     })
 
