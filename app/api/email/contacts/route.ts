@@ -32,9 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos' }, { status: 400 })
     }
 
-    // 1. Auto-registrar el directorio en emailmarketing.campanas
+    // 1. Auto-registrar el directorio en emailmarketing.directorios
     try {
-      await fetch(`${url}/rest/v1/campanas`, {
+      await fetch(`${url}/rest/v1/directorios`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
@@ -47,7 +47,6 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           nombre: cleanDirectory,
           descripcion: 'Directorio auto-registrado',
-          estado: 'activa',
         }),
       })
     } catch {
@@ -88,11 +87,11 @@ export async function POST(request: Request) {
     const payload = validContacts.map((c) => ({
       email: c.email.trim().toLowerCase(),
       nombre: c.nombre ? c.nombre.trim() : null,
-      campana_nombre: cleanDirectory,
+      directorio_nombre: cleanDirectory,
       estado: 'pendiente',
     }))
 
-    const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,campana_nombre`, {
+    const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
@@ -105,35 +104,26 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload),
     })
 
-    let insertedRows: any[] = []
-    if (insertRes.ok) {
-      try {
-        insertedRows = await insertRes.json()
-      } catch {
-        insertedRows = []
-      }
+    if (!insertRes.ok) {
+      const errText = await insertRes.text()
+      return NextResponse.json({ success: false, error: `Error de inserción en Supabase: ${errText}` }, { status: 400 })
     }
 
-    const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : 0
-    const insertedEmails = new Set(
-      Array.isArray(insertedRows) ? insertedRows.map((r: any) => r.email?.toLowerCase()).filter(Boolean) : []
-    )
-    const duplicateEmails = validContacts
-      .filter((c: any) => !insertedEmails.has(c.email.toLowerCase()))
-      .map((c: any) => c.email)
+    const insertedRows = await insertRes.json()
+    const insertedCount = Array.isArray(insertedRows) ? insertedRows.length : validContacts.length
+    const duplicateCount = validContacts.length - insertedCount
 
     return NextResponse.json({
       success: true,
       directorio_nombre: cleanDirectory,
       processedTotal: validContacts.length,
       insertedCount,
-      duplicateCount: duplicateEmails.length,
-      duplicateEmails,
-      message: `Procesamiento completado: ${insertedCount} nuevos contactos registrados.`,
+      duplicateCount,
+      message: `Procesamiento completado: ${insertedCount} nuevos contactos registrados en el directorio.`,
     })
   } catch (error: any) {
     console.error('[API CONTACTS POST ERROR]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error interno del servidor' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
 
@@ -156,7 +146,7 @@ export async function GET(request: Request) {
     
     if (directorio && directorio.trim() && directorio.trim() !== 'Todas' && directorio.trim() !== 'Todos los Directorios') {
       const cleanDir = directorio.trim()
-      queryUrl += `&campana_nombre=eq.${encodeURIComponent(cleanDir)}`
+      queryUrl += `&directorio_nombre=eq.${encodeURIComponent(cleanDir)}`
     }
 
     if (search) {

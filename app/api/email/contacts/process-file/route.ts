@@ -94,9 +94,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No se encontraron correos electrónicos válidos en el archivo.' }, { status: 400 })
     }
 
-    // Auto-registrar el directorio en emailmarketing.campanas
+    // Auto-registrar el directorio en emailmarketing.directorios
     try {
-      await fetch(`${url}/rest/v1/campanas`, {
+      await fetch(`${url}/rest/v1/directorios`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
@@ -109,7 +109,6 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           nombre: cleanDirectory,
           descripcion: 'Directorio auto-registrado desde archivo masivo',
-          estado: 'activa',
         }),
       })
     } catch {
@@ -124,7 +123,7 @@ export async function POST(request: Request) {
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,campana_nombre`, {
+      const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
         method: 'POST',
         headers: {
           apikey: anonKey,

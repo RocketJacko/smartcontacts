@@ -216,26 +216,26 @@ export function EmailAutomationModule({
 
   const dailyQuota = senderEmail.endsWith("@pascualbravo.edu.co") ? 2000 : 500
 
-  // Fetch Campaigns List
+  // Fetch Directories List
   const loadCampaigns = async () => {
     try {
-      const res = await fetch("/api/email/campaigns")
+      const res = await fetch("/api/email/directories")
       const data = await res.json()
-      if (data.success && data.campaigns) {
-        setCampaignsList(data.campaigns)
+      if (data.success && data.directories) {
+        setCampaignsList(data.directories)
       }
     } catch (err) {
       // Silencioso
     }
   }
 
-  // Create New Campaign Action
+  // Create New Directory Action
   const handleCreateCampaign = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     if (!newCampaignNameInput.trim()) return
 
     try {
-      const res = await fetch("/api/email/campaigns", {
+      const res = await fetch("/api/email/directories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nombre: newCampaignNameInput.trim() }),
@@ -247,13 +247,13 @@ export function EmailAutomationModule({
         setNewCampaignNameInput("")
         setIsCreatingCategory(false)
         setIsCreateCampaignModalOpen(false)
-        showFeedback("success", "Categoría Creada", `La categoría "${createdName}" se ha creado y seleccionado automáticamente.`)
+        showFeedback("success", "Directorio Creado", `El directorio "${createdName}" se ha creado y seleccionado automáticamente.`)
         loadCampaigns()
       } else {
-        showFeedback("error", "Error al Crear Categoría", data.error || "No se pudo registrar la categoría.")
+        showFeedback("error", "Error al Crear Directorio", data.error || "No se pudo registrar el directorio.")
       }
     } catch (err) {
-      showFeedback("error", "Error de Servidor", "Fallo de conexión al guardar la nueva categoría.")
+      showFeedback("error", "Error de Servidor", "Fallo de conexión al guardar el nuevo directorio.")
     }
   }
 
