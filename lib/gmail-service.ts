@@ -348,9 +348,13 @@ export async function send8AMMorningReminderEmail(params: {
  */
 export async function sendGmailCustomEmail(params: {
   toEmail: string
+  toName?: string
   subject: string
-  body: string
+  body?: string
+  htmlBody?: string
   fromMask?: string
+  senderEmail?: string
+  senderMask?: string
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const { senderEmail, senderName } = getGmailCredentials()
   const accessToken = await getAccessToken()
@@ -360,12 +364,16 @@ export async function sendGmailCustomEmail(params: {
   }
 
   try {
+    const effectiveSender = params.senderEmail || senderEmail
+    const effectiveMask = params.senderMask || params.fromMask || senderName
+    const effectiveBody = params.htmlBody || params.body || ''
+
     const rawMessage = createRawMimeMessage(
-      params.fromMask ? params.fromMask.split('<')[0].trim() : senderName,
-      senderEmail,
+      effectiveMask.includes('<') ? effectiveMask.split('<')[0].trim() : effectiveMask,
+      effectiveSender,
       params.toEmail,
       params.subject,
-      params.body
+      effectiveBody
     )
 
     const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {

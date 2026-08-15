@@ -1,39 +1,48 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
-// GET: Obtener pools de asuntos y cuerpos para Round-Robin
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
+    const { searchParams } = new URL(request.url)
+    const campanaId = searchParams.get('campana_id')
+
     if (!url || !anonKey) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    const resAsuntos = await fetch(`${url}/rest/v1/pool_asuntos?select=*&order=creado_en.asc`, {
-      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
-      cache: 'no-store',
-    })
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
+    }
+
+    let asuntosUrl = `${url}/rest/v1/campana_asuntos?select=*&order=creado_en.asc`
+    let cuerposUrl = `${url}/rest/v1/campana_cuerpos?select=*&order=creado_en.asc`
+
+    if (campanaId) {
+      asuntosUrl += `&campana_id=eq.${campanaId}`
+      cuerposUrl += `&campana_id=eq.${campanaId}`
+    }
+
+    const resAsuntos = await fetch(asuntosUrl, { headers, cache: 'no-store' })
     const asuntos = resAsuntos.ok ? await resAsuntos.json() : []
 
-    const resCuerpos = await fetch(`${url}/rest/v1/pool_cuerpos?select=*&order=creado_en.asc`, {
-      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Accept-Profile': 'automatizacion' },
-      cache: 'no-store',
-    })
+    const resCuerpos = await fetch(cuerposUrl, { headers, cache: 'no-store' })
     const cuerpos = resCuerpos.ok ? await resCuerpos.json() : []
 
     return NextResponse.json({ success: true, asuntos, cuerpos })
   } catch (error: any) {
-    console.error('[API ROUNDROBIN GET ERROR]', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
 
-// POST: Crear nuevo asunto o cuerpo en el pool Round-Robin
 export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { tipo, texto } = body // tipo: 'asunto' | 'cuerpo'
+    const { tipo, texto, campana_id } = body
 
     if (!tipo || !texto) {
       return NextResponse.json({ success: false, error: 'tipo y texto son obligatorios' }, { status: 400 })
@@ -43,37 +52,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    const targetTable = tipo === 'asunto' ? 'pool_asuntos' : 'pool_cuerpos'
-    const payload = tipo === 'asunto' ? { asunto: texto, activo: true } : { cuerpo_html: texto, activo: true }
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
+      Prefer: 'return=representation',
+    }
+
+    const targetTable = tipo === 'asunto' ? 'campana_asuntos' : 'campana_cuerpos'
+    const payload = tipo === 'asunto' 
+      ? { asunto: texto, activo: true, campana_id: campana_id || null } 
+      : { cuerpo_html: texto, activo: true, campana_id: campana_id || null }
 
     const res = await fetch(`${url}/rest/v1/${targetTable}`, {
       method: 'POST',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-        'Accept-Profile': 'automatizacion',
-        'Content-Profile': 'automatizacion',
-        Prefer: 'return=representation',
-      },
+      headers,
       body: JSON.stringify(payload),
     })
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[ROUNDROBIN ERROR]', res.status, errText)
-      return NextResponse.json({ success: false, error: 'No se pudo guardar el elemento en el pool Round-Robin.' }, { status: 400 })
+      return NextResponse.json({ success: false, error: errText }, { status: 400 })
     }
 
     const inserted = await res.json()
     return NextResponse.json({ success: true, item: inserted[0] })
   } catch (error: any) {
-    console.error('[API ROUNDROBIN POST ERROR]', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
 
-// DELETE: Eliminar un asunto o cuerpo del pool
 export async function DELETE(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
@@ -85,20 +95,22 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: 'id y tipo son obligatorios' }, { status: 400 })
     }
 
-    const targetTable = tipo === 'asunto' ? 'pool_asuntos' : 'pool_cuerpos'
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
+    }
+
+    const targetTable = tipo === 'asunto' ? 'campana_asuntos' : 'campana_cuerpos'
 
     await fetch(`${url}/rest/v1/${targetTable}?id=eq.${encodeURIComponent(id)}`, {
       method: 'DELETE',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'Accept-Profile': 'automatizacion',
-      },
+      headers,
     })
 
     return NextResponse.json({ success: true, message: 'Elemento eliminado del pool Round-Robin' })
   } catch (error: any) {
-    console.error('[API ROUNDROBIN DELETE ERROR]', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

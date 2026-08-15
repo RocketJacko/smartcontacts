@@ -1,97 +1,118 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
-// GET: Obtener lista de campañas asignadas a un directorio o todas
 export async function GET(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const { searchParams } = new URL(request.url)
-    const directorio = searchParams.get('directorio_nombre')
+    const directorioNombre = searchParams.get('directorio_nombre')
 
     if (!url || !anonKey) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
 
-    let endpoint = `${url}/rest/v1/campanas?select=*&order=creado_en.desc`
-    if (directorio && directorio.trim()) {
-      endpoint += `&directorio_nombre=eq.${encodeURIComponent(directorio.trim())}`
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
     }
 
-    const res = await fetch(endpoint, {
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'Accept-Profile': 'emailmarketing',
-        'Content-Profile': 'emailmarketing',
-      },
-      cache: 'no-store',
-    })
-
-    let campaigns: any[] = []
-    if (res.ok) {
-      campaigns = await res.json()
+    let endpoint = `${url}/rest/v1/campanas?select=id,nombre,descripcion,estado,directorio_id,remitente,mascara_remitente,drip_min,drip_max,creado_en&order=creado_en.desc`
+    
+    if (directorioNombre) {
+      const dirRes = await fetch(`${url}/rest/v1/directorios?nombre=eq.${encodeURIComponent(directorioNombre.trim())}&select=id`, {
+        headers,
+        cache: 'no-store',
+      })
+      if (dirRes.ok) {
+        const rows = await dirRes.json()
+        if (rows.length > 0) {
+          endpoint += `&directorio_id=eq.${rows[0].id}`
+        }
+      }
     }
 
-    return NextResponse.json({ success: true, campaigns })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const res = await fetch(endpoint, { headers, cache: 'no-store' })
+    if (!res.ok) {
+      const err = await res.text()
+      return NextResponse.json({ success: false, error: err }, { status: res.status })
+    }
+
+    const campanas = await res.json()
+    return NextResponse.json({ success: true, campanas })
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
 }
 
-// POST: Asignar/Crear una nueva campaña para un directorio específico
 export async function POST(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { nombre, directorio_nombre, descripcion } = body
+    const { nombre, descripcion = '', directorio_nombre, remitente, mascara_remitente, drip_min, drip_max } = body
 
-    if (!nombre || typeof nombre !== 'string' || !nombre.trim()) {
+    if (!nombre || !nombre.trim()) {
       return NextResponse.json({ success: false, error: 'El nombre de la campaña es obligatorio' }, { status: 400 })
     }
 
-    if (!url || !anonKey) {
-      return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
+    const headers = {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'emailmarketing',
+      'Content-Profile': 'emailmarketing',
+      Prefer: 'return=representation',
     }
 
-    const cleanName = nombre.trim()
-    const cleanDir = directorio_nombre ? directorio_nombre.trim() : null
-
-    const payload = {
-      nombre: cleanName,
-      directorio_nombre: cleanDir,
-      descripcion: descripcion ? descripcion.trim() : 'Campaña asignada al directorio',
-      estado: 'activa',
-    }
-
-    const insertRes = await fetch(`${url}/rest/v1/campanas`, {
-      method: 'POST',
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        'Accept-Profile': 'emailmarketing',
-        'Content-Profile': 'emailmarketing',
-        'Content-Type': 'application/json',
-        Prefer: 'return=representation, resolution=ignore-duplicates',
-      },
-      body: JSON.stringify(payload),
-    })
-
-    if (!insertRes.ok) {
-      const errText = await insertRes.text()
-      let userError = 'No se pudo registrar la campaña.'
-      if (errText.includes('23505') || errText.includes('unique_campana_nombre') || insertRes.status === 409) {
-        userError = `Ya existe una campaña registrada con el nombre "${cleanName}".`
+    // 1. Resolver ID del directorio si existe
+    let directorioId: string | null = null
+    if (directorio_nombre) {
+      const dirRes = await fetch(`${url}/rest/v1/directorios?nombre=eq.${encodeURIComponent(directorio_nombre.trim())}&select=id`, {
+        headers,
+        cache: 'no-store',
+      })
+      if (dirRes.ok) {
+        const rows = await dirRes.json()
+        if (rows.length > 0) directorioId = rows[0].id
       }
-      return NextResponse.json({ success: false, error: userError }, { status: 400 })
     }
 
-    const insertedRows = await insertRes.json()
-    return NextResponse.json({
-      success: true,
-      campaign: insertedRows[0] || { nombre: cleanName, directorio_nombre: cleanDir },
-      message: `Campaña "${cleanName}" asignada exitosamente al directorio.`,
+    // 2. Insertar campaña
+    const res = await fetch(`${url}/rest/v1/campanas`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        directorio_id: directorioId,
+        remitente: remitente || 'jesus.carmona966@pascualbravo.edu.co',
+        mascara_remitente: mascara_remitente || 'Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>',
+        drip_min: drip_min || 3.0,
+        drip_max: drip_max || 5.0,
+        estado: 'borrador',
+      }),
     })
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+
+    if (!res.ok) {
+      const err = await res.text()
+      return NextResponse.json({ success: false, error: err }, { status: res.status })
+    }
+
+    const created = await res.json()
+    const campana = created[0]
+
+    // 3. Sincronizar destinatarios congelados para la campaña
+    if (campana && campana.id) {
+      await fetch(`${url}/rest/v1/rpc/sincronizar_destinatarios_campana`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_campana_id: campana.id }),
+      })
+    }
+
+    return NextResponse.json({ success: true, campana })
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
   }
 }
