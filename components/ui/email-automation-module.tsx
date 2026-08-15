@@ -927,17 +927,22 @@ export function EmailAutomationModule({
               <div className="text-2xl font-bold text-emerald-700 tracking-tight">
                 {contactInventory.filter((c) => c.estado === 'pendiente').length} Pendientes
               </div>
-              <p className="text-[11px] text-black/60 font-sans">Campaña: {campaignName}</p>
+              <p className="text-[11px] text-black/60 font-sans">Directorio: {campaignName}</p>
             </div>
           </div>
 
           <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
-            <div className="border-b border-black/[0.06] pb-3 flex justify-between items-center">
-              <h3 className="text-sm font-semibold text-[#111]">Despacho de Campaña por Goteo (Round-Robin)</h3>
+            <div className="border-b border-black/[0.06] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[#111]">Despacho de Campaña por Goteo (Round-Robin)</h3>
+                <p className="text-xs text-black/60 mt-0.5">
+                  Directorio Objetivo: <span className="font-semibold text-purple-900">{campaignName}</span>
+                </p>
+              </div>
               <button
                 onClick={handleStartDispatch}
                 disabled={isSending}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
               >
                 {isSending ? (
                   <>
@@ -956,6 +961,26 @@ export function EmailAutomationModule({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
               <div>
                 <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                  Directorio Objetivo de Contactos *
+                </label>
+                <select
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-semibold text-[#111] outline-none focus:border-black/30"
+                >
+                  {campaignsList.map((d) => (
+                    <option key={d.id || d.nombre} value={d.nombre}>
+                      {d.nombre}
+                    </option>
+                  ))}
+                  {!campaignsList.some((d) => d.nombre === campaignName) && (
+                    <option value={campaignName}>{campaignName}</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
                   Máscara de Remitente *
                 </label>
                 <input
@@ -964,29 +989,6 @@ export function EmailAutomationModule({
                   onChange={(e) => setSenderMask(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
                 />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
-                  Rango de Goteo Aleatorio (Segundos)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={dripMin}
-                    onChange={(e) => setDripMin(parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-center"
-                  />
-                  <span className="text-black/40 font-mono">a</span>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={dripMax}
-                    onChange={(e) => setDripMax(parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-center"
-                  />
-                </div>
               </div>
             </div>
           </div>

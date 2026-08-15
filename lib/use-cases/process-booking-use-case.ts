@@ -70,6 +70,7 @@ export class ProcessBookingUseCase {
       return {
         success: false,
         error: 'El dominio de correo electrónico no está permitido para agendamientos.',
+        message: 'Dominio de correo electrónico no permitido.',
       }
     }
 

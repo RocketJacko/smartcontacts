@@ -31,7 +31,7 @@ export function FAQSection() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-sans font-semibold tracking-tight text-[#111] mb-4">
-            <RevealText text={t.faq.title} />
+            <RevealText>{t.faq.title}</RevealText>
           </h2>
 
           <p className="text-sm font-sans text-black/80 max-w-2xl mx-auto leading-relaxed">

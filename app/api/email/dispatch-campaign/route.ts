@@ -13,14 +13,17 @@ export async function POST(request: Request) {
     const body = await request.json()
     const {
       campana_nombre,
+      directorio_nombre,
       remitente = 'jesus.carmona966@pascualbravo.edu.co',
       mascara_remitente = 'Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>',
       drip_min = 3.0,
       drip_max = 5.0,
     } = body
 
-    if (!campana_nombre || !remitente) {
-      return NextResponse.json({ success: false, error: 'campana_nombre y remitente son obligatorios' }, { status: 400 })
+    const targetDirectory = directorio_nombre || campana_nombre
+
+    if (!targetDirectory || !remitente) {
+      return NextResponse.json({ success: false, error: 'directorio_nombre (o campana_nombre) y remitente son obligatorios' }, { status: 400 })
     }
 
     if (!url || !anonKey) {
@@ -69,9 +72,9 @@ export async function POST(request: Request) {
     }
 
     // 3. Consultar contactos pendientes en el directorio
-    const cleanDirectory = campana_nombre.trim()
+    const cleanDirectory = targetDirectory.trim()
     const contactsRes = await fetch(
-      `${url}/rest/v1/email?campana_nombre=eq.${encodeURIComponent(cleanDirectory)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
+      `${url}/rest/v1/email?directorio_nombre=eq.${encodeURIComponent(cleanDirectory)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
       {
         headers: { 
           apikey: anonKey, 

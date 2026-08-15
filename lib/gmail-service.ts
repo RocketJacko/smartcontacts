@@ -176,7 +176,7 @@ function createRawMimeMessage(
 /**
  * Envía el correo de confirmación usando la API REST v1 de Gmail.
  */
-export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
+export async function sendBookingConfirmationEmail(params: BookingEmailParams): Promise<{ success: boolean; messageId?: string; error?: string; dripDelaySeconds?: string }> {
   const { senderEmail, senderName } = getGmailCredentials()
   const accessToken = await getAccessToken()
 

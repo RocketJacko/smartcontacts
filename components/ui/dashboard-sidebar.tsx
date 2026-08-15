@@ -100,10 +100,10 @@ const mockBottomItems: NavItemData[] = [
   { id: "logout", titleKey: "logout", icon: LogOut },
 ]
 
-function WorkspaceSwitcher({ selected, onSelect }: { selected?: string; onSelect?: (ws: string) => void }) {
+function WorkspaceSwitcher({ selected, onSelect }: { selected?: string; onSelect?: (ws: any) => void }) {
   const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
-  const [internalSelected, setInternalSelected] = useState(t.dashboard?.navWorkspace || "SmartContacts Cloud")
+  const [internalSelected, setInternalSelected] = useState<string>(t.dashboard?.navWorkspace || "SmartContacts Cloud")
 
   const current = selected || internalSelected
   const handleSelect = onSelect || setInternalSelected

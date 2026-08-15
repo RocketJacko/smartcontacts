@@ -43,7 +43,7 @@ export function ScrollSalesSection({ sections, indicatorConfig = defaultIndicato
   const [scrollProgress, setScrollProgress] = useState(0)
   const [transformStyle, setTransformStyle] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const sectionRefs = useRef<(HTMLElement | null)[]>([])
   const animationFrameId = useRef<number>(0)
 
   const calculatedPositions = useMemo(() => {
