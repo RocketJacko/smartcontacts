@@ -1620,13 +1620,6 @@ export function EmailAutomationModule({
                           <td className="py-3 px-3.5 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <button
-                                onClick={() => setEditingContact(c)}
-                                className="p-1.5 rounded-lg text-black/60 hover:bg-black/5 hover:text-[#111] transition-colors cursor-pointer"
-                                title="Editar contacto"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                              <button
                                 onClick={() => handleDeleteContact(c.id, c.email)}
                                 className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                                 title="Eliminar contacto"
