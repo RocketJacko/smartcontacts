@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     // 3. Consultar contactos pendientes en el directorio
     const cleanDirectory = campana_nombre.trim()
     const contactsRes = await fetch(
-      `${url}/rest/v1/email?directorio_nombre=eq.${encodeURIComponent(cleanDirectory)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
+      `${url}/rest/v1/email?campana_nombre=eq.${encodeURIComponent(cleanDirectory)}&estado=eq.pendiente&select=*&order=creado_en.asc`,
       {
         headers: { 
           apikey: anonKey, 

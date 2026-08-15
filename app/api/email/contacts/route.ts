@@ -88,11 +88,11 @@ export async function POST(request: Request) {
     const payload = validContacts.map((c) => ({
       email: c.email.trim().toLowerCase(),
       nombre: c.nombre ? c.nombre.trim() : null,
-      directorio_nombre: cleanDirectory,
+      campana_nombre: cleanDirectory,
       estado: 'pendiente',
     }))
 
-    const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
+    const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,campana_nombre`, {
       method: 'POST',
       headers: {
         apikey: anonKey,
@@ -156,7 +156,7 @@ export async function GET(request: Request) {
     
     if (directorio && directorio.trim() && directorio.trim() !== 'Todas' && directorio.trim() !== 'Todos los Directorios') {
       const cleanDir = directorio.trim()
-      queryUrl += `&directorio_nombre=eq.${encodeURIComponent(cleanDir)}`
+      queryUrl += `&campana_nombre=eq.${encodeURIComponent(cleanDir)}`
     }
 
     if (search) {

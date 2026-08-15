@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         parsedContacts.push({
           email: cleanEmail,
           nombre: nombreVal ? nombreVal.trim() : null,
-          directorio_nombre: cleanDirectory,
+          campana_nombre: cleanDirectory,
           estado: 'pendiente',
         })
       }
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
     for (let i = 0; i < parsedContacts.length; i += BATCH_SIZE) {
       const batch = parsedContacts.slice(i, i + BATCH_SIZE)
       
-      const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,directorio_nombre`, {
+      const insertRes = await fetch(`${url}/rest/v1/email?on_conflict=email,campana_nombre`, {
         method: 'POST',
         headers: {
           apikey: anonKey,
