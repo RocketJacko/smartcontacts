@@ -1,7 +1,7 @@
 -- ==============================================================================
--- DEFINICIÓN DEFINITIVA Y LIMPIA DEL ESQUEMA `calendario` (SUPABASE POSTGRESQL)
+-- DEFINICIÓN DDL DEL ESQUEMA `calendario` (SUPABASE POSTGRESQL)
 -- ==============================================================================
--- Cumplimiento de Regla 5 (AGENTS.md): Organización Estricta de Esquemas (`schema.nombre_tabla`)
+-- Cumplimiento de Regla 5 (AGENTS.md): Nomenclatura por Esquemas (`schema.nombre_tabla`)
 -- ==============================================================================
 
 CREATE SCHEMA IF NOT EXISTS calendario;
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS calendario.prospectos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. TABLA DE EVENTOS Y CITAS (CON CLAVE FORÁNEA RELACIONAL EXPLÍCITA)
+-- 2. TABLA DE EVENTOS Y CITAS
 CREATE TABLE IF NOT EXISTS calendario.eventos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     titulo VARCHAR(255) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS calendario.eventos (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. TABLA DE DISPONIBILIDAD HORARIA PARA AGENTES DE IA
+-- 3. TABLA DE DISPONIBILIDAD HORARIA
 CREATE TABLE IF NOT EXISTS calendario.disponibilidad (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     dia_semana INT NOT NULL, -- 1=Lunes, 5=Viernes
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS calendario.disponibilidad (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. ÍNDICES RELACIONALES DE ALTO RENDIMIENTO
+-- ÍNDICES RELACIONALES
 CREATE INDEX IF NOT EXISTS idx_prospectos_email ON calendario.prospectos(email);
 CREATE INDEX IF NOT EXISTS idx_eventos_prospecto_id ON calendario.eventos(prospecto_id);
 CREATE INDEX IF NOT EXISTS idx_eventos_estado ON calendario.eventos(estado);

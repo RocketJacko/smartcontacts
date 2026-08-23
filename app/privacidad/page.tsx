@@ -51,7 +51,7 @@ export default function PrivacidadPage() {
             </p>
             <div className="pt-2 text-xs font-mono text-black/70 space-y-1 border-t border-black/[0.06] mt-4">
               <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> Directo / WhatsApp: +57 312 752 9629</p>
-              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Correo Oficial: jesus.carmona966@pascualbravo.edu.co</p>
+              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Correo Oficial: codificandoandoacces@gmail.com</p>
               <p className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Ubicación: Medellín, Antioquia, Colombia</p>
             </div>
           </section>
@@ -82,7 +82,7 @@ export default function PrivacidadPage() {
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
             <h2 className="text-lg sm:text-xl font-medium text-[#111]">4. Procedimiento para el Ejercicio de Derechos</h2>
             <p>
-              Para radicar una solicitud de consulta, actualización o supresión de datos, puede escribir directamente a nuestro correo electrónico oficial <strong>jesus.carmona966@pascualbravo.edu.co</strong> o comunicarse vía WhatsApp al <strong>+57 312 752 9629</strong>. Las consultas serán atendidas en un término máximo de diez (10) días hábiles.
+              Para radicar una solicitud de consulta, actualización o supresión de datos, puede escribir directamente a nuestro correo electrónico oficial <strong>codificandoandoacces@gmail.com</strong> o comunicarse vía WhatsApp al <strong>+57 312 752 9629</strong>. Las consultas serán atendidas en un término máximo de diez (10) días hábiles.
             </p>
           </section>
 

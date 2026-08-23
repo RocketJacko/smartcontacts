@@ -57,8 +57,8 @@ export function Footer() {
               </a>
             </p>
             <p>
-              <a href="mailto:jesus.carmona966@pascualbravo.edu.co" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4">
-                jesus.carmona966@pascualbravo.edu.co
+              <a href="mailto:codificandoandoacces@gmail.com" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4">
+                codificandoandoacces@gmail.com
               </a>
             </p>
             <p className="text-black/60">Medellín, Antioquia, Colombia</p>
