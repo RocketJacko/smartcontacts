@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
 
-    // Read strictly from Dokploy / system environment without dummy fallbacks
+    // Read strictly from environment
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       ""
     ).trim()
 
-    // 2. Server-side signed JWT Token for Step 1
+    // Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
       {
         sub: "benefit_activation_platzi_step1_request_code",
@@ -100,12 +100,12 @@ export async function POST(request: Request) {
     const cleanPhone = String(phone).trim()
     const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
 
-    // Split name into parts for n8n validation node compatibility
+    // Split name strictly into firstName and lastName as expected by n8n
     const nameParts = cleanName.split(/\s+/).filter(Boolean)
-    const primerNombre = nameParts[0] || cleanName
-    const segundoNombre = nameParts.length > 2 ? nameParts[1] : ""
-    const primerApellido = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ""
-    const apellidos = nameParts.slice(1).join(" ")
+    const firstName = nameParts[0] || cleanName
+    const lastName = nameParts.slice(1).join(" ") || nameParts[0] || cleanName
+    const primerNombre = firstName
+    const primerApellido = lastName
 
     const payloadToWebhook = {
       event: "request_code",
@@ -115,18 +115,20 @@ export async function POST(request: Request) {
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
       
-      // Name field variations for n8n validation nodes
+      // Exact field expected by n8n validation node: firstName
+      firstName,
+      lastName,
+      first_name: firstName,
+      last_name: lastName,
       primer_nombre: primerNombre,
       primerNombre: primerNombre,
-      "primer nombre": primerNombre,
-      segundo_nombre: segundoNombre,
       primer_apellido: primerApellido,
-      apellidos: apellidos,
+      apellidos: lastName,
       nombre: cleanName,
       name: cleanName,
       nombre_completo: cleanName,
       
-      // Contact & Phone field variations
+      // Contact & Phone fields
       celular: cleanPhone,
       phone: cleanPhone,
       telefono: cleanPhone,
@@ -134,7 +136,7 @@ export async function POST(request: Request) {
       email: cleanEmail,
       contactEmail: cleanEmail,
       
-      // Account & Discount variations
+      // Account & Discount
       cuenta_platzi: cleanPlatziEmail,
       platziAccountEmail: cleanPlatziEmail,
       codigo_descuento: cleanDiscountCode,
@@ -146,8 +148,8 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     }
 
-    console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 6) + "..." : "NONE"}`)
+    console.log(`[PLATZI STEP 1 WEBHOOK CALL] URL: ${webhookUrl}`)
+    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 8) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -185,7 +187,7 @@ export async function POST(request: Request) {
       if (!webhookRes.ok || (webhookResData && webhookResData.success === false)) {
         return NextResponse.json(
           {
-            error: webhookResData?.message || `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
+            error: webhookResData?.message || webhookResData?.error || `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
             details: webhookResponseText,
           },
           { status: 400 }
