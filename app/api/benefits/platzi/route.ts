@@ -70,10 +70,11 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
+    // Priority for x-api-key configured in Dokploy
     const webhookKey =
-      process.env.PLATZI_WEBHOOK_KEY ||
-      process.env.X_API_KEY ||
       process.env["x-api-key"] ||
+      process.env.X_API_KEY ||
+      process.env.PLATZI_WEBHOOK_KEY ||
       "sc_platzi_live_key_2026"
 
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
@@ -106,20 +107,25 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
+    console.log(`[PLATZI STEP 1 KEY USED] ${webhookKey.substring(0, 10)}...`)
 
     // 3. Server-to-Server request to n8n Webhook
     let webhookResponseText = ""
     let webhookResData: any = null
     let responseStatus = 0
 
+    // Provide headers matching n8n Header Auth credentials
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-api-key": webhookKey,
+      "X-API-KEY": webhookKey,
+      "Authorization": webhookKey.startsWith("Bearer ") ? webhookKey : `Bearer ${jwtToken}`,
+    }
+
     try {
       const webhookRes = await fetch(webhookUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": webhookKey,
-          "Authorization": `Bearer ${jwtToken}`,
-        },
+        headers,
         body: JSON.stringify(payloadToWebhook),
       })
 
@@ -138,7 +144,7 @@ export async function POST(request: Request) {
       if (!webhookRes.ok) {
         return NextResponse.json(
           {
-            error: `El webhook de n8n retornó estado HTTP ${responseStatus}. Detalle: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que el flujo esté activo en n8n o la URL sea correcta.`,
+            error: `El webhook de n8n retornó estado HTTP ${responseStatus}. Detalle: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que la clave en 'Header Auth account' de n8n coincida con la variable de entorno x-api-key (${webhookKey.substring(0, 8)}...).`,
             details: webhookResponseText,
           },
           { status: 502 }
