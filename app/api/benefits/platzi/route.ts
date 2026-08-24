@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
 
-    // Read key strictly from environment
+    // Read strictly from Dokploy / system environment without dummy fallbacks
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       ""
     ).trim()
 
-    // Server-side signed JWT Token for Step 1
+    // 2. Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
       {
         sub: "benefit_activation_platzi_step1_request_code",
@@ -100,7 +100,13 @@ export async function POST(request: Request) {
     const cleanPhone = String(phone).trim()
     const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
 
-    // Payload sending both English and Spanish property names for n8n node compatibility
+    // Split name into parts for n8n validation node compatibility
+    const nameParts = cleanName.split(/\s+/).filter(Boolean)
+    const primerNombre = nameParts[0] || cleanName
+    const segundoNombre = nameParts.length > 2 ? nameParts[1] : ""
+    const primerApellido = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ""
+    const apellidos = nameParts.slice(1).join(" ")
+
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
@@ -108,17 +114,32 @@ export async function POST(request: Request) {
       duration: "5 meses",
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
+      
+      // Name field variations for n8n validation nodes
+      primer_nombre: primerNombre,
+      primerNombre: primerNombre,
+      "primer nombre": primerNombre,
+      segundo_nombre: segundoNombre,
+      primer_apellido: primerApellido,
+      apellidos: apellidos,
       nombre: cleanName,
       name: cleanName,
+      nombre_completo: cleanName,
+      
+      // Contact & Phone field variations
       celular: cleanPhone,
       phone: cleanPhone,
+      telefono: cleanPhone,
       correo: cleanEmail,
       email: cleanEmail,
       contactEmail: cleanEmail,
+      
+      // Account & Discount variations
       cuenta_platzi: cleanPlatziEmail,
       platziAccountEmail: cleanPlatziEmail,
       codigo_descuento: cleanDiscountCode,
       discountCode: cleanDiscountCode,
+      
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       jwtToken,
@@ -126,7 +147,7 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 8) + "..." : "NONE"}`)
+    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 6) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -161,13 +182,13 @@ export async function POST(request: Request) {
         webhookResData = { raw: webhookResponseText }
       }
 
-      if (!webhookRes.ok) {
+      if (!webhookRes.ok || (webhookResData && webhookResData.success === false)) {
         return NextResponse.json(
           {
             error: webhookResData?.message || `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
             details: webhookResponseText,
           },
-          { status: 502 }
+          { status: 400 }
         )
       }
     } catch (whErr: any) {
