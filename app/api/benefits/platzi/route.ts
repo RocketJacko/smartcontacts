@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import crypto from "crypto"
 
 // In-memory rate limiting store (max 5 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -21,21 +20,6 @@ function checkRateLimit(ip: string): boolean {
 
   record.count += 1
   return true
-}
-
-function createServerJWT(payload: object, secret: string): string {
-  const header = { alg: "HS256", typ: "JWT" }
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url")
-  const encodedPayload = Buffer.from(
-    JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 })
-  ).toString("base64url")
-
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest("base64url")
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`
 }
 
 export async function POST(request: Request) {
@@ -64,11 +48,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Production n8n Webhook URL
+    // Exact Webhook Test URL requested by user
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+      "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
 
     // Read x-api-key strictly from Dokploy / system environment
     const rawKey =
@@ -79,21 +63,6 @@ export async function POST(request: Request) {
       ""
 
     const webhookKey = String(rawKey).trim()
-    const jwtSecret = (
-      process.env.PLATZI_JWT_SECRET ||
-      process.env.CHECK_DOMAIN_SECRET ||
-      ""
-    ).trim()
-
-    // Server-side signed JWT Token for Step 1
-    const jwtToken = createServerJWT(
-      {
-        sub: "benefit_activation_platzi_step1_request_code",
-        accountEmail: platziAccountEmail,
-        contactEmail: email,
-      },
-      jwtSecret || "sc_platzi_jwt_secret"
-    )
 
     // Clean payload matching exact form fields
     const payloadToWebhook = {
@@ -110,7 +79,6 @@ export async function POST(request: Request) {
       discountCode: String(discountCode || "").trim().toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
-      jwtToken,
       timestamp: new Date().toISOString(),
     }
 
