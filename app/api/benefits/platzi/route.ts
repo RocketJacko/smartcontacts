@@ -69,18 +69,31 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // In Linux/Docker containers (Dokploy), environment variable names with hyphens (x-api-key)
-    // are automatically converted to uppercase with underscores (X_API_KEY) or x_api_key.
-    const rawKey =
+    // Read strictly from Dokploy / system environment without dummy fallbacks
+    const webhookKey = (
+      process.env["x-api-key"] ||
       process.env.X_API_KEY ||
       process.env.x_api_key ||
-      process.env["x-api-key"] ||
       process.env.PLATZI_WEBHOOK_KEY ||
+      ""
+    ).trim()
+
+    const jwtSecret = (
+      process.env.PLATZI_JWT_SECRET ||
       process.env.CHECK_DOMAIN_SECRET ||
       ""
+    ).trim()
 
-    const webhookKey = String(rawKey).trim()
-    const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
+    // Strict check: DO NOT call webhook if x-api-key is not defined in Dokploy environment
+    if (!webhookKey) {
+      console.error("[DOKPLOY ENV DIAGNOSTIC] x-api-key is missing. Keys in process.env:", Object.keys(process.env))
+      return NextResponse.json(
+        {
+          error: "Error: La variable de entorno 'x-api-key' (o 'X_API_KEY') no está configurada en Dokploy.",
+        },
+        { status: 500 }
+      )
+    }
 
     // 2. Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
@@ -89,7 +102,7 @@ export async function POST(request: Request) {
         accountEmail: platziAccountEmail,
         contactEmail: email,
       },
-      jwtSecret
+      jwtSecret || "sc_platzi_jwt_secret"
     )
 
     const payloadToWebhook = {
@@ -110,16 +123,13 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     }
 
-    console.log(`[PLATZI STEP 1 WEBHOOK CALL] URL: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey.substring(0, 5)}... (len: ${webhookKey.length})`)
+    console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
+    console.log(`[PLATZI STEP 1 KEY SENT FROM DOKPLOY] ${webhookKey.substring(0, 6)}... (length: ${webhookKey.length})`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-    }
-
-    if (webhookKey) {
-      headers["x-api-key"] = webhookKey
-      headers["X-API-KEY"] = webhookKey
+      "x-api-key": webhookKey,
+      "X-API-KEY": webhookKey,
     }
 
     let webhookResponseText = ""
@@ -148,7 +158,7 @@ export async function POST(request: Request) {
       if (!webhookRes.ok) {
         return NextResponse.json(
           {
-            error: `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que en Dokploy la variable esté configurada como X_API_KEY o x-api-key con la misma clave de n8n.`,
+            error: `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
             details: webhookResponseText,
           },
           { status: 502 }
