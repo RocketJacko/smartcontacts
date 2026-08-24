@@ -146,7 +146,7 @@ export function MobileNav() {
                 {l.label}
               </Link>
             ))}
-            <div className="pt-1 px-2 pb-1">
+            <div className="pt-1 px-2 pb-1 space-y-2">
               <a
                 href="#agendar"
                 onClick={close}
@@ -154,6 +154,15 @@ export function MobileNav() {
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
                 {t.nav.startBuilding}
+              </a>
+              <a
+                href="https://wa.me/573127529629"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={close}
+                className="flex items-center justify-center gap-2 w-full text-center text-xs font-mono min-h-[48px] px-4 py-3 whitespace-nowrap rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold tracking-wider transition-all duration-200 shadow-sm"
+              >
+                <span>💬 Hablar por WhatsApp</span>
               </a>
             </div>
           </div>
