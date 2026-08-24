@@ -373,7 +373,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   <span>{language === "es" ? "GENERANDO CÓDIGO..." : "GENERATING CODE..."}</span>
                 </>
               ) : (
-                <span>{language === "es" ? "SOLICITAR ACTIVACIÓN EN 1° LUGAR" : "REQUEST ACTIVATION FIRST"}</span>
+                <span>Activar Cuenta</span>
               )}
             </button>
 
