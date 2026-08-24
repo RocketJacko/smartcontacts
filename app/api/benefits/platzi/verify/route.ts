@@ -43,16 +43,17 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Consumir estrictamente la variable x-api-key definida
-    const webhookKey = process.env["x-api-key"] || process.env.X_API_KEY || ""
-    const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
+    // Check all possible environment variable name variants for x-api-key in Node.js
+    const webhookKey =
+      process.env["x-api-key"] ||
+      process.env["X-API-KEY"] ||
+      process.env.x_api_key ||
+      process.env.X_API_KEY ||
+      process.env.PLATZI_WEBHOOK_KEY ||
+      process.env.CHECK_DOMAIN_SECRET ||
+      ""
 
-    if (!webhookKey) {
-      return NextResponse.json(
-        { error: "La variable de entorno x-api-key no está configurada en el servidor." },
-        { status: 500 }
-      )
-    }
+    const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
     // Server-side signed JWT Token for Step 2 Verification
     const jwtToken = createServerJWT(
@@ -87,8 +88,12 @@ export async function POST(request: Request) {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "x-api-key": webhookKey,
       "Authorization": `Bearer ${jwtToken}`,
+    }
+
+    if (webhookKey) {
+      headers["x-api-key"] = webhookKey
+      headers["X-API-KEY"] = webhookKey
     }
 
     // Forward verification request to n8n Webhook

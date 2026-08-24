@@ -69,16 +69,20 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Consumir estrictamente la variable x-api-key definida
-    const webhookKey = process.env["x-api-key"] || process.env.X_API_KEY || ""
-    const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
+    // Check all possible environment variable name variants for x-api-key in Node.js
+    const webhookKey =
+      process.env["x-api-key"] ||
+      process.env["X-API-KEY"] ||
+      process.env.x_api_key ||
+      process.env.X_API_KEY ||
+      process.env.PLATZI_WEBHOOK_KEY ||
+      process.env.CHECK_DOMAIN_SECRET ||
+      ""
 
-    if (!webhookKey) {
-      return NextResponse.json(
-        { error: "La variable de entorno x-api-key no está configurada en el servidor." },
-        { status: 500 }
-      )
-    }
+    console.log("[DEBUG ENV KEYS IN NODE]", Object.keys(process.env).filter(k => k.toLowerCase().includes("key") || k.toLowerCase().includes("api") || k.toLowerCase().includes("platzi")))
+    console.log("[DEBUG WEBHOOK KEY VALUE FOUND]", webhookKey ? `${webhookKey.substring(0, 8)}... (length: ${webhookKey.length})` : "EMPTY")
+
+    const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
     // 2. Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
@@ -109,16 +113,20 @@ export async function POST(request: Request) {
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
 
-    // 3. Server-to-Server request to n8n Webhook con la cabecera x-api-key estricta
+    // Build headers dictionary dynamically
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${jwtToken}`,
+    }
+
+    if (webhookKey) {
+      headers["x-api-key"] = webhookKey
+      headers["X-API-KEY"] = webhookKey
+    }
+
     let webhookResponseText = ""
     let webhookResData: any = null
     let responseStatus = 0
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-api-key": webhookKey,
-      "Authorization": `Bearer ${jwtToken}`,
-    }
 
     try {
       const webhookRes = await fetch(webhookUrl, {
