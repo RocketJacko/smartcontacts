@@ -38,11 +38,13 @@ export async function POST(request: Request) {
       )
     }
 
+    // Production n8n Webhook URL
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
+      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
+    // Read x-api-key strictly from Dokploy / system environment
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
@@ -68,13 +70,7 @@ export async function POST(request: Request) {
       jwtSecret || "sc_platzi_jwt_secret"
     )
 
-    const cleanEmail = String(email).trim().toLowerCase()
-    const cleanPlatziEmail = String(platziAccountEmail).trim().toLowerCase()
-    const cleanName = String(name).trim()
-    const cleanPhone = String(phone).trim()
-    const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
-    const cleanCode = String(inputCode).trim()
-
+    // Clean payload matching exact form fields + inputCode
     const payloadToWebhook = {
       event: "verify_code_and_activate",
       step: 2,
@@ -82,19 +78,12 @@ export async function POST(request: Request) {
       duration: "5 meses",
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
-      nombre: cleanName,
-      name: cleanName,
-      celular: cleanPhone,
-      phone: cleanPhone,
-      correo: cleanEmail,
-      email: cleanEmail,
-      contactEmail: cleanEmail,
-      cuenta_platzi: cleanPlatziEmail,
-      platziAccountEmail: cleanPlatziEmail,
-      codigo_descuento: cleanDiscountCode,
-      discountCode: cleanDiscountCode,
-      codigo: cleanCode,
-      verificationCode: cleanCode,
+      inputCode: String(inputCode).trim(),
+      name: String(name).trim(),
+      phone: String(phone).trim(),
+      email: String(email).trim().toLowerCase(),
+      platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
+      discountCode: String(discountCode || "").trim().toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       jwtToken,
@@ -102,19 +91,16 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 2 VERIFY WEBHOOK CALL] URL: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 2 KEY SENT] ${webhookKey ? webhookKey.substring(0, 8) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     }
 
+    // Header validation key expected by n8n: x-api-key
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
-      headers["X-API-KEY"] = webhookKey
-      headers["Authorization"] = webhookKey
     }
 
-    // Forward verification request to n8n Webhook
     let webhookResponseText = ""
     let webhookResponseData: any = null
     let responseStatus = 0

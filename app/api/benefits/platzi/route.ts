@@ -64,12 +64,13 @@ export async function POST(request: Request) {
       )
     }
 
+    // Production n8n Webhook URL
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
+      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Read strictly from environment
+    // Read x-api-key strictly from Dokploy / system environment
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
@@ -94,19 +95,7 @@ export async function POST(request: Request) {
       jwtSecret || "sc_platzi_jwt_secret"
     )
 
-    const cleanEmail = String(email).trim().toLowerCase()
-    const cleanPlatziEmail = String(platziAccountEmail).trim().toLowerCase()
-    const cleanName = String(name).trim()
-    const cleanPhone = String(phone).trim()
-    const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
-
-    // Split name strictly into firstName and lastName as expected by n8n
-    const nameParts = cleanName.split(/\s+/).filter(Boolean)
-    const firstName = nameParts[0] || cleanName
-    const lastName = nameParts.slice(1).join(" ") || nameParts[0] || cleanName
-    const primerNombre = firstName
-    const primerApellido = lastName
-
+    // Clean payload matching exact form fields
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
@@ -114,34 +103,11 @@ export async function POST(request: Request) {
       duration: "5 meses",
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
-      
-      // Exact field expected by n8n validation node: firstName
-      firstName,
-      lastName,
-      first_name: firstName,
-      last_name: lastName,
-      primer_nombre: primerNombre,
-      primerNombre: primerNombre,
-      primer_apellido: primerApellido,
-      apellidos: lastName,
-      nombre: cleanName,
-      name: cleanName,
-      nombre_completo: cleanName,
-      
-      // Contact & Phone fields
-      celular: cleanPhone,
-      phone: cleanPhone,
-      telefono: cleanPhone,
-      correo: cleanEmail,
-      email: cleanEmail,
-      contactEmail: cleanEmail,
-      
-      // Account & Discount
-      cuenta_platzi: cleanPlatziEmail,
-      platziAccountEmail: cleanPlatziEmail,
-      codigo_descuento: cleanDiscountCode,
-      discountCode: cleanDiscountCode,
-      
+      name: String(name).trim(),
+      phone: String(phone).trim(),
+      email: String(email).trim().toLowerCase(),
+      platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
+      discountCode: String(discountCode || "").trim().toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       jwtToken,
@@ -149,16 +115,14 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] URL: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 8) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     }
 
+    // Header validation key expected by n8n: x-api-key
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
-      headers["X-API-KEY"] = webhookKey
-      headers["Authorization"] = webhookKey
     }
 
     let webhookResponseText = ""
