@@ -75,38 +75,4 @@ export const SERVICES_CONFIG: ServiceItem[] = [
       },
     ],
   },
-  {
-    id: 'google',
-    name: 'Google Workspace / Cloud',
-    slug: 'google',
-    tag: 'Herramientas & Productividad',
-    description: 'Solicita la activación y aprovisionamiento de servicios de Google para tu empresa.',
-    iconName: 'Globe',
-    fields: [
-      {
-        id: 'nombre',
-        label: 'Nombre completo',
-        type: 'text',
-        required: true,
-        placeholder: 'Ej. María Rodríguez',
-        errorMessage: 'El nombre completo es obligatorio (mínimo 2 caracteres)',
-      },
-      {
-        id: 'telefono',
-        label: 'Número de contacto móvil',
-        type: 'tel',
-        required: true,
-        placeholder: 'Ej. +57 310 987 6543',
-        errorMessage: 'Ingresa un número de celular válido (mínimo 7 dígitos)',
-      },
-      {
-        id: 'email',
-        label: 'Correo electrónico',
-        type: 'email',
-        required: true,
-        placeholder: 'ejemplo@empresa.com',
-        errorMessage: 'Ingresa un correo electrónico válido',
-      },
-    ],
-  },
 ]
