@@ -70,6 +70,7 @@ export function Footer() {
             <Link href="/propuesta" className="text-black/70 hover:text-black transition-colors">{t.nav.platform}</Link>
             <Link href="/cobertura" className="text-black/70 hover:text-black transition-colors">{t.nav.coverage}</Link>
             <Link href="/modalidades" className="text-black/70 hover:text-black transition-colors">{t.nav.modalities}</Link>
+            <Link href="/servicios" className="text-black/70 hover:text-black transition-colors">{t.nav.services}</Link>
             <Link href="/sobre-mi" className="text-black/70 hover:text-black transition-colors">{t.nav.about}</Link>
             <Link href="/agendar" className="text-black/70 hover:text-black transition-colors">{t.nav.schedule}</Link>
           </div>
