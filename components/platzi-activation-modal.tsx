@@ -262,14 +262,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </p>
               </div>
 
-              {/* Location Badge */}
-              <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#FAF9F6] border border-black/[0.06] text-xs font-mono text-black/70">
-                <div className="flex items-center gap-2">
-                  <img src={flagUrl} alt={countryCode} className="w-4 h-3 object-cover rounded-xs shrink-0" />
-                  <span>Ubicación: {countryName} ({dialCode})</span>
-                </div>
-                <span className="text-[10px] text-emerald-700 font-bold uppercase">{userCurrency}</span>
-              </div>
+
             </div>
 
             {/* Form Fields */}
@@ -330,14 +323,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   {language === "es" ? "Cuenta de correo que tomará el servicio Platzi *" : "Platzi Service Account Email *"}
                 </label>
                 <div className="relative">
-                  <Sparkles className="w-4 h-4 text-emerald-600 absolute left-3.5 top-3" />
                   <input
                     type="email"
                     required
                     value={platziAccountEmail}
                     onChange={(e) => setPlatziAccountEmail(e.target.value)}
                     placeholder="mi-cuenta-platzi@correo.com"
-                    className="w-full pl-10 pr-4 py-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
+                    className="w-full px-4 py-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
                   />
                 </div>
                 <p className="text-[10px] font-mono text-black/50">
@@ -385,9 +377,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               )}
             </button>
 
-            <p className="text-[10px] text-black/40 text-center font-mono pt-1">
-              🔒 Protegido con Rate Limit, JWT y proxy seguro de servidor.
-            </p>
+
 
           </form>
         )}
