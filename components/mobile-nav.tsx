@@ -85,13 +85,13 @@ export function MobileNav() {
             </div>
 
             {/* CTA Button — DESKTOP ONLY (hidden on mobile/tablet < lg) */}
-            <a
-              href="#agendar"
+            <Link
+              href="/agendar"
               className="text-[11px] w-[210px] min-h-[48px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
               {t.nav.startBuilding}
-            </a>
+            </Link>
 
             {/* Burger — MOBILE & TABLET ONLY (48px Touch Target) */}
             <button
@@ -147,14 +147,14 @@ export function MobileNav() {
               </Link>
             ))}
             <div className="pt-1 px-2 pb-1 space-y-2">
-              <a
-                href="#agendar"
+              <Link
+                href="/agendar"
                 onClick={close}
                 className="flex items-center justify-center w-full text-center text-xs min-h-[48px] px-4 py-3 whitespace-nowrap rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] active:bg-black/10 transition-all duration-200 tracking-wide"
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
                 {t.nav.startBuilding}
-              </a>
+              </Link>
               <a
                 href="https://wa.me/573127529629"
                 target="_blank"
