@@ -43,11 +43,12 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
+    // In Linux/Docker containers (Dokploy), environment variable names with hyphens (x-api-key)
+    // are automatically converted to uppercase with underscores (X_API_KEY) or x_api_key.
     const rawKey =
-      process.env["x-api-key"] ||
-      process.env["X-API-KEY"] ||
-      process.env.x_api_key ||
       process.env.X_API_KEY ||
+      process.env.x_api_key ||
+      process.env["x-api-key"] ||
       process.env.PLATZI_WEBHOOK_KEY ||
       process.env.CHECK_DOMAIN_SECRET ||
       ""
@@ -94,7 +95,6 @@ export async function POST(request: Request) {
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
       headers["X-API-KEY"] = webhookKey
-      headers["Authorization"] = webhookKey
     }
 
     // Forward verification request to n8n Webhook

@@ -69,26 +69,18 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
+    // In Linux/Docker containers (Dokploy), environment variable names with hyphens (x-api-key)
+    // are automatically converted to uppercase with underscores (X_API_KEY) or x_api_key.
     const rawKey =
-      process.env["x-api-key"] ||
-      process.env["X-API-KEY"] ||
-      process.env.x_api_key ||
       process.env.X_API_KEY ||
+      process.env.x_api_key ||
+      process.env["x-api-key"] ||
       process.env.PLATZI_WEBHOOK_KEY ||
       process.env.CHECK_DOMAIN_SECRET ||
       ""
 
     const webhookKey = String(rawKey).trim()
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
-
-    if (!webhookKey) {
-      return NextResponse.json(
-        {
-          error: "Falta configurar la clave x-api-key en .env.local o Dokploy con el valor secreto de la credencial creada en n8n.",
-        },
-        { status: 500 }
-      )
-    }
 
     // 2. Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
@@ -123,8 +115,11 @@ export async function POST(request: Request) {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "x-api-key": webhookKey,
-      "X-API-KEY": webhookKey,
+    }
+
+    if (webhookKey) {
+      headers["x-api-key"] = webhookKey
+      headers["X-API-KEY"] = webhookKey
     }
 
     let webhookResponseText = ""
@@ -153,7 +148,7 @@ export async function POST(request: Request) {
       if (!webhookRes.ok) {
         return NextResponse.json(
           {
-            error: `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que la clave en 'Header Auth account' de n8n sea idéntica a la variable x-api-key.`,
+            error: `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que en Dokploy la variable esté configurada como X_API_KEY o x-api-key con la misma clave de n8n.`,
             details: webhookResponseText,
           },
           { status: 502 }
