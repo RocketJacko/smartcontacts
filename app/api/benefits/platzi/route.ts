@@ -64,13 +64,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Default to test URL requested: https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
 
-    // Read strictly from environment
+    // Read key strictly from environment
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
@@ -95,6 +94,13 @@ export async function POST(request: Request) {
       jwtSecret || "sc_platzi_jwt_secret"
     )
 
+    const cleanEmail = String(email).trim().toLowerCase()
+    const cleanPlatziEmail = String(platziAccountEmail).trim().toLowerCase()
+    const cleanName = String(name).trim()
+    const cleanPhone = String(phone).trim()
+    const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
+
+    // Payload sending both English and Spanish property names for n8n node compatibility
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
@@ -102,11 +108,17 @@ export async function POST(request: Request) {
       duration: "5 meses",
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
-      name: String(name).trim(),
-      phone: String(phone).trim(),
-      contactEmail: String(email).trim().toLowerCase(),
-      platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: String(discountCode || "").trim().toUpperCase(),
+      nombre: cleanName,
+      name: cleanName,
+      celular: cleanPhone,
+      phone: cleanPhone,
+      correo: cleanEmail,
+      email: cleanEmail,
+      contactEmail: cleanEmail,
+      cuenta_platzi: cleanPlatziEmail,
+      platziAccountEmail: cleanPlatziEmail,
+      codigo_descuento: cleanDiscountCode,
+      discountCode: cleanDiscountCode,
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       jwtToken,
@@ -114,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 6) + "..." : "NONE"}`)
+    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 8) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -152,7 +164,7 @@ export async function POST(request: Request) {
       if (!webhookRes.ok) {
         return NextResponse.json(
           {
-            error: `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
+            error: webhookResData?.message || `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
             details: webhookResponseText,
           },
           { status: 502 }
