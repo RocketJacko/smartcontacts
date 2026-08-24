@@ -248,7 +248,7 @@ export function BookingSection() {
                   </>
                 ) : (
                   <>
-                    <span>🚀 {t.booking.submitBtn}</span>
+                    <span>{t.booking.submitBtn}</span>
                     <Send className="w-4 h-4 text-emerald-400 ml-1" />
                   </>
                 )}

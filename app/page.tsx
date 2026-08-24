@@ -138,19 +138,7 @@ export default function AgenticPage() {
 
         {/* Title + metrics — positioned with safe top padding */}
         <div className="relative z-30 flex flex-col px-6 md:px-12 max-w-4xl">
-          {/* Badge / Subtitle Pill */}
-          <div
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-emerald-800 bg-emerald-500/10 border border-emerald-500/20 uppercase tracking-widest font-semibold mb-4 w-fit"
-            style={{
-              opacity: heroReady ? 1 : 0,
-              filter: heroReady ? "blur(0px)" : "blur(12px)",
-              transform: heroReady ? "translateY(0px)" : "translateY(16px)",
-              transition: "opacity 0.8s cubic-bezier(0.16,1,0.3,1) 0ms, filter 0.8s cubic-bezier(0.16,1,0.3,1) 0ms, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0ms",
-            }}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{t.hero.badge || "+200,000 contactos B2B verificados en Colombia"}</span>
-          </div>
+
 
           {/* Title */}
           <h1
@@ -192,7 +180,7 @@ export default function AgenticPage() {
               href="#agendar"
               className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-wider hover:bg-black/80 transition-all shadow-md font-semibold cursor-pointer"
             >
-              <span>🚀 {t.hero.primaryCta || "AGENDAR ASESORÍA & CREAR UNIDAD DE CRECIMIENTO"}</span>
+              <span>{t.hero.primaryCta || "AGENDAR ASESORÍA & CREAR UNIDAD DE CRECIMIENTO"}</span>
               <span className="text-emerald-400 font-bold">&rarr;</span>
             </a>
           </div>
@@ -273,11 +261,7 @@ export default function AgenticPage() {
         <div className="relative z-10 max-w-4xl mx-auto">
           <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-black/10 p-8 sm:p-12 md:p-14 shadow-xl text-center space-y-8">
             
-            {/* Pill Tag */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono text-emerald-800 bg-emerald-500/10 border border-emerald-500/20 uppercase tracking-widest font-semibold mx-auto">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>UNIDAD DE CRECIMIENTO INMEDIATA</span>
-            </div>
+
 
             {/* Main Headline */}
             <div className="space-y-4 max-w-3xl mx-auto">
@@ -295,7 +279,7 @@ export default function AgenticPage() {
                 href="#agendar"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-[#111] text-white text-xs sm:text-sm font-mono uppercase tracking-wider hover:bg-black/90 transition-all shadow-md hover:shadow-xl font-bold cursor-pointer"
               >
-                <span>🚀 SOLICITAR ASESORÍA ESTRATÉGICA</span>
+                <span>SOLICITAR ASESORÍA ESTRATÉGICA</span>
                 <span className="text-emerald-400 font-bold">&rarr;</span>
               </a>
 
@@ -305,7 +289,7 @@ export default function AgenticPage() {
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-mono tracking-wider hover:bg-emerald-700 transition-all shadow-md font-bold cursor-pointer"
               >
-                <span>💬 Hablar por WhatsApp (+57 312 752 9629)</span>
+                <span>💬 Hablar por WhatsApp</span>
               </a>
             </div>
 

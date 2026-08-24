@@ -14,7 +14,6 @@ export const translations = {
       startBuilding: "CREAR UNIDAD DE CRECIMIENTO",
     },
     hero: {
-      badge: "+200,000 contactos B2B verificados en Colombia",
       titleLine1: "Tu nueva unidad de",
       titleLine2: "crecimiento comercial,",
       titleLine3: "impulsada por IA",
