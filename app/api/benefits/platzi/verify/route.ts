@@ -71,9 +71,13 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     }
 
+    console.log(`[PLATZI STEP 2 VERIFY WEBHOOK CALL] Sending request to: ${webhookUrl}`)
+    console.log(`[PLATZI STEP 2 PAYLOAD]`, JSON.stringify(payloadToWebhook, null, 2))
+
     // Forward verification request to n8n Webhook
+    let webhookResponseText = ""
     let webhookResponseData: any = null
-    let responseStatus = 200
+    let responseStatus = 0
 
     try {
       const webhookRes = await fetch(webhookUrl, {
@@ -87,21 +91,35 @@ export async function POST(request: Request) {
       })
 
       responseStatus = webhookRes.status
-      webhookResponseData = await webhookRes.json().catch(() => null)
-    } catch (whErr) {
-      console.warn("Error reaching n8n webhook on step 2 code verification:", whErr)
-    }
+      webhookResponseText = await webhookRes.text()
 
-    // Check if n8n returned an explicit error status or message
-    if (responseStatus >= 400 || (webhookResponseData && webhookResponseData.success === false)) {
+      console.log(`[PLATZI STEP 2 WEBHOOK RESPONSE STATUS] ${responseStatus}`)
+      console.log(`[PLATZI STEP 2 WEBHOOK RESPONSE BODY] ${webhookResponseText}`)
+
+      try {
+        webhookResponseData = JSON.parse(webhookResponseText)
+      } catch {
+        webhookResponseData = { raw: webhookResponseText }
+      }
+
+      if (!webhookRes.ok || (webhookResponseData && webhookResponseData.success === false)) {
+        return NextResponse.json(
+          {
+            error:
+              webhookResponseData?.error ||
+              webhookResponseData?.message ||
+              `El webhook de n8n retornó estado ${responseStatus}. Detalle: ${webhookResponseText || 'Código incorrecto o no verificado'}.`,
+          },
+          { status: 400 }
+        )
+      }
+    } catch (whErr: any) {
+      console.error("[PLATZI STEP 2 FETCH ERROR]", whErr)
       return NextResponse.json(
         {
-          error:
-            webhookResponseData?.error ||
-            webhookResponseData?.message ||
-            "El código de seguridad ingresado es incorrecto o ha expirado. Por favor verifica en tu correo electrónico.",
+          error: `Error de conexión al llamar al webhook de n8n en el paso 2: ${whErr.message || String(whErr)}`,
         },
-        { status: 400 }
+        { status: 502 }
       )
     }
 
@@ -113,10 +131,10 @@ export async function POST(request: Request) {
       },
       { status: 200 }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error("[API PLATZI ACTIVATION VERIFY ERROR]", error)
     return NextResponse.json(
-      { error: "Ocurrió un error al verificar el código de seguridad." },
+      { error: `Ocurrió un error en el servidor al verificar el código: ${error.message || String(error)}` },
       { status: 500 }
     )
   }

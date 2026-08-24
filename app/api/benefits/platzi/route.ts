@@ -95,8 +95,14 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     }
 
-    // 3. Server-to-Server request to n8n Webhook -> n8n triggers email with security code
+    console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
+    console.log(`[PLATZI STEP 1 PAYLOAD]`, JSON.stringify(payloadToWebhook, null, 2))
+
+    // 3. Server-to-Server request to n8n Webhook
+    let webhookResponseText = ""
     let webhookResData: any = null
+    let responseStatus = 0
+
     try {
       const webhookRes = await fetch(webhookUrl, {
         method: "POST",
@@ -108,13 +114,35 @@ export async function POST(request: Request) {
         body: JSON.stringify(payloadToWebhook),
       })
 
-      if (webhookRes.ok) {
-        webhookResData = await webhookRes.json().catch(() => null)
-      } else {
-        console.warn(`Webhook n8n step 1 returned status ${webhookRes.status}`)
+      responseStatus = webhookRes.status
+      webhookResponseText = await webhookRes.text()
+
+      console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE STATUS] ${responseStatus}`)
+      console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE BODY] ${webhookResponseText}`)
+
+      try {
+        webhookResData = JSON.parse(webhookResponseText)
+      } catch {
+        webhookResData = { raw: webhookResponseText }
       }
-    } catch (whErr) {
-      console.warn("Error reaching n8n webhook on step 1:", whErr)
+
+      if (!webhookRes.ok) {
+        return NextResponse.json(
+          {
+            error: `El webhook de n8n retornó estado HTTP ${responseStatus}. Detalle: ${webhookResponseText || 'Sin respuesta'}. Por favor verifica que el flujo esté activo en n8n o la URL sea correcta.`,
+            details: webhookResponseText,
+          },
+          { status: 502 }
+        )
+      }
+    } catch (whErr: any) {
+      console.error("[PLATZI STEP 1 FETCH ERROR]", whErr)
+      return NextResponse.json(
+        {
+          error: `Error de conexión al llamar al webhook de n8n (${webhookUrl}): ${whErr.message || String(whErr)}`,
+        },
+        { status: 502 }
+      )
     }
 
     return NextResponse.json(
@@ -122,13 +150,14 @@ export async function POST(request: Request) {
         success: true,
         verificationRequired: true,
         message: webhookResData?.message || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`,
+        details: webhookResData,
       },
       { status: 200 }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error("[API PLATZI ACTIVATION STEP 1 ERROR]", error)
     return NextResponse.json(
-      { error: "Ocurrió un error al procesar la solicitud de activación." },
+      { error: `Ocurrió un error en el servidor: ${error.message || String(error)}` },
       { status: 500 }
     )
   }
