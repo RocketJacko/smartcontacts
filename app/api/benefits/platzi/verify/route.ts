@@ -43,8 +43,7 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Check all possible environment variable name variants for x-api-key in Node.js
-    const webhookKey =
+    const rawKey =
       process.env["x-api-key"] ||
       process.env["X-API-KEY"] ||
       process.env.x_api_key ||
@@ -53,6 +52,7 @@ export async function POST(request: Request) {
       process.env.CHECK_DOMAIN_SECRET ||
       ""
 
+    const webhookKey = String(rawKey).trim()
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
     // Server-side signed JWT Token for Step 2 Verification
@@ -81,6 +81,7 @@ export async function POST(request: Request) {
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       verificationCode: String(inputCode).trim(),
+      jwtToken,
       timestamp: new Date().toISOString(),
     }
 
@@ -88,12 +89,12 @@ export async function POST(request: Request) {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${jwtToken}`,
     }
 
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
       headers["X-API-KEY"] = webhookKey
+      headers["Authorization"] = webhookKey
     }
 
     // Forward verification request to n8n Webhook

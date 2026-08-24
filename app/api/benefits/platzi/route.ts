@@ -69,8 +69,8 @@ export async function POST(request: Request) {
       process.env.N8N_WEBHOOK_URL ||
       "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Check all possible environment variable name variants for x-api-key in Node.js
-    const webhookKey =
+    // Read key trimmed to prevent newline/whitespace mismatch
+    const rawKey =
       process.env["x-api-key"] ||
       process.env["X-API-KEY"] ||
       process.env.x_api_key ||
@@ -79,9 +79,7 @@ export async function POST(request: Request) {
       process.env.CHECK_DOMAIN_SECRET ||
       ""
 
-    console.log("[DEBUG ENV KEYS IN NODE]", Object.keys(process.env).filter(k => k.toLowerCase().includes("key") || k.toLowerCase().includes("api") || k.toLowerCase().includes("platzi")))
-    console.log("[DEBUG WEBHOOK KEY VALUE FOUND]", webhookKey ? `${webhookKey.substring(0, 8)}... (length: ${webhookKey.length})` : "EMPTY")
-
+    const webhookKey = String(rawKey).trim()
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
     // 2. Server-side signed JWT Token for Step 1
@@ -108,20 +106,21 @@ export async function POST(request: Request) {
       discountCode: String(discountCode || "").trim().toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
+      jwtToken,
       timestamp: new Date().toISOString(),
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
 
-    // Build headers dictionary dynamically
+    // Clean headers for n8n Header Auth
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${jwtToken}`,
     }
 
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
       headers["X-API-KEY"] = webhookKey
+      headers["Authorization"] = webhookKey
     }
 
     let webhookResponseText = ""
