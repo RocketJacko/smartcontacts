@@ -38,8 +38,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const webhookUrl = process.env.PLATZI_WEBHOOK_URL || "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
-    const webhookKey = process.env.PLATZI_WEBHOOK_KEY || "sc_platzi_live_key_2026"
+    // Default to active production URL (without -test) if no custom env set
+    const webhookUrl =
+      process.env.PLATZI_WEBHOOK_URL ||
+      process.env.N8N_WEBHOOK_URL ||
+      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+
+    const webhookKey =
+      process.env.PLATZI_WEBHOOK_KEY ||
+      process.env.X_API_KEY ||
+      process.env["x-api-key"] ||
+      "sc_platzi_live_key_2026"
+
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
     // Server-side signed JWT Token for Step 2 Verification
@@ -72,7 +82,6 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 2 VERIFY WEBHOOK CALL] Sending request to: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 2 PAYLOAD]`, JSON.stringify(payloadToWebhook, null, 2))
 
     // Forward verification request to n8n Webhook
     let webhookResponseText = ""
