@@ -180,7 +180,7 @@ export default function AgenticPage() {
               href="#agendar"
               className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-wider hover:bg-black/80 transition-all shadow-md font-semibold cursor-pointer"
             >
-              <span>{t.hero.primaryCta || "AGENDAR ASESORÍA & CREAR UNIDAD DE CRECIMIENTO"}</span>
+              <span>{t.hero.primaryCta || "Agendar Cita"}</span>
               <span className="text-emerald-400 font-bold">&rarr;</span>
             </a>
           </div>

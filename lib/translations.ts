@@ -11,7 +11,7 @@ export const translations = {
       agents: "Agentes & IA",
       workflow: "Filosofía",
       pricing: "Unidad de Crecimiento",
-      startBuilding: "CREAR UNIDAD DE CRECIMIENTO",
+      startBuilding: "Agendar Cita",
     },
     hero: {
       titleLine1: "Tu nueva unidad de",
@@ -24,7 +24,7 @@ export const translations = {
         payroll: "Sin nómina fija ni pasivos",
         agents: "Prospección y cierre con IA",
       },
-      primaryCta: "Agendar asesoría y crear mi unidad de crecimiento",
+      primaryCta: "Agendar Cita",
       secondaryCta: "EXPLORAR BASE DE DATOS (+200K)",
       emailPlaceholder: "Ingrese su correo empresarial...",
       submitBtn: "SOLICITAR ASESORÍA COMERCIAL",
