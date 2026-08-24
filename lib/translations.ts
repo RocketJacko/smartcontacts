@@ -11,6 +11,7 @@ export const translations = {
       agents: "Agentes & IA",
       workflow: "Filosofía",
       pricing: "Unidad de Crecimiento",
+      benefits: "Beneficios",
       startBuilding: "Agendar Cita",
     },
     hero: {
@@ -454,6 +455,7 @@ export const translations = {
       agents: "Agents & AI",
       workflow: "Philosophy",
       pricing: "Growth Unit",
+      benefits: "Benefits",
       startBuilding: "BUILD GROWTH UNIT",
     },
     hero: {

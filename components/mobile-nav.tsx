@@ -21,6 +21,7 @@ export function MobileNav() {
     { label: t.nav.platform,   href: "/propuesta" },
     { label: t.nav.coverage,   href: "/cobertura" },
     { label: t.nav.modalities, href: "/modalidades" },
+    { label: t.nav.benefits || "Beneficios", href: "/beneficios" },
     { label: t.nav.about,      href: "/sobre-mi" },
     { label: t.nav.schedule,   href: "/agendar" },
   ]
