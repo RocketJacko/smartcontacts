@@ -17,9 +17,9 @@ export const translations = {
       titleLine1: "Tu nueva unidad de",
       titleLine2: "crecimiento comercial,",
       titleLine3: "impulsada por IA",
-      subtitle: "Multiplicamos tus ventas y tu prospección sin inflar tu nómina ni asumir pasivos laborales. Te entregamos un canal de ventas activo: agentes de IA entrenados en tu marca, ejecutando sobre nuestra propia base de datos perfilada.",
+      subtitle: "Multiplicamos tus ventas y tu prospección sin inflar tu nómina ni asumir pasivos laborales. Apoyamos a tu empresa comercializando tus productos y servicios directamente a clientes finales (B2C) y empresas (B2B) con agentes de IA entrenados en tu marca sobre nuestra propia base de datos perfilada.",
       stats: {
-        contacts: "Contactos B2B verificados",
+        contacts: "Contactos B2C y B2B verificados",
         coverage: "Departamentos con cobertura",
         payroll: "Sin nómina fija ni pasivos",
         agents: "Prospección y cierre con IA",
@@ -36,13 +36,13 @@ export const translations = {
       title: "Nos sumamos como un canal de ventas más, con todo ya construido.",
       autonomousTag: "SISTEMA AGÉNTICO, NO CHATBOT",
       autonomousTitle: "Agentes de IA que ejecutan la labor comercial completa",
-      autonomousDesc: "No es un bot de respuestas automáticas. Son agentes entrenados con el conocimiento comercial, tono y políticas exactas de tu marca. Contactan, presentan tu oferta, manejan objeciones y ejecutan el cierre o el agendamiento — sin improvisar y sin errores humanos.",
+      autonomousDesc: "No es un bot de respuestas automáticas. Son agentes entrenados con el conocimiento comercial, tono y políticas exactas de tu marca. Comercializan tus productos o servicios directamente a clientes finales (B2C) y empresas (B2B), presentan tu oferta, manejan objeciones y ejecutan el cierre o agendamiento — sin improvisar y sin errores humanos.",
       multiAgentTag: "EXPERIENCIA COMERCIAL REAL (10+ AÑOS)",
       multiAgentTitle: "IA creada por quien dirigió ventas reales.",
       multiAgentDesc: "Diseñado desde más de una década de experiencia real dirigiendo equipos de ventas en servicios financieros (libranza, tarjetas de crédito) y servicios de salud (planes complementarios, asistencia médica domiciliaria y odontología).",
       memoryTag: "DATOS PROPIOS",
       memoryTitle: "Prospectamos con nuestra propia base de datos",
-      memoryDesc: "No dependemos de tu cartera ni exigimos que tengas una base dormida. Traemos nuestra infraestructura de registros, perfilados por 5 variables clave, listos para contactar.",
+      memoryDesc: "No dependemos de tu cartera ni exigimos que tengas una base dormida. Apoyamos comercialmente a tu empresa con nuestra infraestructura de registros de personas (B2C) y empresas (B2B), perfilados por 5 variables clave, listos para contactar.",
       segmentationTitle: "VARIABLES DE SEGMENTACIÓN PROPIA",
       segmentationItems: [
         "Departamento / Ciudad",
@@ -56,7 +56,7 @@ export const translations = {
       manifesto: {
         tagline: "No somos una agencia de publicidad. No somos un BPO. Somos un canal de ventas adicional, con todo ya construido.",
         title: "No reemplazamos tu equipo comercial — nos sumamos como un canal más.",
-        desc: "No hace falta que algo esté mal para que sumemos: si tu empresa quiere vender más, traemos nuestra propia cartera, nuestro sistema agéntico, y vendemos tu producto como una fuerza de ventas adicional.",
+        desc: "No hace falta que algo esté mal para que sumemos: si tu empresa quiere vender más, traemos nuestra propia cartera de clientes finales (B2C) y corporativos (B2B), nuestro sistema agéntico, y comercializamos tus productos o servicios como una fuerza de ventas adicional.",
         notTitle: "LO QUE NO SOMOS",
         notItems: [
           "Agencia de marketing o redes sociales",
