@@ -64,26 +64,22 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Generate 6-digit verification code (PIN)
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-
     const webhookUrl = process.env.PLATZI_WEBHOOK_URL || "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
     const webhookKey = process.env.PLATZI_WEBHOOK_KEY || "sc_platzi_live_key_2026"
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
-    // 3. Server-side signed JWT Token
+    // 2. Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
       {
-        sub: "benefit_activation_platzi_step1",
+        sub: "benefit_activation_platzi_step1_request_code",
         accountEmail: platziAccountEmail,
         contactEmail: email,
-        verificationCode,
       },
       jwtSecret
     )
 
     const payloadToWebhook = {
-      event: "activation_requested",
+      event: "request_code",
       step: 1,
       product: "Platzi",
       duration: "5 meses",
@@ -96,38 +92,43 @@ export async function POST(request: Request) {
       discountCode: String(discountCode || "").trim().toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
-      verificationCode,
       timestamp: new Date().toISOString(),
     }
 
-    // 4. Server-to-Server request to n8n Webhook
-    const webhookRes = await fetch(webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": webhookKey,
-        "Authorization": `Bearer ${jwtToken}`,
-      },
-      body: JSON.stringify(payloadToWebhook),
-    })
+    // 3. Server-to-Server request to n8n Webhook -> n8n triggers email with security code
+    let webhookResData: any = null
+    try {
+      const webhookRes = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": webhookKey,
+          "Authorization": `Bearer ${jwtToken}`,
+        },
+        body: JSON.stringify(payloadToWebhook),
+      })
 
-    if (!webhookRes.ok) {
-      console.warn(`Webhook n8n step 1 response status: ${webhookRes.status}`)
+      if (webhookRes.ok) {
+        webhookResData = await webhookRes.json().catch(() => null)
+      } else {
+        console.warn(`Webhook n8n step 1 returned status ${webhookRes.status}`)
+      }
+    } catch (whErr) {
+      console.warn("Error reaching n8n webhook on step 1:", whErr)
     }
 
     return NextResponse.json(
       {
         success: true,
         verificationRequired: true,
-        verificationCode, // sent to client for verification step
-        message: "Solicitud iniciada. Ingresa el código de confirmación enviado a tu correo/WhatsApp.",
+        message: webhookResData?.message || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`,
       },
       { status: 200 }
     )
   } catch (error) {
     console.error("[API PLATZI ACTIVATION STEP 1 ERROR]", error)
     return NextResponse.json(
-      { error: "Ocurrió un error al procesar la solicitud inicial de activación." },
+      { error: "Ocurrió un error al procesar la solicitud de activación." },
       { status: 500 }
     )
   }

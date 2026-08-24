@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { X, CheckCircle2, Loader2, ShieldCheck, Tag, User, Phone, Mail, Sparkles, KeyRound, RefreshCw } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -13,7 +13,7 @@ interface PlatziActivationModalProps {
 
 export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModalProps) {
   const { language } = useLanguage()
-  const { countryCode, countryName, dialCode, flagUrl, userCurrency, formattedPlatziPrice, toggleCurrency } = useGeoLocation()
+  const { countryCode, countryName, userCurrency, formattedPlatziPrice } = useGeoLocation()
 
   // Step 1 Form States
   const [name, setName] = useState("")
@@ -24,7 +24,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   // Flow & Step States
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [expectedCode, setExpectedCode] = useState("")
   const [inputCode, setInputCode] = useState("")
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -35,14 +34,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   const handleResetModal = () => {
     setStep(1)
-    setExpectedCode("")
     setInputCode("")
     setErrorMsg("")
     setSuccessMessage("")
     onClose()
   }
 
-  // Step 1: Submit initial request -> Receive verification PIN
+  // Step 1: Submit initial request -> Webhook sends email code to user
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
@@ -73,10 +71,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const data = await res.json()
 
       if (res.ok && data.success) {
-        setExpectedCode(data.verificationCode || "")
         setStep(2)
       } else {
-        setErrorMsg(data.error || (language === "es" ? "Ocurrió un error al procesar la solicitud." : "An error occurred."))
+        setErrorMsg(data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred."))
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al enviar la solicitud." : "Connection error.")
@@ -85,13 +82,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }
 
-  // Step 2: Verify PIN & Execute final activation webhook
+  // Step 2: Forward user-entered PIN to n8n webhook for verification & activation
   const handleStep2Verify = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
 
     if (!inputCode.trim()) {
-      setErrorMsg(language === "es" ? "Por favor ingresa el código de confirmación." : "Please enter confirmation code.")
+      setErrorMsg(language === "es" ? "Por favor ingresa el código de seguridad." : "Please enter security code.")
       return
     }
 
@@ -103,7 +100,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           inputCode,
-          expectedCode,
           name,
           phone,
           email,
@@ -121,7 +117,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
         setStep(3)
       } else {
-        setErrorMsg(data.error || (language === "es" ? "Código incorrecto o error en activación." : "Verification error."))
+        setErrorMsg(data.error || (language === "es" ? "El código ingresado es incorrecto." : "Invalid code."))
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al verificar el código." : "Connection error.")
@@ -170,44 +166,29 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </button>
           </div>
         ) : step === 2 ? (
-          /* STEP 2: CODE VERIFICATION (RATE LIMIT PROTECTION) */
+          /* STEP 2: CODE VERIFICATION (COPIED FROM EMAIL) */
           <form onSubmit={handleStep2Verify} className="space-y-5">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/60 font-semibold uppercase tracking-wider">
-                <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{language === "es" ? "PASO 2 DE 2: VERIFICACIÓN DE CÓDIGO" : "STEP 2 OF 2: CODE VERIFICATION"}</span>
-              </div>
-
-              <div>
-                <h3 className="text-2xl font-medium text-[#111] tracking-tight">
-                  {language === "es" ? "Ingresa tu Código de Confirmación" : "Enter Confirmation Code"}
-                </h3>
-                <p className="text-xs text-black/70 leading-relaxed mt-1">
-                  {language === "es"
-                    ? `Hemos generado el código de activación de 6 dígitos para la cuenta: ${platziAccountEmail}.`
-                    : `Enter the 6-digit confirmation code for account: ${platziAccountEmail}.`}
-                </p>
-              </div>
-
-              {/* Demo Helper Banner showing expected PIN */}
-              {expectedCode && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-mono text-center">
-                  Código de activación generado: <span className="font-bold text-sm tracking-widest">{expectedCode}</span>
-                </div>
-              )}
+            <div className="space-y-2">
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                {language === "es" ? "Código de Seguridad" : "Security Code"}
+              </h3>
+              <p className="text-xs text-black/70 leading-relaxed">
+                {language === "es"
+                  ? `Hemos enviado un código de seguridad al correo electrónico: ${email}. Revisa tu bandeja de entrada, cópialo e ingrésalo a continuación para confirmar la activación de la cuenta ${platziAccountEmail}.`
+                  : `We sent a security code to ${email}. Check your inbox and enter it below to confirm activation for ${platziAccountEmail}.`}
+              </p>
             </div>
 
-            {/* Input PIN Field */}
+            {/* Input Security Code Field */}
             <div className="space-y-1">
               <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                {language === "es" ? "Código de 6 Dígitos *" : "6-Digit Code *"}
+                {language === "es" ? "Código de Seguridad *" : "Security Code *"}
               </label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
+                <KeyRound className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   required
-                  maxLength={6}
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
                   placeholder="Ej. 123456"
@@ -231,17 +212,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>{language === "es" ? "VERIFICANDO Y ACTIVANDO..." : "VERIFYING..."}</span>
+                    <span>{language === "es" ? "VERIFICANDO CÓDIGO..." : "VERIFYING..."}</span>
                   </>
                 ) : (
-                  <span>{language === "es" ? "CONFIRMAR Y ACTIVAR BENEFICIO" : "CONFIRM AND ACTIVATE BENEFIT"}</span>
+                  <span>{language === "es" ? "CONFIRMAR ACTIVACIÓN" : "CONFIRM ACTIVATION"}</span>
                 )}
               </button>
 
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="w-full py-2.5 text-xs font-mono text-black/60 hover:text-black transition-colors"
+                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors"
               >
                 &larr; {language === "es" ? "Volver a editar datos" : "Edit request details"}
               </button>
@@ -250,19 +231,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         ) : (
           /* STEP 1: INITIAL DATA COLLECTION */
           <form onSubmit={handleStep1Submit} className="space-y-5">
-            <div className="space-y-3">
-
-
-              <div>
-                <h3 className="text-2xl font-medium text-[#111] tracking-tight">
-                  {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
-                </h3>
-                <p className="text-xs text-black/60 font-mono mt-0.5">
-                  {formattedPlatziPrice} — 5 meses de acceso total
-                </p>
-              </div>
-
-
+            <div className="space-y-1">
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+              </h3>
+              <p className="text-xs text-black/60 font-mono">
+                {formattedPlatziPrice} — 5 meses de acceso total
+              </p>
             </div>
 
             {/* Form Fields */}
@@ -271,7 +246,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {/* Field 1: Nombre Completo */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Nombre Completo *" : "Full Name *"}
+                  {language === "es" ? "Nombre Completo " : "Full Name "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
@@ -302,7 +278,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {/* Field 3: Correo de Contacto */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Correo de Contacto *" : "Contact Email *"}
+                  {language === "es" ? "Correo de Contacto " : "Contact Email "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
@@ -320,7 +297,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {/* Field 4: Cuenta de Correo que tomará el servicio Platzi */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-emerald-900 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Cuenta de correo que tomará el servicio Platzi *" : "Platzi Service Account Email *"}
+                  {language === "es" ? "Cuenta de correo que tomará el servicio Platzi " : "Platzi Service Account Email "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -343,13 +321,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
                 </label>
                 <div className="relative">
-                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
                   <input
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
                     placeholder="Ej. PLATZI2026"
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase"
+                    className="w-full px-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase"
                   />
                 </div>
               </div>
@@ -370,14 +347,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>{language === "es" ? "GENERANDO CÓDIGO..." : "GENERATING CODE..."}</span>
+                  <span>{language === "es" ? "ENVIANDO CÓDIGO A TU CORREO..." : "SENDING CODE..."}</span>
                 </>
               ) : (
                 <span>Activar Cuenta</span>
               )}
             </button>
-
-
 
           </form>
         )}
