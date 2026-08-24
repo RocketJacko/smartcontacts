@@ -64,38 +64,28 @@ export async function POST(request: Request) {
       )
     }
 
+    // Default to test URL requested: https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+      "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
 
-    // Read strictly from Dokploy / system environment without dummy fallbacks
-    const webhookKey = (
+    // Read strictly from environment
+    const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
       process.env.x_api_key ||
       process.env.PLATZI_WEBHOOK_KEY ||
       ""
-    ).trim()
 
+    const webhookKey = String(rawKey).trim()
     const jwtSecret = (
       process.env.PLATZI_JWT_SECRET ||
       process.env.CHECK_DOMAIN_SECRET ||
       ""
     ).trim()
 
-    // Strict check: DO NOT call webhook if x-api-key is not defined in Dokploy environment
-    if (!webhookKey) {
-      console.error("[DOKPLOY ENV DIAGNOSTIC] x-api-key is missing. Keys in process.env:", Object.keys(process.env))
-      return NextResponse.json(
-        {
-          error: "Error: La variable de entorno 'x-api-key' (o 'X_API_KEY') no está configurada en Dokploy.",
-        },
-        { status: 500 }
-      )
-    }
-
-    // 2. Server-side signed JWT Token for Step 1
+    // Server-side signed JWT Token for Step 1
     const jwtToken = createServerJWT(
       {
         sub: "benefit_activation_platzi_step1_request_code",
@@ -124,12 +114,16 @@ export async function POST(request: Request) {
     }
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] Sending request to: ${webhookUrl}`)
-    console.log(`[PLATZI STEP 1 KEY SENT FROM DOKPLOY] ${webhookKey.substring(0, 6)}... (length: ${webhookKey.length})`)
+    console.log(`[PLATZI STEP 1 KEY SENT] ${webhookKey ? webhookKey.substring(0, 6) + "..." : "NONE"}`)
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "x-api-key": webhookKey,
-      "X-API-KEY": webhookKey,
+    }
+
+    if (webhookKey) {
+      headers["x-api-key"] = webhookKey
+      headers["X-API-KEY"] = webhookKey
+      headers["Authorization"] = webhookKey
     }
 
     let webhookResponseText = ""
