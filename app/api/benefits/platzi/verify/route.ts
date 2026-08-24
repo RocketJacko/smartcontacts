@@ -47,6 +47,8 @@ export async function POST(request: Request) {
       totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
       currency: currency || "COP",
       inputCode: String(inputCode).trim(),
+      codigo: String(inputCode).trim(),
+      verificationCode: String(inputCode).trim(),
       name: String(name).trim(),
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
@@ -91,7 +93,13 @@ export async function POST(request: Request) {
         webhookResponseData = { raw: webhookResponseText }
       }
 
-      if (!webhookRes.ok || (webhookResponseData && webhookResponseData.success === false)) {
+      // Check if n8n processed the workflow successfully or returned a missing respond node message
+      const isWorkflowExecuted =
+        webhookRes.ok ||
+        webhookResponseText.includes("No Respond to Webhook node") ||
+        (webhookResponseData && webhookResponseData.success !== false && !webhookResponseData.error)
+
+      if (!isWorkflowExecuted) {
         return NextResponse.json(
           {
             error:
