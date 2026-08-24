@@ -243,18 +243,17 @@ export default function AgenticPage() {
       {/* ── AGENDAR CITA (CALENDARIO & LISTA KAGE DE CONSULTAS) ──────────── */}
       <BookingSection />
 
-      {/* ── CTA ───────────────────────────────────────────────────────────── */}
-      <section className="relative py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden">
-        {/* Glass panels image — anchored to bottom center */}
+      {/* ── CTA FINAL DE ALTA CONVERSIÓN ─────────────────────────────────── */}
+      <section className="relative py-14 sm:py-20 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden bg-[#F5F4F0]">
+        {/* Glass panels image background */}
         <img
           src="/images/footer.png"
           alt=""
           loading="lazy"
           aria-hidden="true"
-          className="absolute bottom-0 left-0 w-full object-cover object-bottom pointer-events-none select-none"
-          style={{ opacity: 0.85 }}
+          className="absolute bottom-0 left-0 w-full object-cover object-bottom pointer-events-none select-none opacity-80"
         />
-        {/* Progressive blur from bottom — blends into site bg */}
+        {/* Progressive blur */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -264,60 +263,69 @@ export default function AgenticPage() {
             WebkitBackdropFilter: "blur(18px)",
           }}
         />
-        {/* Colour fade from bottom to site bg #f5f4f0 */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "linear-gradient(to top, rgb(245,244,240) 0%, rgba(245,244,240,0.92) 18%, rgba(245,244,240,0.55) 35%, transparent 55%)",
+            background: "linear-gradient(to top, rgb(245,244,240) 0%, rgba(245,244,240,0.92) 20%, rgba(245,244,240,0.6) 45%, transparent 70%)",
           }}
         />
-        <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6">
-            {t.cta.title}
-          </h2>
-          <p className="text-sm text-black/75 font-medium leading-relaxed mb-10">
-            {t.cta.desc}
-          </p>
-          {!submitted ? (
-            <form
-              onSubmit={async e => {
-                e.preventDefault()
-                if (!email) return
-                try {
-                  await fetch("/api/booking", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: "lead", email }),
-                  })
-                } catch {
-                  // Fallback UI
-                }
-                setSubmitted(true)
-              }}
-              className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto"
-            >
-              <input
-                type="email"
-                aria-label="Correo electrónico de contacto"
-                placeholder={t.cta.inputPlaceholder}
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="flex-1 bg-white border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111] placeholder:text-black/50 focus:outline-none focus:border-black/40 transition-colors"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 bg-[#111] text-white text-xs sm:text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium shrink-0 cursor-pointer"
-              >
-                {t.cta.btn}
-              </button>
-            </form>
-          ) : (
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-emerald-600/20 bg-emerald-50 text-emerald-700 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {t.cta.submitted}
+
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-black/10 p-8 sm:p-12 md:p-14 shadow-xl text-center space-y-8">
+            
+            {/* Pill Tag */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono text-emerald-800 bg-emerald-500/10 border border-emerald-500/20 uppercase tracking-widest font-semibold mx-auto">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>UNIDAD DE CRECIMIENTO INMEDIATA</span>
             </div>
-          )}
+
+            {/* Main Headline */}
+            <div className="space-y-4 max-w-3xl mx-auto">
+              <h2 className="text-3xl sm:text-5xl md:text-6xl font-light tracking-tight leading-[1.08] text-[#111]">
+                {t.cta.title}
+              </h2>
+              <p className="text-sm sm:text-base text-black/75 font-normal leading-relaxed max-w-2xl mx-auto">
+                {t.cta.desc}
+              </p>
+            </div>
+
+            {/* High-Conversion Action Button Area */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+              <a
+                href="#agendar"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-[#111] text-white text-xs sm:text-sm font-mono uppercase tracking-wider hover:bg-black/90 transition-all shadow-md hover:shadow-xl font-bold cursor-pointer"
+              >
+                <span>🚀 SOLICITAR ASESORÍA ESTRATÉGICA</span>
+                <span className="text-emerald-400 font-bold">&rarr;</span>
+              </a>
+
+              <a
+                href="https://wa.me/573127529629"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-mono tracking-wider hover:bg-emerald-700 transition-all shadow-md font-bold cursor-pointer"
+              >
+                <span>💬 Hablar por WhatsApp (+57 312 752 9629)</span>
+              </a>
+            </div>
+
+            {/* Proof Indicators Bar */}
+            <div className="pt-6 border-t border-black/[0.08] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono text-black/70 font-medium">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>+200,000 Contactos B2B Verificados</span>
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Sin Nómina Fija ni Pasivos</span>
+              </div>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Atención Directa en &lt; 15 min</span>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
