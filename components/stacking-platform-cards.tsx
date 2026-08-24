@@ -88,9 +88,9 @@ export function StackingPlatformCards() {
                       PROMESA DE VALOR
                     </div>
                     {[
-                      { label: "Enfoque Consultivo", desc: "Venta directa de alto valor" },
-                      { label: "Control de Marca", desc: "Alineado a tus políticas" },
-                      { label: "Escala Comercial", desc: "Sin inflar nómina fija" },
+                      { label: "Enfoque consultivo", desc: "Venta directa de alto valor, no spam masivo" },
+                      { label: "Control de marca", desc: "Cada interacción sigue tus políticas y tono" },
+                      { label: "Escala comercial", desc: "Más ventas sin aumentar tu nómina fija" },
                     ].map((item, idx) => (
                       <div key={idx} className="p-3 rounded-xl bg-white border border-black/[0.04]">
                         <div className="text-[11px] font-semibold text-[#111]">{item.label}</div>
