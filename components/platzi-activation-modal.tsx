@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { X, CheckCircle2, Loader2, ShieldCheck, Tag, User, Phone, Mail, Sparkles, KeyRound, RefreshCw } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
+import { PhoneInput } from "@/components/phone-input"
 
 interface PlatziActivationModalProps {
   isOpen: boolean
@@ -250,23 +251,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           /* STEP 1: INITIAL DATA COLLECTION */
           <form onSubmit={handleStep1Submit} className="space-y-5">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono text-emerald-800 bg-emerald-50 border border-emerald-200/60 font-semibold uppercase tracking-wider">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{language === "es" ? "1° PASO: ACTIVACIÓN EN TU CUENTA" : "STEP 1: ACCOUNT ACTIVATION"}</span>
-                </div>
 
-                {/* Currency Toggle Button (COP vs USD) */}
-                <button
-                  type="button"
-                  onClick={toggleCurrency}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] border border-black/10 text-xs font-mono font-semibold text-black transition-colors cursor-pointer"
-                  title="Cambiar moneda (COP / USD)"
-                >
-                  <RefreshCw className="w-3 h-3 text-black/50" />
-                  <span>{userCurrency}</span>
-                </button>
-              </div>
 
               <div>
                 <h3 className="text-2xl font-medium text-[#111] tracking-tight">
@@ -308,22 +293,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </div>
               </div>
 
-              {/* Field 2: Celular / WhatsApp */}
+              {/* Field 2: Celular / WhatsApp con PhoneInput */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Número Celular / WhatsApp *" : "Mobile / WhatsApp Number *"}
+                  {language === "es" ? "Número Celular / WhatsApp " : "Mobile / WhatsApp Number "}
+                  <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Ej. +57 312 752 9629"
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors"
-                  />
-                </div>
+                <PhoneInput
+                  value={phone}
+                  onChange={(fullNum) => setPhone(fullNum)}
+                  placeholder="+57 300 123 4567"
+                />
               </div>
 
               {/* Field 3: Correo de Contacto */}
