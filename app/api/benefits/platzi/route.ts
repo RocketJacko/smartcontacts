@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
 
 // In-memory rate limiting store (max 20 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -6,7 +7,7 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
   const windowMs = 15 * 60 * 1000 // 15 minutes
-  const maxRequests = 20 // Increased to 20 per 15 mins per user request
+  const maxRequests = 20
 
   const record = rateLimitMap.get(ip)
   if (!record || now > record.resetAt) {
@@ -34,12 +35,10 @@ function sanitizeString(str: string): string {
 function extractCleanErrorMessage(data: any, fallbackText: string): string {
   if (!data) return sanitizeString(fallbackText)
 
-  // If array like [{ mensaje: "..." }]
   if (Array.isArray(data) && data.length > 0) {
     return extractCleanErrorMessage(data[0], fallbackText)
   }
 
-  // If object like { mensaje: "..." } or { message: "..." }
   if (typeof data === "object" && data !== null) {
     if (data.mensaje && typeof data.mensaje === "string") return sanitizeString(data.mensaje)
     if (data.message && typeof data.message === "string") return sanitizeString(data.message)
@@ -51,7 +50,6 @@ function extractCleanErrorMessage(data: any, fallbackText: string): string {
   if (typeof data === "string" && data.trim()) {
     const rawStr = data.trim()
 
-    // 1. Extract embedded JSON object/array if string contains JSON
     const jsonMatch = rawStr.match(/(\{|\[)[\s\S]*(\}|\])/)
     if (jsonMatch) {
       try {
@@ -63,7 +61,6 @@ function extractCleanErrorMessage(data: any, fallbackText: string): string {
       }
     }
 
-    // 2. Strip prefixes like "El webhook de n8n retornó HTTP 402: "
     let cleaned = rawStr.replace(/^El webhook de n8n [^:]+:\s*/i, "")
     cleaned = cleaned.replace(/^HTTP \d+ error:\s*/i, "")
 
@@ -154,42 +151,25 @@ export async function POST(request: Request) {
       ""
 
     const webhookKey = String(rawKey).trim()
-    const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
+    const rawCode = String(discountCode || "").trim()
 
-    // Dynamic price & duration calculation for n8n payload
-    let calculatedDuration = "1 año"
-    let calculatedPrice = currency === "USD" ? "$105 USD" : "$400.909,75 COP"
-
-    if (cleanDiscountCode === "PLAN CS") {
-      calculatedDuration = "5 meses"
-      calculatedPrice = currency === "USD" ? "$25 USD" : "$90.000 COP"
-    } else if (cleanDiscountCode === "COMPUESTUDIOS") {
-      calculatedDuration = "1 año"
-      calculatedPrice = "$0 COP"
-    } else if (cleanDiscountCode === "PLAN AS") {
-      calculatedDuration = "1 año"
-      calculatedPrice = currency === "USD" ? "$48 USD" : "$180.000 COP"
-    } else if (cleanDiscountCode === "PLAN BS") {
-      calculatedDuration = "1 año"
-      calculatedPrice = currency === "USD" ? "$43 USD" : "$160.000 COP"
-    } else if (cleanDiscountCode === "CODIFICANDOANDO") {
-      calculatedDuration = "1 año"
-      calculatedPrice = currency === "USD" ? "$20 USD" : "$75.000 COP"
-    }
+    // Resolve exact discount plan details using centralized resolver
+    const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
 
     // Clean payload matching exact form fields
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
       product: "Platzi",
-      duration: calculatedDuration,
-      totalPrice: calculatedPrice,
+      planName: planInfo.planName,
+      duration: planInfo.duration,
+      totalPrice: planInfo.formattedPrice,
       currency: currency || "COP",
       name: String(name).trim(),
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: cleanDiscountCode,
+      discountCode: rawCode.toUpperCase(),
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),
@@ -201,7 +181,6 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     }
 
-    // Header validation key expected by n8n: x-api-key
     if (webhookKey) {
       headers["x-api-key"] = webhookKey
     }
@@ -257,6 +236,7 @@ export async function POST(request: Request) {
         success: true,
         verificationRequired: true,
         message: webhookResData?.message || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`,
+        planInfo,
         details: webhookResData,
       },
       { status: 200 }

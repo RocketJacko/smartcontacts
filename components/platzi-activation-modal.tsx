@@ -5,6 +5,7 @@ import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag, Sparkles } from "l
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
+import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
 
 interface PlatziActivationModalProps {
   isOpen: boolean
@@ -15,7 +16,6 @@ function cleanErrorForUI(raw: string): string {
   if (!raw) return ""
   let str = String(raw).trim()
 
-  // Try extracting embedded JSON like {"mensaje":"..."} or [{"mensaje":"..."}]
   const jsonMatch = str.match(/(\{|\[)[\s\S]*(\}|\])/)
   if (jsonMatch) {
     try {
@@ -30,7 +30,6 @@ function cleanErrorForUI(raw: string): string {
     }
   }
 
-  // Strip prefixes like "El webhook de n8n..."
   str = str.replace(/^El webhook de n8n [^:]+:\s*/i, "")
   str = str.replace(/^HTTP \d+ error:\s*/i, "")
 
@@ -67,57 +66,14 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Effect to update default price when geo location loads
+  // Instant client-side plan resolution + server fallback verification
   useEffect(() => {
-    if (!discountCode.trim()) {
-      setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
-      setDisplayDuration("1 año")
-      setDisplayPlanName("Plan Basic")
-      setDiscountLabel("")
-    }
-  }, [formattedPlatziPrice, discountCode])
-
-  // Debounced effect to query secure server validation for discount codes
-  useEffect(() => {
-    if (!discountCode.trim()) {
-      setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
-      setDisplayDuration("1 año")
-      setDisplayPlanName("Plan Basic")
-      setDiscountLabel("")
-      return
-    }
-
-    const timer = setTimeout(async () => {
-      setIsValidatingCode(true)
-      try {
-        const res = await fetch("/api/benefits/platzi/validate-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: discountCode }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data && data.valid) {
-            setDisplayPrice(data.formattedPrice)
-            setDisplayDuration(data.duration)
-            setDisplayPlanName(data.planName || "Plan Basic")
-            setDiscountLabel(data.discountLabel || "Código de descuento aplicado")
-          } else {
-            setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
-            setDisplayDuration("1 año")
-            setDisplayPlanName("Plan Basic")
-            setDiscountLabel("")
-          }
-        }
-      } catch (err) {
-        console.warn("Error validating discount code:", err)
-      } finally {
-        setIsValidatingCode(false)
-      }
-    }, 350)
-
-    return () => clearTimeout(timer)
-  }, [discountCode, formattedPlatziPrice])
+    const resolved = resolveDiscountPlan(discountCode, userCurrency)
+    setDisplayPrice(resolved.formattedPrice)
+    setDisplayDuration(resolved.duration)
+    setDisplayPlanName(resolved.planName)
+    setDiscountLabel(resolved.discountLabel)
+  }, [discountCode, userCurrency])
 
   if (!isOpen) return null
 
@@ -160,6 +116,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const data = await res.json()
 
       if (res.ok && data.success) {
+        if (data.planInfo) {
+          setDisplayPlanName(data.planInfo.planName)
+          setDisplayPrice(data.planInfo.formattedPrice)
+          setDisplayDuration(data.planInfo.duration)
+        }
         setStep(2)
       } else {
         const rawErr = data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
@@ -204,6 +165,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const data = await res.json()
 
       if (res.ok && data.success) {
+        if (data.planInfo) {
+          setDisplayPlanName(data.planInfo.planName)
+          setDisplayPrice(data.planInfo.formattedPrice)
+          setDisplayDuration(data.planInfo.duration)
+        }
         setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
         setStep(3)
       } else {
@@ -447,7 +413,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder="Ej. PLAN CS"
+                    placeholder="Ej. PLAN A"
                     className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
                   />
                 </div>
