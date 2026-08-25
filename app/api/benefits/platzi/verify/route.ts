@@ -37,14 +37,36 @@ export async function POST(request: Request) {
       ""
 
     const webhookKey = String(rawKey).trim()
+    const cleanDiscountCode = String(discountCode || "").trim().toUpperCase()
+
+    // Dynamic price & duration calculation for n8n payload
+    let calculatedDuration = "1 año"
+    let calculatedPrice = currency === "USD" ? "$105 USD" : "$400.909,75 COP"
+
+    if (cleanDiscountCode === "PLAN CS") {
+      calculatedDuration = "5 meses"
+      calculatedPrice = currency === "USD" ? "$25 USD" : "$90.000 COP"
+    } else if (cleanDiscountCode === "COMPUESTUDIOS") {
+      calculatedDuration = "1 año"
+      calculatedPrice = "$0 COP"
+    } else if (cleanDiscountCode === "PLAN AS") {
+      calculatedDuration = "1 año"
+      calculatedPrice = currency === "USD" ? "$48 USD" : "$180.000 COP"
+    } else if (cleanDiscountCode === "PLAN BS") {
+      calculatedDuration = "1 año"
+      calculatedPrice = currency === "USD" ? "$43 USD" : "$160.000 COP"
+    } else if (cleanDiscountCode === "CODIFICANDOANDO") {
+      calculatedDuration = "1 año"
+      calculatedPrice = currency === "USD" ? "$20 USD" : "$75.000 COP"
+    }
 
     // Clean payload matching exact form fields + inputCode (no jwtToken)
     const payloadToWebhook = {
       event: "verify_code_and_activate",
       step: 2,
       product: "Platzi",
-      duration: "5 meses",
-      totalPrice: currency === "USD" ? "$25 USD" : "$90.000 COP",
+      duration: calculatedDuration,
+      totalPrice: calculatedPrice,
       currency: currency || "COP",
       inputCode: String(inputCode).trim(),
       codigo: String(inputCode).trim(),
@@ -53,7 +75,7 @@ export async function POST(request: Request) {
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: String(discountCode || "").trim().toUpperCase(),
+      discountCode: cleanDiscountCode,
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),

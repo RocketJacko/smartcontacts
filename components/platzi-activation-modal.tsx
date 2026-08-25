@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag, Sparkles } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -22,6 +22,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [platziAccountEmail, setPlatziAccountEmail] = useState("")
   const [discountCode, setDiscountCode] = useState("")
 
+  // Dynamic Discount Validation States
+  const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
+  const [displayDuration, setDisplayDuration] = useState<string>("1 año")
+  const [discountLabel, setDiscountLabel] = useState<string>("")
+  const [isValidatingCode, setIsValidatingCode] = useState<boolean>(false)
+
   // Flow & Step States
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [inputCode, setInputCode] = useState("")
@@ -29,6 +35,54 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
+
+  // Effect to update default price when geo location loads
+  useEffect(() => {
+    if (!discountCode.trim()) {
+      setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
+      setDisplayDuration("1 año")
+      setDiscountLabel("")
+    }
+  }, [formattedPlatziPrice, discountCode])
+
+  // Debounced effect to query secure server validation for discount codes
+  useEffect(() => {
+    if (!discountCode.trim()) {
+      setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
+      setDisplayDuration("1 año")
+      setDiscountLabel("")
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      setIsValidatingCode(true)
+      try {
+        const res = await fetch("/api/benefits/platzi/validate-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: discountCode }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && data.valid) {
+            setDisplayPrice(data.formattedPrice)
+            setDisplayDuration(data.duration)
+            setDiscountLabel(data.discountLabel || "Código de descuento aplicado")
+          } else {
+            setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
+            setDisplayDuration("1 año")
+            setDiscountLabel("")
+          }
+        }
+      } catch (err) {
+        console.warn("Error validating discount code:", err)
+      } finally {
+        setIsValidatingCode(false)
+      }
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [discountCode, formattedPlatziPrice])
 
   if (!isOpen) return null
 
@@ -134,17 +188,16 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         <button
           type="button"
           onClick={handleResetModal}
-          className="absolute top-5 right-5 w-9 h-9 rounded-full bg-black/[0.04] hover:bg-black/10 flex items-center justify-center text-black/60 hover:text-black transition-colors cursor-pointer"
-          aria-label="Cerrar modal"
+          className="absolute top-5 right-5 p-2 rounded-full text-black/40 hover:text-black hover:bg-black/5 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* STEP 3: SUCCESS CONFIRMATION */}
         {step === 3 ? (
-          <div className="text-center py-6 space-y-5">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+          /* STEP 3: ACTIVATION SUCCESS STATE */
+          <div className="text-center py-6 space-y-6">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-xs">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </div>
             <div className="space-y-2">
               <h3 className="text-2xl font-medium text-[#111]">
@@ -154,7 +207,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 {successMessage}
               </p>
               <p className="text-[11px] font-mono text-black/50">
-                Se activó la cuenta <span className="font-semibold text-black">{platziAccountEmail}</span> por 5 meses ({formattedPlatziPrice}).
+                Se activó la cuenta <span className="font-semibold text-black">{platziAccountEmail}</span> por {displayDuration} ({displayPrice}).
               </p>
             </div>
             <button
@@ -235,9 +288,21 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
                 {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
               </h3>
-              <p className="text-xs text-black/60 font-mono">
-                {formattedPlatziPrice} — 5 meses de acceso total
-              </p>
+              
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <span className="text-sm font-mono font-bold text-[#111]">
+                  {displayPrice}
+                </span>
+                <span className="text-xs text-black/60 font-mono">
+                  — {displayDuration} (Para 1 estudiante)
+                </span>
+                {discountLabel && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold border border-emerald-300">
+                    <Sparkles className="w-3 h-3 text-emerald-600" />
+                    <span>{discountLabel}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Form Fields */}
@@ -317,16 +382,25 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
               {/* Field 5: Código de Descuento (opcional) */}
               <div className="space-y-1 pt-1">
-                <label className="block text-xs font-mono text-black/70 font-semibold uppercase tracking-wider">
-                  {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-mono text-black/70 font-semibold uppercase tracking-wider">
+                    {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
+                  </label>
+                  {isValidatingCode && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-black/50">
+                      <Loader2 className="w-3 h-3 animate-spin text-black/40" />
+                      <span>{language === "es" ? "Validando..." : "Validating..."}</span>
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
+                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
                   <input
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder="Ej. PLATZI2026"
-                    className="w-full px-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase"
+                    placeholder="Ej. PLAN CS"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
                   />
                 </div>
               </div>

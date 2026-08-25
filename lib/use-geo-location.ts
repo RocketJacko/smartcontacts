@@ -32,8 +32,8 @@ export function useGeoLocation(): GeoLocationState {
   const [exchangeRate, setExchangeRate] = useState<number>(FALLBACK_EXCHANGE_RATE_COP)
   const [isLoading, setIsLoading] = useState<boolean>(true)
 
-  const platziPriceCop = 90000
-  const platziPriceUsd = Math.round((platziPriceCop / exchangeRate) * 10) / 10 || 25
+  const platziPriceCop = 400909.75
+  const platziPriceUsd = Math.round((platziPriceCop / exchangeRate) * 10) / 10 || 105
 
   useEffect(() => {
     let active = true
@@ -117,7 +117,8 @@ export function useGeoLocation(): GeoLocationState {
       ? new Intl.NumberFormat("es-CO", {
           style: "currency",
           currency: "COP",
-          maximumFractionDigits: 0,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         }).format(platziPriceCop)
       : new Intl.NumberFormat("en-US", {
           style: "currency",

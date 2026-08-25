@@ -21,11 +21,11 @@ export interface BenefitItem {
 const BENEFITS_LIST: BenefitItem[] = [
   {
     id: "platzi",
-    title: "Platzi",
-    subtitle: "Contenido profesional y acceso a los beneficios incluidos en el plan.",
+    title: "Platzi (Plan Basic)",
+    subtitle: "Para 1 estudiante — Contenido profesional y acceso a los beneficios incluidos en el plan.",
     image: "https://cdn.sanity.io/images/vr0czzef/production/0332c01ab74e4d12d723d11c8b4cd7815bebe373-1200x1200.png?w=3840&h=3840&fm=webp&q=80&fit=crop&auto=format",
-    period: "5 meses",
-    periodLabel: "Pago único por el período completo de 5 meses",
+    period: "1 año",
+    periodLabel: "Pago único por el período completo de 1 año",
     features: [
       "Contenido profesional actualizado con certificados digitales",
       "Certificados físicos para las rutas de aprendizaje profesional",
