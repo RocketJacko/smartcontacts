@@ -61,11 +61,12 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  if (normalized === "COMPUESTUDIOS" || normalized === "COMPU") {
+  // Exact matching for COMPUESTUDIO & COMPUESTUDIOS
+  if (normalized === "COMPUESTUDIO" || normalized === "COMPUESTUDIOS" || normalized === "COMPU") {
     return {
       valid: true,
-      codeKey: "COMPUESTUDIOS",
-      planName: "Plan Compuestudios",
+      codeKey: "COMPUESTUDIO",
+      planName: "Plan Compuestudio",
       duration: "1 año",
       priceCop: 0,
       formattedPrice: "$0 COP",
@@ -85,7 +86,7 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  // If user entered a custom code string like "PROMO2026", show as "Plan [CÓDIGO]" with code text
+  // Fallback for custom code inputs
   return {
     valid: true,
     codeKey: cleanCode.toUpperCase(),
