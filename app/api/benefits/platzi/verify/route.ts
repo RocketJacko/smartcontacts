@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server"
 
+function sanitizeString(str: string): string {
+  if (!str) return ""
+  let clean = str.trim()
+  if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+    clean = clean.slice(1, -1).trim()
+  }
+  return clean
+}
+
 function extractCleanErrorMessage(data: any, fallbackText: string): string {
-  if (!data) return fallbackText
+  if (!data) return sanitizeString(fallbackText)
 
   // If array like [{ mensaje: "..." }]
   if (Array.isArray(data) && data.length > 0) {
@@ -9,24 +18,37 @@ function extractCleanErrorMessage(data: any, fallbackText: string): string {
   }
 
   // If object like { mensaje: "..." } or { message: "..." }
-  if (typeof data === "object") {
-    if (data.mensaje && typeof data.mensaje === "string") return data.mensaje
-    if (data.message && typeof data.message === "string") return data.message
-    if (data.error && typeof data.error === "string") return data.error
-    if (data.detalle && typeof data.detalle === "string") return data.detalle
-    if (data.detail && typeof data.detail === "string") return data.detail
+  if (typeof data === "object" && data !== null) {
+    if (data.mensaje && typeof data.mensaje === "string") return sanitizeString(data.mensaje)
+    if (data.message && typeof data.message === "string") return sanitizeString(data.message)
+    if (data.error && typeof data.error === "string") return sanitizeString(data.error)
+    if (data.detalle && typeof data.detalle === "string") return sanitizeString(data.detalle)
+    if (data.detail && typeof data.detail === "string") return sanitizeString(data.detail)
   }
 
   if (typeof data === "string" && data.trim()) {
-    try {
-      const parsed = JSON.parse(data)
-      return extractCleanErrorMessage(parsed, data)
-    } catch {
-      return data
+    const rawStr = data.trim()
+
+    // 1. Extract embedded JSON object/array if string contains JSON
+    const jsonMatch = rawStr.match(/(\{|\[)[\s\S]*(\}|\])/)
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0])
+        const extracted = extractCleanErrorMessage(parsed, "")
+        if (extracted) return sanitizeString(extracted)
+      } catch {
+        // ignore parse error
+      }
     }
+
+    // 2. Strip prefixes like "El webhook de n8n retornó HTTP 402: "
+    let cleaned = rawStr.replace(/^El webhook de n8n [^:]+:\s*/i, "")
+    cleaned = cleaned.replace(/^HTTP \d+ error:\s*/i, "")
+
+    return sanitizeString(cleaned)
   }
 
-  return fallbackText
+  return sanitizeString(fallbackText)
 }
 
 export async function POST(request: Request) {

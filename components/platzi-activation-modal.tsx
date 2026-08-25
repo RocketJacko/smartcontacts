@@ -11,6 +11,36 @@ interface PlatziActivationModalProps {
   onClose: () => void
 }
 
+function cleanErrorForUI(raw: string): string {
+  if (!raw) return ""
+  let str = String(raw).trim()
+
+  // Try extracting embedded JSON like {"mensaje":"..."} or [{"mensaje":"..."}]
+  const jsonMatch = str.match(/(\{|\[)[\s\S]*(\}|\])/)
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0])
+      if (Array.isArray(parsed) && parsed[0]?.mensaje) return String(parsed[0].mensaje).trim()
+      if (Array.isArray(parsed) && parsed[0]?.message) return String(parsed[0].message).trim()
+      if (parsed?.mensaje) return String(parsed.mensaje).trim()
+      if (parsed?.message) return String(parsed.message).trim()
+      if (parsed?.error) return String(parsed.error).trim()
+    } catch {
+      // fallback
+    }
+  }
+
+  // Strip prefixes like "El webhook de n8n..."
+  str = str.replace(/^El webhook de n8n [^:]+:\s*/i, "")
+  str = str.replace(/^HTTP \d+ error:\s*/i, "")
+
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim()
+  }
+
+  return str
+}
+
 export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModalProps) {
   const { language } = useLanguage()
   const { countryCode, countryName, userCurrency, formattedPlatziPrice } = useGeoLocation()
@@ -127,7 +157,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       if (res.ok && data.success) {
         setStep(2)
       } else {
-        setErrorMsg(data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred."))
+        const rawErr = data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
+        setErrorMsg(cleanErrorForUI(rawErr))
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al enviar la solicitud." : "Connection error.")
@@ -171,7 +202,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
         setStep(3)
       } else {
-        setErrorMsg(data.error || (language === "es" ? "El código ingresado es incorrecto." : "Invalid code."))
+        const rawErr = data.error || (language === "es" ? "El código ingresado es incorrecto." : "Invalid code.")
+        setErrorMsg(cleanErrorForUI(rawErr))
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al verificar el código." : "Connection error.")
