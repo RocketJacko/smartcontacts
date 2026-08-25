@@ -18,6 +18,9 @@ function extractCleanErrorMessage(data: any, fallbackText: string): string {
   }
 
   if (typeof data === "object" && data !== null) {
+    if (data.labelIds || data.threadId || (data.id && !data.message && !data.mensaje && !data.error)) {
+      return "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
+    }
     if (data.mensaje && typeof data.mensaje === "string") return sanitizeString(data.mensaje)
     if (data.message && typeof data.message === "string") return sanitizeString(data.message)
     if (data.error && typeof data.error === "string") return sanitizeString(data.error)
@@ -37,6 +40,10 @@ function extractCleanErrorMessage(data: any, fallbackText: string): string {
       } catch {
         // ignore parse error
       }
+    }
+
+    if (rawStr.includes("threadId") || rawStr.includes("labelIds") || rawStr.includes('"SENT"')) {
+      return "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
     }
 
     let cleaned = rawStr.replace(/^El webhook de n8n [^:]+:\s*/i, "")
@@ -70,11 +77,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Exact Webhook Test URL requested by user
+    // Default Webhook URL set to Production as requested by user
     const webhookUrl =
       process.env.PLATZI_WEBHOOK_URL ||
       process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook-test/Paltzi"
+      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
     // Read x-api-key strictly from Dokploy / system environment
     const rawKey =
