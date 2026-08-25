@@ -6,6 +6,7 @@ import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
 import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
+import { verificarDominioCorreoValido } from "@/lib/email-validator"
 
 interface PlatziActivationModalProps {
   isOpen: boolean
@@ -136,6 +137,22 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setIsSubmitting(true)
 
     try {
+      // 1. Validar dominio de correo de contacto
+      const contactDomainCheck = await verificarDominioCorreoValido(email)
+      if (!contactDomainCheck.valid) {
+        setErrorMsg(contactDomainCheck.reason || (language === "es" ? "El correo de contacto no tiene un dominio válido." : "Invalid contact email domain."))
+        setIsSubmitting(false)
+        return
+      }
+
+      // 2. Validar dominio de correo de cuenta Platzi
+      const platziDomainCheck = await verificarDominioCorreoValido(platziAccountEmail)
+      if (!platziDomainCheck.valid) {
+        setErrorMsg(platziDomainCheck.reason || (language === "es" ? "La cuenta Platzi no tiene un dominio válido." : "Invalid Platzi email domain."))
+        setIsSubmitting(false)
+        return
+      }
+
       const res = await fetch("/api/benefits/platzi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,18 +219,33 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
       const data = await res.json()
 
-      if (res.ok && data.success) {
-        if (data.planInfo) {
-          setDisplayPlanName(data.planInfo.planName)
-          setDisplayPrice(data.planInfo.formattedPrice)
-          setDisplayDuration(data.planInfo.duration)
-        }
-        setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
-        setStep(3)
-      } else {
-        const rawErr = data.error || (language === "es" ? "El código ingresado es incorrecto." : "Invalid code.")
+      const rawMsg = String(data.error || data.message || data.details || "").toLowerCase()
+      const isError =
+        !res.ok ||
+        !data.success ||
+        data.error ||
+        rawMsg.includes("errado") ||
+        rawMsg.includes("mal escrito") ||
+        rawMsg.includes("incorrecto") ||
+        rawMsg.includes("no coincide") ||
+        rawMsg.includes("inválido") ||
+        rawMsg.includes("invalido") ||
+        rawMsg.includes("error")
+
+      if (isError) {
+        const rawErr = data.error || data.message || (language === "es" ? "El código de seguridad ingresado es incorrecto o está mal escrito." : "Invalid security code.")
         setErrorMsg(cleanErrorForUI(rawErr))
+        // NUNCA AVANZAR AL PASO 3 SI HAY ERROR EN EL CÓDIGO DE SEGURIDAD
+        return
       }
+
+      if (data.planInfo) {
+        setDisplayPlanName(data.planInfo.planName)
+        setDisplayPrice(data.planInfo.formattedPrice)
+        setDisplayDuration(data.planInfo.duration)
+      }
+      setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
+      setStep(3)
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al verificar el código." : "Connection error.")
     } finally {
@@ -249,7 +281,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         </button>
 
         {step === 3 ? (
-          /* STEP 3: ACTIVATION SUCCESS STATE */
+          /* STEP 3: ACTIVATION SUCCESS STATE (ONLY REACHED UPON TRUE VALIDATION) */
           <div className="text-center py-6 space-y-6">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
@@ -330,7 +362,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors"
+                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors cursor-pointer"
               >
                 &larr; {language === "es" ? "Volver a editar datos" : "Edit request details"}
               </button>
@@ -390,7 +422,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             )}
           </form>
         ) : (
-          /* STEP 1B: USER DATA INPUTS (NO DISCOUNT CODE FIELD SHOWN HERE) */
+          /* STEP 1B: USER DATA INPUTS (WITH REAL DNS DOMAIN VALIDATION) */
           <form onSubmit={handleStep1Submit} className="space-y-5">
             <div className="space-y-1">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
@@ -407,7 +439,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </div>
             </div>
 
-            {/* User Contact & Account Fields (Discount code field is NOT present) */}
+            {/* User Contact & Account Fields */}
             <div className="space-y-3 pt-1">
               
               {/* Field 1: Nombre Completo */}
@@ -499,7 +531,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>{language === "es" ? "ENVIANDO CÓDIGO A TU CORREO..." : "SENDING CODE..."}</span>
+                    <span>{language === "es" ? "VALIDANDO CORREOS Y ENVIANDO CÓDIGO..." : "VALIDATING & SENDING CODE..."}</span>
                   </>
                 ) : (
                   <span>Activar Cuenta</span>

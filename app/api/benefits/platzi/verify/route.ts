@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Clean payload matching exact form fields + inputCode (no jwtToken)
+    // Clean payload matching exact form fields + inputCode
     const payloadToWebhook = {
       event: "verify_code_and_activate",
       step: 2,
@@ -138,7 +138,6 @@ export async function POST(request: Request) {
 
     let webhookResponseText = ""
     let webhookResponseData: any = null
-    let responseStatus = 0
 
     try {
       const webhookRes = await fetch(webhookUrl, {
@@ -147,10 +146,8 @@ export async function POST(request: Request) {
         body: JSON.stringify(payloadToWebhook),
       })
 
-      responseStatus = webhookRes.status
       webhookResponseText = await webhookRes.text()
 
-      console.log(`[PLATZI STEP 2 WEBHOOK RESPONSE STATUS] ${responseStatus}`)
       console.log(`[PLATZI STEP 2 WEBHOOK RESPONSE BODY] ${webhookResponseText}`)
 
       try {
@@ -159,18 +156,28 @@ export async function POST(request: Request) {
         webhookResponseData = { raw: webhookResponseText }
       }
 
+      const bodyLower = webhookResponseText.toLowerCase()
+      const hasErrorKeywords =
+        bodyLower.includes("errado") ||
+        bodyLower.includes("mal escrito") ||
+        bodyLower.includes("incorrecto") ||
+        bodyLower.includes("no coincide") ||
+        bodyLower.includes("invalid") ||
+        bodyLower.includes("error")
+
       const isWorkflowExecuted =
-        webhookRes.ok ||
-        webhookResponseText.includes("No Respond to Webhook node") ||
+        webhookRes.ok &&
+        !hasErrorKeywords &&
         (webhookResponseData && webhookResponseData.success !== false && !webhookResponseData.error)
 
       if (!isWorkflowExecuted) {
         const cleanError = extractCleanErrorMessage(
           webhookResponseData,
-          webhookResponseText || "El código ingresado es incorrecto o no pudo verificarse."
+          webhookResponseText || "El código de seguridad ingresado es incorrecto o está mal escrito."
         )
         return NextResponse.json(
           {
+            success: false,
             error: cleanError,
           },
           { status: 400 }
@@ -180,6 +187,7 @@ export async function POST(request: Request) {
       console.error("[PLATZI STEP 2 FETCH ERROR]", whErr)
       return NextResponse.json(
         {
+          success: false,
           error: `Error de conexión al llamar al webhook de n8n en el paso 2: ${whErr.message || String(whErr)}`,
         },
         { status: 502 }
@@ -198,7 +206,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("[API PLATZI ACTIVATION VERIFY ERROR]", error)
     return NextResponse.json(
-      { error: `Ocurrió un error en el servidor al verificar el código: ${error.message || String(error)}` },
+      { success: false, error: `Ocurrió un error en el servidor al verificar el código: ${error.message || String(error)}` },
       { status: 500 }
     )
   }
