@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
+import { verificarDominioCorreoValido } from "@/lib/email-validator"
 
 // In-memory rate limiting store (max 20 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -139,6 +140,23 @@ export async function POST(request: Request) {
     if (!name || !phone || !email || !platziAccountEmail) {
       return NextResponse.json(
         { error: "Los campos Nombre, Celular, Correo de Contacto y Cuenta Platzi son requeridos." },
+        { status: 400 }
+      )
+    }
+
+    // Real DNS Domain Validation (Google DNS Over HTTPS + Supabase Blocked List)
+    const contactEmailCheck = await verificarDominioCorreoValido(email)
+    if (!contactEmailCheck.valid) {
+      return NextResponse.json(
+        { error: contactEmailCheck.reason || `El correo de contacto "${email}" no tiene un dominio de correo válido.` },
+        { status: 400 }
+      )
+    }
+
+    const platziEmailCheck = await verificarDominioCorreoValido(platziAccountEmail)
+    if (!platziEmailCheck.valid) {
+      return NextResponse.json(
+        { error: platziEmailCheck.reason || `El correo de la cuenta Platzi "${platziAccountEmail}" no tiene un dominio válido.` },
         { status: 400 }
       )
     }

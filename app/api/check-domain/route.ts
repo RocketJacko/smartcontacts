@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server'
-import { SupabaseDomainValidator } from '@/lib/infrastructure/repositories/supabase-domain-validator'
-import { CheckDomainUseCase } from '@/lib/use-cases/check-domain-use-case'
-
-const validator = new SupabaseDomainValidator()
-const checkDomainUseCase = new CheckDomainUseCase(validator)
+import { verificarDominioCorreoValido } from '@/lib/email-validator'
 
 export async function POST(request: Request) {
   try {
     const { email } = await request.json()
-    const result = await checkDomainUseCase.execute(email)
-    return NextResponse.json(result, { status: 200 })
+    if (!email) {
+      return NextResponse.json({ valid: false, message: 'Correo no proporcionado.' }, { status: 400 })
+    }
+
+    const domainValidation = await verificarDominioCorreoValido(email)
+    return NextResponse.json({
+      valid: domainValidation.valid,
+      message: domainValidation.reason || (domainValidation.valid ? 'Dominio de correo válido' : 'Dominio de correo no válido'),
+    }, { status: 200 })
   } catch (error) {
     console.error('[API CHECK DOMAIN ERROR]', error)
     return NextResponse.json({ valid: true, message: 'Fail-open' }, { status: 200 })
