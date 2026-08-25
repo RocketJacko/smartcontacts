@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 
-// In-memory rate limiting store (max 5 requests per 15 mins per IP)
+// In-memory rate limiting store (max 20 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
   const windowMs = 15 * 60 * 1000 // 15 minutes
-  const maxRequests = 5
+  const maxRequests = 20 // Increased to 20 per 15 mins per user request
 
   const record = rateLimitMap.get(ip)
   if (!record || now > record.resetAt) {
@@ -83,7 +83,7 @@ export async function GET() {
       activeBlocks.push({
         ip,
         attempts: data.count,
-        maxAllowed: 5,
+        maxAllowed: 20,
         minutesRemaining: Math.ceil((data.resetAt - now) / 60000),
       })
     }
@@ -92,6 +92,7 @@ export async function GET() {
   return NextResponse.json(
     {
       status: "Rate Limit Memory Inspector",
+      maxAllowed: 20,
       totalTrackedIPs: activeBlocks.length,
       activeBlocks,
     },
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
     // 1. Rate Limit Enforcement
     if (!checkRateLimit(clientIp)) {
       return NextResponse.json(
-        { error: "Has superado el límite de solicitudes de activación. Por favor espera unos minutos antes de reintentar." },
+        { error: "Has superado el límite de solicitudes de activación (máximo 20 intentos). Por favor espera unos minutos antes de reintentar." },
         { status: 429 }
       )
     }

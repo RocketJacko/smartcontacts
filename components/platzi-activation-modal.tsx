@@ -55,6 +55,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   // Dynamic Discount Validation States
   const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
   const [displayDuration, setDisplayDuration] = useState<string>("1 año")
+  const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
   const [discountLabel, setDiscountLabel] = useState<string>("")
   const [isValidatingCode, setIsValidatingCode] = useState<boolean>(false)
 
@@ -71,6 +72,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     if (!discountCode.trim()) {
       setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
       setDisplayDuration("1 año")
+      setDisplayPlanName("Plan Basic")
       setDiscountLabel("")
     }
   }, [formattedPlatziPrice, discountCode])
@@ -80,6 +82,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     if (!discountCode.trim()) {
       setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
       setDisplayDuration("1 año")
+      setDisplayPlanName("Plan Basic")
       setDiscountLabel("")
       return
     }
@@ -97,10 +100,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           if (data && data.valid) {
             setDisplayPrice(data.formattedPrice)
             setDisplayDuration(data.duration)
+            setDisplayPlanName(data.planName || "Plan Basic")
             setDiscountLabel(data.discountLabel || "Código de descuento aplicado")
           } else {
             setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
             setDisplayDuration("1 año")
+            setDisplayPlanName("Plan Basic")
             setDiscountLabel("")
           }
         }
@@ -212,6 +217,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }
 
+  // Clean success message if it contains n8n test strings
+  const isRawN8nTestMsg =
+    !successMessage ||
+    successMessage.includes("is not registered") ||
+    successMessage.includes("Execute workflow") ||
+    successMessage.includes("webhook")
+
+  const cleanSuccessMsgText = isRawN8nTestMsg
+    ? "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
+    : successMessage
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-sm animate-fadeIn">
       <div className="relative w-full max-w-lg bg-white rounded-3xl border border-black/10 shadow-2xl p-6 sm:p-8 space-y-6 my-auto">
@@ -236,10 +252,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 {language === "es" ? "¡Activación Confirmada!" : "Activation Confirmed!"}
               </h3>
               <p className="text-xs sm:text-sm text-black/75 leading-relaxed max-w-sm mx-auto">
-                {successMessage}
+                {cleanSuccessMsgText}
               </p>
-              <p className="text-[11px] font-mono text-black/50">
-                Se activó la cuenta <span className="font-semibold text-black">{platziAccountEmail}</span> por {displayDuration} ({displayPrice}).
+              <p className="text-[11px] font-mono text-black/60 pt-2 border-t border-black/[0.06] mt-2">
+                Se activó el <span className="font-semibold text-black">{displayPlanName}</span> para la cuenta <span className="font-semibold text-black">{platziAccountEmail}</span> por {displayDuration} ({displayPrice}).
               </p>
             </div>
             <button
