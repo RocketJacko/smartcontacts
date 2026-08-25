@@ -209,27 +209,42 @@ export async function POST(request: Request) {
 
     console.log(`[PLATZI STEP 1 WEBHOOK CALL] URL: ${webhookUrl}`)
 
-    const headers: Record<string, string> = {
+    const headersJson: Record<string, string> = {
       "Content-Type": "application/json",
     }
+    if (webhookKey) headersJson["x-api-key"] = webhookKey
 
-    if (webhookKey) {
-      headers["x-api-key"] = webhookKey
+    const headersText: Record<string, string> = {
+      "Content-Type": "text/plain",
     }
+    if (webhookKey) headersText["x-api-key"] = webhookKey
 
     let webhookResponseText = ""
     let webhookResData: any = null
     let responseStatus = 0
+    let webhookRes: Response
 
     try {
-      const webhookRes = await fetch(webhookUrl, {
+      webhookRes = await fetch(webhookUrl, {
         method: "POST",
-        headers,
+        headers: headersJson,
         body: JSON.stringify(payloadToWebhook),
       })
 
       responseStatus = webhookRes.status
       webhookResponseText = await webhookRes.text()
+
+      // Retry with text/plain if n8n body parser rejects application/json with HTTP 422
+      if (responseStatus === 422 || webhookResponseText.includes("Failed to parse request body")) {
+        console.warn("[PLATZI WEBHOOK 422 RETRY WITH TEXT/PLAIN]")
+        webhookRes = await fetch(webhookUrl, {
+          method: "POST",
+          headers: headersText,
+          body: JSON.stringify(payloadToWebhook),
+        })
+        responseStatus = webhookRes.status
+        webhookResponseText = await webhookRes.text()
+      }
 
       console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE STATUS] ${responseStatus}`)
       console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE BODY] ${webhookResponseText}`)
