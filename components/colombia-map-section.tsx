@@ -83,6 +83,10 @@ function Tag({ children }: { children: React.ReactNode }) {
   )
 }
 
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+}
+
 export function ColombiaMapSection() {
   const { language } = useLanguage()
   const [deptList, setDeptList] = useState<DeptData[]>(DEFAULT_DEPARTMENTS)
@@ -207,12 +211,12 @@ export function ColombiaMapSection() {
                   {displayDept.departamento}
                 </span>
                 <span className="text-2xl font-light font-mono text-[#111] tracking-tight my-0.5">
-                  {displayDept.total.toLocaleString()}
+                  {formatNumber(displayDept.total)}
                 </span>
                 <div className="flex items-center gap-3 text-[10px] font-mono text-black/60 pt-1 border-t border-black/[0.06] w-full justify-center">
-                  <span>Natural: {displayDept.personas_naturales.toLocaleString()} ({naturalPercent}%)</span>
+                  <span>Natural: {formatNumber(displayDept.personas_naturales)} ({naturalPercent}%)</span>
                   <span className="text-black/20">•</span>
-                  <span>Jurídica: {displayDept.personas_juridicas.toLocaleString()} ({juridicaPercent}%)</span>
+                  <span>Jurídica: {formatNumber(displayDept.personas_juridicas)} ({juridicaPercent}%)</span>
                 </div>
               </div>
             </div>
@@ -233,7 +237,7 @@ export function ColombiaMapSection() {
               <div className="p-5 rounded-xl bg-[#FAF9F6] border border-black/[0.06] space-y-1">
                 <div className="text-[10px] font-mono text-black/50 uppercase tracking-wider">TOTAL REGISTROS DEPARTAMENTO</div>
                 <div className="text-3xl lg:text-4xl font-light font-mono text-[#111] tracking-tight">
-                  {displayDept.total.toLocaleString()}
+                  {formatNumber(displayDept.total)}
                 </div>
               </div>
 
@@ -255,13 +259,13 @@ export function ColombiaMapSection() {
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
                 <span className="text-[10px] text-black/30 font-mono min-w-[16px]">01</span>
                 <span className="text-xs text-black/70 font-normal flex-1">Personas Naturales</span>
-                <span className="font-mono text-xs font-semibold text-[#111]">{displayDept.personas_naturales.toLocaleString()}</span>
+                <span className="font-mono text-xs font-semibold text-[#111]">{formatNumber(displayDept.personas_naturales)}</span>
               </div>
 
               <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer">
                 <span className="text-[10px] text-black/30 font-mono min-w-[16px]">02</span>
                 <span className="text-xs text-black/70 font-normal flex-1">Personas Jurídicas</span>
-                <span className="font-mono text-xs font-semibold text-[#111]">{displayDept.personas_juridicas.toLocaleString()}</span>
+                <span className="font-mono text-xs font-semibold text-[#111]">{formatNumber(displayDept.personas_juridicas)}</span>
               </div>
             </div>
           </div>

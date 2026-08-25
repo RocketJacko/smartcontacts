@@ -29,9 +29,14 @@ function useInView(threshold = 0.15) {
 }
 
 // ─── Animated counter ────────────────────────────────────────────────────────
-function Counter({ end, suffix = "" }: { end: number; suffix?: string }) {
-  const [count, setCount] = useState(0)
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+}
+
+function AnimatedCounter({ end, suffix = "" }: { end: number; suffix?: string }) {
   const { ref, inView } = useInView()
+  const [count, setCount] = useState(0)
+
   useEffect(() => {
     if (!inView) return
     let start = 0
@@ -45,7 +50,7 @@ function Counter({ end, suffix = "" }: { end: number; suffix?: string }) {
     }, step)
     return () => clearInterval(timer)
   }, [inView, end])
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
+  return <span ref={ref}>{formatNumber(count)}{suffix}</span>
 }
 
 // ─── Bento card ──────────────────────────────────────────────────────────────

@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from "react"
 import { useLanguage } from "@/lib/language-context"
 
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+}
+
 export function KageSalesIndicator() {
   const { language } = useLanguage()
   const [progress, setProgress] = useState(35) // 0 to 100%
@@ -69,7 +73,7 @@ export function KageSalesIndicator() {
             {language === "es" ? "PROSPECCIÓN NACIONAL" : "NATIONAL PROSPECTING"}
           </span>
           <span className="text-lg font-mono font-medium text-[#111] mt-1 block">
-            {contacts.toLocaleString()} {language === "es" ? "Contactos" : "Leads"}
+            {formatNumber(contacts)} {language === "es" ? "Contactos" : "Leads"}
           </span>
         </div>
 
