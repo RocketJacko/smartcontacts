@@ -12,9 +12,10 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
   const cleanCode = String(rawCode || "").trim()
   const normalized = cleanCode.toUpperCase().replace(/\s+/g, "")
 
+  // Si no se ingresa ningún código, se aplica el Plan Basic estándar
   if (!cleanCode) {
     return {
-      valid: false,
+      valid: true,
       codeKey: "",
       planName: "Plan Basic",
       duration: "1 año",
@@ -24,7 +25,19 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  // Exact plan matching
+  // Coincidencias estrictas según la tabla oficial
+  if (normalized === "COMPUESTUDIO" || normalized === "COMPUESTUDIOS" || normalized === "COMPU") {
+    return {
+      valid: true,
+      codeKey: "COMPUESTUDIO",
+      planName: "Plan Compuestudio",
+      duration: "1 año",
+      priceCop: 0,
+      formattedPrice: "$0 COP",
+      discountLabel: "¡Descuento del 100% — Acceso Gratis!",
+    }
+  }
+
   if (normalized === "PLANA" || normalized === "PLANAS" || normalized === "A") {
     return {
       valid: true,
@@ -61,19 +74,6 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  // Exact matching for COMPUESTUDIO & COMPUESTUDIOS
-  if (normalized === "COMPUESTUDIO" || normalized === "COMPUESTUDIOS" || normalized === "COMPU") {
-    return {
-      valid: true,
-      codeKey: "COMPUESTUDIO",
-      planName: "Plan Compuestudio",
-      duration: "1 año",
-      priceCop: 0,
-      formattedPrice: "$0 COP",
-      discountLabel: "¡Descuento del 100% — Acceso Gratis!",
-    }
-  }
-
   if (normalized === "CODIFICANDOANDO" || normalized === "CODIFICANDO") {
     return {
       valid: true,
@@ -86,14 +86,14 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  // Fallback for custom code inputs
+  // SI EL CÓDIGO NO COINCIDE CON NINGUNO DE LA TABLA, ES INVÁLIDO (valid = false)
   return {
-    valid: true,
+    valid: false,
     codeKey: cleanCode.toUpperCase(),
-    planName: `Plan ${cleanCode.toUpperCase()}`,
+    planName: "Plan Invalido",
     duration: "1 año",
     priceCop: 400909.75,
     formattedPrice: currency === "USD" ? "$105 USD" : "$400.909,75 COP",
-    discountLabel: `Código ${cleanCode.toUpperCase()} Aplicado`,
+    discountLabel: "",
   }
 }

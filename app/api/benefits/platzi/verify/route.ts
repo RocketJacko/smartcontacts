@@ -90,6 +90,13 @@ export async function POST(request: Request) {
     // Resolve exact discount plan details using centralized resolver
     const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
 
+    if (!planInfo.valid) {
+      return NextResponse.json(
+        { error: `El código de descuento "${rawCode}" no es válido.` },
+        { status: 400 }
+      )
+    }
+
     // Clean payload matching exact form fields + inputCode (no jwtToken)
     const payloadToWebhook = {
       event: "verify_code_and_activate",

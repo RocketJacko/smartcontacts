@@ -73,7 +73,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setDisplayDuration(resolved.duration)
     setDisplayPlanName(resolved.planName)
     setDiscountLabel(resolved.discountLabel)
-  }, [discountCode, userCurrency])
+
+    if (discountCode.trim() && !resolved.valid) {
+      setErrorMsg(language === "es" ? `El código "${discountCode.trim()}" no es un código de descuento válido.` : `Invalid discount code "${discountCode.trim()}".`)
+    } else {
+      setErrorMsg("")
+    }
+  }, [discountCode, userCurrency, language])
 
   if (!isOpen) return null
 
