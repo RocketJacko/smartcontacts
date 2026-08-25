@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag, Sparkles } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -16,7 +16,6 @@ function cleanErrorForUI(raw: string): string {
   if (!raw) return ""
   let str = String(raw).trim()
 
-  // If raw contains Gmail API output like {"id":"...","threadId":"...","labelIds":["SENT"]}
   if (str.includes("threadId") || str.includes("labelIds") || str.includes('"SENT"')) {
     return "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
   }
@@ -59,12 +58,14 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [platziAccountEmail, setPlatziAccountEmail] = useState("")
   const [discountCode, setDiscountCode] = useState("")
 
+  // Sub-stage for Step 1: 'code' (only discount code input) vs 'details' (user contact & account inputs)
+  const [step1SubStage, setStep1SubStage] = useState<"code" | "details">("code")
+
   // Dynamic Discount Validation States
   const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
   const [displayDuration, setDisplayDuration] = useState<string>("1 año")
   const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
-  const [discountLabel, setDiscountLabel] = useState<string>("")
-  const [isValidatingCode, setIsValidatingCode] = useState<boolean>(false)
+  const [isCodeValid, setIsCodeValid] = useState<boolean>(true)
 
   // Flow & Step States
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -74,16 +75,20 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Instant client-side plan resolution + server fallback verification
+  // Instant client-side plan resolution + strict validation
   useEffect(() => {
     const resolved = resolveDiscountPlan(discountCode, userCurrency)
     setDisplayPrice(resolved.formattedPrice)
     setDisplayDuration(resolved.duration)
     setDisplayPlanName(resolved.planName)
-    setDiscountLabel(resolved.discountLabel)
+    setIsCodeValid(resolved.valid)
 
     if (discountCode.trim() && !resolved.valid) {
-      setErrorMsg(language === "es" ? `El código "${discountCode.trim()}" no es un código de descuento válido.` : `Invalid discount code "${discountCode.trim()}".`)
+      setErrorMsg(
+        language === "es"
+          ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
+          : `Invalid discount code "${discountCode.trim()}".`
+      )
     } else {
       setErrorMsg("")
     }
@@ -93,13 +98,32 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   const handleResetModal = () => {
     setStep(1)
+    setStep1SubStage("code")
     setInputCode("")
     setErrorMsg("")
     setSuccessMessage("")
     onClose()
   }
 
-  // Step 1: Submit initial request -> Webhook sends email code to user
+  // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input)
+  const handleContinueToDetails = (e: React.FormEvent) => {
+    e.preventDefault()
+    const resolved = resolveDiscountPlan(discountCode, userCurrency)
+
+    if (discountCode.trim() && !resolved.valid) {
+      setErrorMsg(
+        language === "es"
+          ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
+          : `Invalid discount code "${discountCode.trim()}".`
+      )
+      return
+    }
+
+    setErrorMsg("")
+    setStep1SubStage("details")
+  }
+
+  // Step 1 Final Submit (SubStage 1B) -> Webhook sends email verification code to user
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
@@ -312,8 +336,61 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </button>
             </div>
           </form>
+        ) : step1SubStage === "code" ? (
+          /* STEP 1A: DISCOUNT CODE INPUT ONLY (BUTTON ONLY SHOWN WHEN CODE IS VALID) */
+          <form onSubmit={handleContinueToDetails} className="space-y-5">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+              </h3>
+              
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <span className="text-sm font-mono font-bold text-[#111]">
+                  {displayPrice}
+                </span>
+                <span className="text-xs text-black/60 font-mono">
+                  — {displayDuration} (Para 1 estudiante)
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              {/* Single Field: Código de Descuento (Opcional) */}
+              <div className="space-y-1">
+                <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
+                  {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
+                </label>
+                <div className="relative">
+                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value)}
+                    placeholder="Ej. COMPUESTUDIO"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {errorMsg && (
+              <p className="text-xs font-mono font-medium text-red-600 text-center py-1">
+                {errorMsg}
+              </p>
+            )}
+
+            {/* BUTTON IS ONLY VISIBLE WHEN THE CODE IS VALID (OR EMPTY) */}
+            {isCodeValid && (
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>{language === "es" ? "CONTINUAR" : "CONTINUE"}</span>
+              </button>
+            )}
+          </form>
         ) : (
-          /* STEP 1: INITIAL DATA COLLECTION (ORIGINAL FORM LAYOUT) */
+          /* STEP 1B: USER DATA INPUTS (NO DISCOUNT CODE FIELD SHOWN HERE) */
           <form onSubmit={handleStep1Submit} className="space-y-5">
             <div className="space-y-1">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
@@ -327,16 +404,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <span className="text-xs text-black/60 font-mono">
                   — {displayDuration} (Para 1 estudiante)
                 </span>
-                {discountLabel && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold border border-emerald-300">
-                    <Sparkles className="w-3 h-3 text-emerald-600" />
-                    <span>{discountLabel}</span>
-                  </span>
-                )}
               </div>
             </div>
 
-            {/* Form Fields in Original Order */}
+            {/* User Contact & Account Fields (Discount code field is NOT present) */}
             <div className="space-y-3 pt-1">
               
               {/* Field 1: Nombre Completo */}
@@ -411,31 +482,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </p>
               </div>
 
-              {/* Field 5: Código de Descuento (opcional) */}
-              <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-mono text-black/70 font-semibold uppercase tracking-wider">
-                    {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
-                  </label>
-                  {isValidatingCode && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-black/50">
-                      <Loader2 className="w-3 h-3 animate-spin text-black/40" />
-                      <span>{language === "es" ? "Validando..." : "Validating..."}</span>
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder="Ej. COMPUESTUDIO"
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
-                  />
-                </div>
-              </div>
-
             </div>
 
             {errorMsg && (
@@ -444,20 +490,30 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>{language === "es" ? "ENVIANDO CÓDIGO A TU CORREO..." : "SENDING CODE..."}</span>
-                </>
-              ) : (
-                <span>Activar Cuenta</span>
-              )}
-            </button>
+            <div className="space-y-2 pt-1">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{language === "es" ? "ENVIANDO CÓDIGO A TU CORREO..." : "SENDING CODE..."}</span>
+                  </>
+                ) : (
+                  <span>Activar Cuenta</span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep1SubStage("code")}
+                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors cursor-pointer"
+              >
+                &larr; {language === "es" ? "Volver a editar código de descuento" : "Back to edit discount code"}
+              </button>
+            </div>
 
           </form>
         )}
