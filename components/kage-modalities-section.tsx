@@ -23,6 +23,7 @@ export function KageModalitiesSection() {
       id: 0,
       code: "01",
       name: language === "es" ? "Comercialización directa sobre base propia (+4M registros)" : "Direct Commercialization (+4M Records)",
+      tabLabel: language === "es" ? "Base Propia (+4M)" : "Proprietary Data (+4M)",
       subtitle: language === "es" ? "Ejecutamos el ciclo comercial completo con nuestro sistema y nuestra data." : "We execute the full sales cycle using our system and data.",
       badge: language === "es" ? "BASE DE DATOS PROPIA (+4M REGISTROS)" : "PROPRIETARY DATA (+4M)",
       features: [
@@ -39,6 +40,7 @@ export function KageModalitiesSection() {
       id: 1,
       code: "02",
       name: language === "es" ? "Instalación In-House" : "In-House System Setup",
+      tabLabel: language === "es" ? "Instalación In-House" : "In-House Setup",
       subtitle: language === "es" ? "Instalamos el sistema dentro de su operación" : "We install the agentic architecture inside your existing operation",
       badge: language === "es" ? "TRANSFERENCIA TECNOLÓGICA TOTAL" : "FULL TECH TRANSFER",
       features: [
@@ -69,7 +71,7 @@ export function KageModalitiesSection() {
         </div>
 
         {/* Kage Style Interactive Switcher Track */}
-        <div className="w-full max-w-[#540px] mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1.5 select-none">
+        <div className="w-full max-w-[580px] mx-auto bg-white p-1.5 rounded-2xl border border-black/[0.08] shadow-xs flex items-center gap-1.5 select-none">
           {modalities.map(m => {
             const isActive = activeModality === m.id
             return (
@@ -78,13 +80,13 @@ export function KageModalitiesSection() {
                 type="button"
                 aria-label={`Seleccionar ${m.name}`}
                 onClick={() => setActiveModality(m.id as 0 | 1)}
-                className={`flex-1 min-h-[48px] py-3.5 px-4 rounded-xl text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
+                className={`flex-1 min-w-0 min-h-[48px] py-3.5 px-3 sm:px-4 rounded-xl text-[11px] sm:text-xs font-mono tracking-wider transition-all duration-300 flex items-center justify-center font-bold uppercase ${
                   isActive
                     ? "bg-[#111] text-white shadow-xs"
                     : "text-black/70 hover:text-black hover:bg-black/[0.03]"
                 }`}
               >
-                <span className="truncate">{m.name}</span>
+                <span className="truncate">{m.tabLabel}</span>
               </button>
             )
           })}

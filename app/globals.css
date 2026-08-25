@@ -213,9 +213,11 @@
   50% { opacity: 0.4; transform: scale(0.8) }
 }
 
-/* Smooth scrolling */
-html {
+/* Smooth scrolling & overflow prevention */
+html, body {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Marquee animations */
