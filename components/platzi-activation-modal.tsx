@@ -313,7 +313,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </div>
           </form>
         ) : (
-          /* STEP 1: INITIAL DATA COLLECTION (OPTIMIZED FLUID ORDER) */
+          /* STEP 1: INITIAL DATA COLLECTION (ORIGINAL FORM LAYOUT) */
           <form onSubmit={handleStep1Submit} className="space-y-5">
             <div className="space-y-1">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
@@ -336,38 +336,13 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </div>
             </div>
 
-            {/* Form Fields Re-ordered for Fluid User Experience */}
+            {/* Form Fields in Original Order */}
             <div className="space-y-3 pt-1">
               
-              {/* FIELD 1: PRIMER LUGAR - Código de Descuento (Opcional) */}
-              <div className="space-y-1 p-3.5 bg-[#FAF9F5] border border-black/15 rounded-2xl shadow-xs">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-mono text-black font-bold uppercase tracking-wider">
-                    {language === "es" ? "1. Código de Descuento (Opcional)" : "1. Discount Code (Optional)"}
-                  </label>
-                  {isValidatingCode && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-black/50">
-                      <Loader2 className="w-3 h-3 animate-spin text-black/40" />
-                      <span>{language === "es" ? "Validando..." : "Validating..."}</span>
-                    </span>
-                  )}
-                </div>
-                <div className="relative pt-1">
-                  <Tag className="w-4 h-4 text-black/50 absolute left-3.5 top-3.5" />
-                  <input
-                    type="text"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder="Ej. COMPUESTUDIO"
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-black/20 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/30 focus:outline-none focus:border-black transition-colors uppercase font-bold tracking-wider"
-                  />
-                </div>
-              </div>
-
-              {/* FIELD 2: Nombre Completo */}
+              {/* Field 1: Nombre Completo */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "2. Nombre Completo " : "2. Full Name "}
+                  {language === "es" ? "Nombre Completo " : "Full Name "}
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -383,10 +358,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </div>
               </div>
 
-              {/* FIELD 3: Celular / WhatsApp */}
+              {/* Field 2: Celular / WhatsApp */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "3. Número Celular / WhatsApp " : "3. Mobile / WhatsApp Number "}
+                  {language === "es" ? "Número Celular / WhatsApp " : "Mobile / WhatsApp Number "}
                   <span className="text-red-500">*</span>
                 </label>
                 <PhoneInput
@@ -396,10 +371,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 />
               </div>
 
-              {/* FIELD 4: Correo de Contacto */}
+              {/* Field 3: Correo de Contacto */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "4. Correo de Contacto " : "4. Contact Email "}
+                  {language === "es" ? "Correo de Contacto " : "Contact Email "}
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -415,10 +390,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </div>
               </div>
 
-              {/* FIELD 5: Cuenta de Correo que tomará el servicio Platzi */}
+              {/* Field 4: Cuenta de Correo que tomará el servicio Platzi */}
               <div className="space-y-1">
                 <label className="block text-xs font-mono text-emerald-900 font-bold uppercase tracking-wider">
-                  {language === "es" ? "5. Cuenta de correo que tomará el servicio Platzi " : "5. Platzi Service Account Email "}
+                  {language === "es" ? "Cuenta de correo que tomará el servicio Platzi " : "Platzi Service Account Email "}
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -434,6 +409,31 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <p className="text-[10px] font-mono text-black/50">
                   Activamos primero el beneficio sobre esta cuenta de correo.
                 </p>
+              </div>
+
+              {/* Field 5: Código de Descuento (opcional) */}
+              <div className="space-y-1 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-mono text-black/70 font-semibold uppercase tracking-wider">
+                    {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
+                  </label>
+                  {isValidatingCode && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-black/50">
+                      <Loader2 className="w-3 h-3 animate-spin text-black/40" />
+                      <span>{language === "es" ? "Validando..." : "Validating..."}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value)}
+                    placeholder="Ej. COMPUESTUDIO"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
+                  />
+                </div>
               </div>
 
             </div>
