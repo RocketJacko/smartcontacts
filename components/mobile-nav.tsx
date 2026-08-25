@@ -88,7 +88,7 @@ export function MobileNav() {
             {/* CTA Button — DESKTOP ONLY (hidden on mobile/tablet < lg) */}
             <Link
               href="/agendar"
-              className="text-[11px] w-[210px] min-h-[48px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
+              className="text-[11px] w-auto px-4 min-h-[48px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
               {t.nav.startBuilding}
