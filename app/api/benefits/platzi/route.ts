@@ -22,6 +22,45 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
+// GET endpoint: Visually view active IP rate limit blocks in browser
+export async function GET() {
+  const now = Date.now()
+  const activeBlocks: Array<{ ip: string; attempts: number; maxAllowed: number; minutesRemaining: number }> = []
+
+  rateLimitMap.forEach((data, ip) => {
+    if (now < data.resetAt) {
+      activeBlocks.push({
+        ip,
+        attempts: data.count,
+        maxAllowed: 5,
+        minutesRemaining: Math.ceil((data.resetAt - now) / 60000),
+      })
+    }
+  })
+
+  return NextResponse.json(
+    {
+      status: "Rate Limit Memory Inspector",
+      totalTrackedIPs: activeBlocks.length,
+      activeBlocks,
+    },
+    { status: 200 }
+  )
+}
+
+// DELETE endpoint: Clear all rate limit blocks from RAM memory
+export async function DELETE() {
+  const totalCleared = rateLimitMap.size
+  rateLimitMap.clear()
+  return NextResponse.json(
+    {
+      message: `Se han limpiado ${totalCleared} bloqueos de la memoria RAM.`,
+      success: true,
+    },
+    { status: 200 }
+  )
+}
+
 export async function POST(request: Request) {
   try {
     const clientIp =
