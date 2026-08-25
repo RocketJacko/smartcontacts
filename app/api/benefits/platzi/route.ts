@@ -22,6 +22,35 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
+function extractCleanErrorMessage(data: any, fallbackText: string): string {
+  if (!data) return fallbackText
+
+  // If array like [{ mensaje: "..." }]
+  if (Array.isArray(data) && data.length > 0) {
+    return extractCleanErrorMessage(data[0], fallbackText)
+  }
+
+  // If object like { mensaje: "..." } or { message: "..." }
+  if (typeof data === "object") {
+    if (data.mensaje && typeof data.mensaje === "string") return data.mensaje
+    if (data.message && typeof data.message === "string") return data.message
+    if (data.error && typeof data.error === "string") return data.error
+    if (data.detalle && typeof data.detalle === "string") return data.detalle
+    if (data.detail && typeof data.detail === "string") return data.detail
+  }
+
+  if (typeof data === "string" && data.trim()) {
+    try {
+      const parsed = JSON.parse(data)
+      return extractCleanErrorMessage(parsed, data)
+    } catch {
+      return data
+    }
+  }
+
+  return fallbackText
+}
+
 // GET endpoint: Visually view active IP rate limit blocks in browser
 export async function GET() {
   const now = Date.now()
@@ -178,9 +207,10 @@ export async function POST(request: Request) {
       }
 
       if (!webhookRes.ok || (webhookResData && webhookResData.success === false)) {
+        const cleanError = extractCleanErrorMessage(webhookResData, webhookResponseText || "Ocurrió un error al procesar la solicitud.")
         return NextResponse.json(
           {
-            error: webhookResData?.message || webhookResData?.error || `El webhook de n8n retornó HTTP ${responseStatus}: ${webhookResponseText || 'Sin respuesta'}.`,
+            error: cleanError,
             details: webhookResponseText,
           },
           { status: 400 }

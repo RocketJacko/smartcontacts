@@ -1,5 +1,34 @@
 import { NextResponse } from "next/server"
 
+function extractCleanErrorMessage(data: any, fallbackText: string): string {
+  if (!data) return fallbackText
+
+  // If array like [{ mensaje: "..." }]
+  if (Array.isArray(data) && data.length > 0) {
+    return extractCleanErrorMessage(data[0], fallbackText)
+  }
+
+  // If object like { mensaje: "..." } or { message: "..." }
+  if (typeof data === "object") {
+    if (data.mensaje && typeof data.mensaje === "string") return data.mensaje
+    if (data.message && typeof data.message === "string") return data.message
+    if (data.error && typeof data.error === "string") return data.error
+    if (data.detalle && typeof data.detalle === "string") return data.detalle
+    if (data.detail && typeof data.detail === "string") return data.detail
+  }
+
+  if (typeof data === "string" && data.trim()) {
+    try {
+      const parsed = JSON.parse(data)
+      return extractCleanErrorMessage(parsed, data)
+    } catch {
+      return data
+    }
+  }
+
+  return fallbackText
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -122,12 +151,10 @@ export async function POST(request: Request) {
         (webhookResponseData && webhookResponseData.success !== false && !webhookResponseData.error)
 
       if (!isWorkflowExecuted) {
+        const cleanError = extractCleanErrorMessage(webhookResponseData, webhookResponseText || "El código ingresado es incorrecto o no pudo verificarse.")
         return NextResponse.json(
           {
-            error:
-              webhookResponseData?.error ||
-              webhookResponseData?.message ||
-              `El webhook de n8n retornó estado ${responseStatus}. Detalle: ${webhookResponseText || 'Código incorrecto o no verificado'}.`,
+            error: cleanError,
           },
           { status: 400 }
         )
@@ -145,7 +172,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: webhookResponseData?.message || "¡Beneficio de Platzi activado exitosamente!",
+        message: extractCleanErrorMessage(webhookResponseData, "¡Beneficio de Platzi activado exitosamente!"),
         details: webhookResponseData,
       },
       { status: 200 }

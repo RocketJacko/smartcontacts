@@ -251,9 +251,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+              <p className="text-xs font-mono font-medium text-red-600 text-center py-1">
                 {errorMsg}
-              </div>
+              </p>
             )}
 
             <div className="space-y-2 pt-1">
@@ -408,9 +408,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+              <p className="text-xs font-mono font-medium text-red-600 text-center py-1">
                 {errorMsg}
-              </div>
+              </p>
             )}
 
             <button
