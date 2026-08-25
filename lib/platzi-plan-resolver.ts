@@ -9,11 +9,22 @@ export interface PlanResolution {
 }
 
 export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): PlanResolution {
-  const normalized = String(rawCode || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "")
+  const cleanCode = String(rawCode || "").trim()
+  const normalized = cleanCode.toUpperCase().replace(/\s+/g, "")
 
+  if (!cleanCode) {
+    return {
+      valid: false,
+      codeKey: "",
+      planName: "Plan Basic",
+      duration: "1 año",
+      priceCop: 400909.75,
+      formattedPrice: currency === "USD" ? "$105 USD" : "$400.909,75 COP",
+      discountLabel: "",
+    }
+  }
+
+  // Exact plan matching
   if (normalized === "PLANA" || normalized === "PLANAS" || normalized === "A") {
     return {
       valid: true,
@@ -74,13 +85,14 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
+  // If user entered a custom code string like "PROMO2026", show as "Plan [CÓDIGO]" with code text
   return {
-    valid: false,
-    codeKey: normalized,
-    planName: "Plan Basic",
+    valid: true,
+    codeKey: cleanCode.toUpperCase(),
+    planName: `Plan ${cleanCode.toUpperCase()}`,
     duration: "1 año",
     priceCop: 400909.75,
     formattedPrice: currency === "USD" ? "$105 USD" : "$400.909,75 COP",
-    discountLabel: "",
+    discountLabel: `Código ${cleanCode.toUpperCase()} Aplicado`,
   }
 }
