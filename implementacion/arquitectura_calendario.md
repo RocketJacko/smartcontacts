@@ -1,3 +1,4 @@
+
 # Documentación Técnica — Arquitectura del Sistema de Calendario Nativo en Supabase Auto-Hospedado
 
 ## 📋 1. Introducción y Objetivos Arquitectónicos
