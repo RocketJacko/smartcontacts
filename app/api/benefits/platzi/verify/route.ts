@@ -160,21 +160,24 @@ export async function POST(request: Request) {
         webhookResponseData = { raw: webhookResponseText }
       }
 
+      let dataObj = webhookResponseData
+      if (Array.isArray(dataObj) && dataObj.length > 0) {
+        dataObj = dataObj[0]
+      }
+
       const bodyLower = webhookResponseText.toLowerCase()
-      const hasErrorKeywords =
+      const rawErrorStr = String(dataObj?.error || dataObj?.mensajeError || "").trim()
+
+      const isExplicitError = Boolean(
+        rawErrorStr ||
+        (dataObj && dataObj.success === false) ||
+        bodyLower.includes("incorrecto") ||
         bodyLower.includes("errado") ||
         bodyLower.includes("mal escrito") ||
-        bodyLower.includes("incorrecto") ||
-        bodyLower.includes("no coincide") ||
-        bodyLower.includes("invalid") ||
-        bodyLower.includes("error")
+        bodyLower.includes("no coincide")
+      )
 
-      const isWorkflowExecuted =
-        webhookRes.ok &&
-        !hasErrorKeywords &&
-        (webhookResponseData && webhookResponseData.success !== false && !webhookResponseData.error)
-
-      if (!isWorkflowExecuted) {
+      if (!webhookRes.ok && isExplicitError) {
         const cleanError = extractCleanErrorMessage(
           webhookResponseData,
           webhookResponseText || "El código de seguridad ingresado es incorrecto o está mal escrito."
@@ -187,6 +190,21 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+
+      const cleanSuccessMsg = extractCleanErrorMessage(
+        webhookResponseData,
+        "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
+      )
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: cleanSuccessMsg,
+          planInfo: dataObj?.planInfo || null,
+          details: webhookResponseData,
+        },
+        { status: 200 }
+      )
     } catch (whErr: any) {
       console.error("[PLATZI STEP 2 FETCH ERROR]", whErr)
       return NextResponse.json(
@@ -197,16 +215,6 @@ export async function POST(request: Request) {
         { status: 502 }
       )
     }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: extractCleanErrorMessage(webhookResponseData, "¡Beneficio de Platzi activado exitosamente!"),
-        planInfo: webhookResponseData?.planInfo || null,
-        details: webhookResponseData,
-      },
-      { status: 200 }
-    )
   } catch (error: any) {
     console.error("[API PLATZI ACTIVATION VERIFY ERROR]", error)
     return NextResponse.json(

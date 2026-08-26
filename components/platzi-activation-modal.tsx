@@ -316,20 +316,24 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const data = await res.json()
 
       const rawMsg = String(data.error || data.message || data.details || "").toLowerCase()
+      const isSuccessConfirmation =
+        rawMsg.includes("recibida") ||
+        rawMsg.includes("confirmada") ||
+        rawMsg.includes("exitosa") ||
+        rawMsg.includes("exitoso") ||
+        rawMsg.includes("activad")
+
       const isError =
         !res.ok ||
-        !data.success ||
-        data.error ||
+        data.success === false ||
+        (data.error && !isSuccessConfirmation) ||
         rawMsg.includes("errado") ||
         rawMsg.includes("mal escrito") ||
         rawMsg.includes("incorrecto") ||
-        rawMsg.includes("no coincide") ||
-        rawMsg.includes("inválido") ||
-        rawMsg.includes("invalido") ||
-        rawMsg.includes("error")
+        rawMsg.includes("no coincide")
 
       if (isError) {
-        const rawErr = data.error || data.message || (language === "es" ? "El código de seguridad ingresado es incorrecto o está mal escrito." : "Invalid security code.")
+        const rawErr = data.error || (language === "es" ? "El código de seguridad ingresado es incorrecto o está mal escrito." : "Invalid security code.")
         setErrorMsg(cleanErrorForUI(rawErr))
         return
       }
@@ -339,7 +343,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setDisplayPrice(data.planInfo.formattedPrice)
         setDisplayDuration(data.planInfo.duration)
       }
-      setSuccessMessage(data.message || "¡Beneficio de Platzi activado exitosamente!")
+      setSuccessMessage(data.message || "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!")
+      setErrorMsg("")
       setStep(3)
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al verificar el código." : "Connection error.")
