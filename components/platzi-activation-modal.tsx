@@ -120,29 +120,44 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       })
       const resolved = await res.json()
 
-      if (res.ok && resolved) {
-        if (!resolved.valid && codeToValidate !== "") {
-          setErrorMsg(
-            resolved.error ||
-            resolved.message ||
-            (language === "es"
-              ? `El código "${codeToValidate}" no es un código de descuento válido.`
-              : `Invalid discount code "${codeToValidate}".`)
-          )
-          setIsCouponValidated(false)
-          setIsValidatingCode(false)
-          return
-        }
+      const isValid = Boolean(
+        resolved?.valid ??
+        resolved?.valido ??
+        resolved?.success ??
+        (resolved && !resolved.error && !resolved.mensaje && !resolved.mensajeError)
+      )
 
-        setDisplayPrice(resolved.formattedPrice || resolved.price || "$400.909,75 COP")
-        setDisplayDuration(resolved.duration || "1 año")
-        setDisplayPlanName(resolved.planName || resolved.plan || "Plan Basic")
-        setDisplayDiscountLabel(resolved.discountLabel || "")
-        setIsCodeValid(resolved.valid)
+      if (res.ok && resolved && (isValid || codeToValidate === "")) {
+        const priceText =
+          resolved.formattedPrice ||
+          resolved.precioFormateado ||
+          resolved.price ||
+          resolved.valor ||
+          (userCurrency === "USD" ? "$105 USD" : "$400.909,75 COP")
+
+        const durationText = resolved.duration || resolved.duracion || "1 año"
+        const planText = resolved.planName || resolved.plan || resolved.nombrePlan || "Plan de Beneficio"
+        const labelText = resolved.discountLabel || resolved.label || resolved.descuentoLabel || ""
+
+        setDisplayPrice(priceText)
+        setDisplayDuration(durationText)
+        setDisplayPlanName(planText)
+        setDisplayDiscountLabel(labelText)
+        setIsCodeValid(isValid)
         setIsCouponValidated(true)
         setErrorMsg("")
       } else {
-        setErrorMsg(resolved.error || resolved.message || (language === "es" ? "Error validando el código de descuento." : "Error validating discount code."))
+        const errorText =
+          resolved?.error ||
+          resolved?.mensaje ||
+          resolved?.message ||
+          resolved?.mensajeError ||
+          (language === "es"
+            ? `El código "${codeToValidate}" no es un código de descuento válido.`
+            : `Invalid discount code "${codeToValidate}".`)
+
+        setErrorMsg(errorText)
+        setIsCouponValidated(false)
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al validar el código." : "Network error validating discount code.")
