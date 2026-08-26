@@ -65,6 +65,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
   const [displayDuration, setDisplayDuration] = useState<string>("1 año")
   const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
+  const [displayDiscountLabel, setDisplayDiscountLabel] = useState<string>("")
   const [isCodeValid, setIsCodeValid] = useState<boolean>(true)
 
   // Flow & Step States
@@ -84,6 +85,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setInputCode("")
     setErrorMsg("")
     setSuccessMessage("")
+    setDisplayDiscountLabel("")
     onClose()
   }
 
@@ -116,9 +118,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           return
         }
 
-        setDisplayPrice(resolved.formattedPrice)
-        setDisplayDuration(resolved.duration)
-        setDisplayPlanName(resolved.planName)
+        setDisplayPrice(resolved.formattedPrice || resolved.price || "$400.909,75 COP")
+        setDisplayDuration(resolved.duration || "1 año")
+        setDisplayPlanName(resolved.planName || resolved.plan || "Plan Basic")
+        setDisplayDiscountLabel(resolved.discountLabel || "")
         setIsCodeValid(resolved.valid)
         setErrorMsg("")
         setStep1SubStage("details")
@@ -391,6 +394,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <span className="text-xs text-black/60 font-mono">
                   — {displayDuration} (Para 1 estudiante)
                 </span>
+                {displayDiscountLabel && (
+                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                    {displayDiscountLabel}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -439,7 +447,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           <form onSubmit={handleStep1Submit} className="space-y-5">
             <div className="space-y-1">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
-                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+                {displayPlanName && displayPlanName !== "Plan Basic"
+                  ? `${language === "es" ? "Activar Beneficio" : "Activate Benefit"} — ${displayPlanName}`
+                  : (language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit")}
               </h3>
               
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
@@ -449,6 +459,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <span className="text-xs text-black/60 font-mono">
                   — {displayDuration} (Para 1 estudiante)
                 </span>
+                {displayDiscountLabel && (
+                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                    {displayDiscountLabel}
+                  </span>
+                )}
               </div>
             </div>
 
