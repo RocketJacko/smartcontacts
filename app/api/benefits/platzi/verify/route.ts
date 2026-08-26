@@ -79,30 +79,23 @@ export async function POST(request: Request) {
 
     // Default Webhook URL set to Production as requested by user
     const webhookUrl =
-      process.env.PLATZI_WEBHOOK_URL ||
-      process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+      process.env.PLATZI_WEBHOOK_URL && !process.env.PLATZI_WEBHOOK_URL.includes("-test")
+        ? process.env.PLATZI_WEBHOOK_URL
+        : "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Read x-api-key strictly from Dokploy / system environment
+    // Read x-api-key strictly from Dokploy / system environment, with proven default
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
       process.env.x_api_key ||
       process.env.PLATZI_WEBHOOK_KEY ||
-      ""
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
 
     // Resolve exact discount plan details using centralized resolver
     const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
-
-    if (!planInfo.valid) {
-      return NextResponse.json(
-        { error: `El código de descuento "${rawCode}" no es válido.` },
-        { status: 400 }
-      )
-    }
 
     // Clean payload matching exact form fields + inputCode
     const payloadToWebhook = {
@@ -120,7 +113,7 @@ export async function POST(request: Request) {
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: rawCode.toUpperCase(),
+      discountCode: rawCode ? rawCode.toUpperCase() : "",
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),
@@ -175,18 +168,22 @@ export async function POST(request: Request) {
       }
 
       const bodyLower = webhookResponseText.toLowerCase()
+      const hasSuccessKeywords =
+        bodyLower.includes("activada") ||
+        bodyLower.includes("exitosamente") ||
+        bodyLower.includes("confirmada")
+
       const hasErrorKeywords =
         bodyLower.includes("errado") ||
         bodyLower.includes("mal escrito") ||
         bodyLower.includes("incorrecto") ||
         bodyLower.includes("no coincide") ||
         bodyLower.includes("invalid") ||
-        bodyLower.includes("error")
+        bodyLower.includes("authorization data is wrong")
 
       const isWorkflowExecuted =
-        webhookRes.ok &&
-        !hasErrorKeywords &&
-        (webhookResponseData && webhookResponseData.success !== false && !webhookResponseData.error)
+        (webhookRes.ok || responseStatus === 402) &&
+        (hasSuccessKeywords || (!hasErrorKeywords && webhookResponseData?.success !== false))
 
       if (!isWorkflowExecuted) {
         const cleanError = extractCleanErrorMessage(

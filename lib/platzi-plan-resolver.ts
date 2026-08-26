@@ -26,10 +26,15 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
   }
 
   // Coincidencias estrictas según la tabla oficial
-  if (normalized === "COMPUESTUDIO" || normalized === "COMPUESTUDIOS" || normalized === "COMPU") {
+  if (
+    normalized === "COMPUESTUDIO" ||
+    normalized === "COMPUESTUDIOS" ||
+    normalized === "COMPUESTUDIO2026" ||
+    normalized === "COMPU"
+  ) {
     return {
       valid: true,
-      codeKey: "COMPUESTUDIO",
+      codeKey: "COMPUESTUDIO2026",
       planName: "Plan Compuestudio",
       duration: "1 año",
       priceCop: 0,
@@ -38,7 +43,7 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  if (normalized === "PLANA" || normalized === "PLANAS" || normalized === "A") {
+  if (normalized === "PLANA" || normalized === "PLANAS" || normalized === "A" || normalized === "PLANA") {
     return {
       valid: true,
       codeKey: "PLAN A",
@@ -50,7 +55,7 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  if (normalized === "PLANB" || normalized === "PLANBS" || normalized === "B") {
+  if (normalized === "PLANB" || normalized === "PLANBS" || normalized === "B" || normalized === "PLANB") {
     return {
       valid: true,
       codeKey: "PLAN B",
@@ -62,7 +67,7 @@ export function resolveDiscountPlan(rawCode: string, currency: string = "COP"): 
     }
   }
 
-  if (normalized === "PLANC" || normalized === "PLANCS" || normalized === "C") {
+  if (normalized === "PLANC" || normalized === "PLANCS" || normalized === "C" || normalized === "PLANC") {
     return {
       valid: true,
       codeKey: "PLAN C",

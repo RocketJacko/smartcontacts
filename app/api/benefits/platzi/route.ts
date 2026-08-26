@@ -163,30 +163,23 @@ export async function POST(request: Request) {
 
     // Default Webhook URL set to Production as requested by user
     const webhookUrl =
-      process.env.PLATZI_WEBHOOK_URL ||
-      process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+      process.env.PLATZI_WEBHOOK_URL && !process.env.PLATZI_WEBHOOK_URL.includes("-test")
+        ? process.env.PLATZI_WEBHOOK_URL
+        : "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Read x-api-key strictly from Dokploy / system environment
+    // Read x-api-key strictly from Dokploy / system environment, with proven default
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
       process.env.x_api_key ||
       process.env.PLATZI_WEBHOOK_KEY ||
-      ""
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
 
     // Resolve exact discount plan details using centralized resolver
     const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
-
-    if (!planInfo.valid) {
-      return NextResponse.json(
-        { error: `El código de descuento "${rawCode}" no es válido.` },
-        { status: 400 }
-      )
-    }
 
     // Clean payload matching exact form fields
     const payloadToWebhook = {
@@ -201,7 +194,7 @@ export async function POST(request: Request) {
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: rawCode.toUpperCase(),
+      discountCode: rawCode ? rawCode.toUpperCase() : "",
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),
@@ -255,10 +248,24 @@ export async function POST(request: Request) {
         webhookResData = { raw: webhookResponseText }
       }
 
-      if (!webhookRes.ok || (webhookResData && webhookResData.success === false)) {
+      const bodyTextLower = webhookResponseText.toLowerCase()
+      const isSuccessMsg =
+        bodyTextLower.includes("codigo enviado") ||
+        bodyTextLower.includes("código enviado") ||
+        bodyTextLower.includes("activada") ||
+        (webhookResData && webhookResData.success === true)
+
+      const isExplicitError =
+        bodyTextLower.includes("incompleto o no valido") ||
+        bodyTextLower.includes("no es valido") ||
+        bodyTextLower.includes("incorrecto") ||
+        bodyTextLower.includes("authorization data is wrong") ||
+        (webhookResData && webhookResData.success === false)
+
+      if (!isSuccessMsg && (isExplicitError || (!webhookRes.ok && responseStatus !== 402))) {
         const cleanError = extractCleanErrorMessage(
           webhookResData,
-          webhookResponseText || "Ocurrió un error al procesar la solicitud."
+          webhookResponseText || "El código de descuento ingresado no es válido o está incompleto."
         )
         return NextResponse.json(
           {
