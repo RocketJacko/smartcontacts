@@ -248,21 +248,35 @@ export async function POST(request: Request) {
 
       const rawMsgStr = String(dataObj?.mensaje || dataObj?.message || webhookResponseText || "").trim()
       const rawErrorStr = String(dataObj?.error || dataObj?.mensajeError || "").trim()
+      const msgLower = rawMsgStr.toLowerCase()
 
-      const isExplicitError = Boolean(
+      const isInvalidCouponOrError = Boolean(
+        !webhookRes.ok ||
         rawErrorStr ||
         (dataObj && dataObj.success === false) ||
         (dataObj && dataObj.aplica === false) ||
-        (dataObj && dataObj.continuar === false)
+        (dataObj && dataObj.continuar === false) ||
+        msgLower.includes("incompleto") ||
+        msgLower.includes("no valido") ||
+        msgLower.includes("no válido") ||
+        msgLower.includes("inválido") ||
+        msgLower.includes("invalido") ||
+        msgLower.includes("no existe") ||
+        msgLower.includes("no vigente") ||
+        msgLower.includes("incorrecto") ||
+        msgLower.includes("errado")
       )
 
-      if (!webhookRes.ok && isExplicitError) {
-        const cleanError = extractCleanErrorMessage(
-          webhookResData,
-          webhookResponseText || "Ocurrió un error al procesar la solicitud."
+      if (isInvalidCouponOrError) {
+        const cleanError = sanitizeString(
+          rawErrorStr ||
+          dataObj?.mensaje ||
+          dataObj?.message ||
+          extractCleanErrorMessage(webhookResData, "Codigo Incompleto o no valido")
         )
         return NextResponse.json(
           {
+            success: false,
             error: cleanError,
             details: webhookResponseText,
           },

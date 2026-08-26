@@ -142,8 +142,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
       const isSuccess = Boolean(
         res.ok &&
-        !data.error &&
-        (data.success || data.verificationRequired || data.message || data.mensaje)
+        data.success !== false &&
+        !data.error
       )
 
       if (isSuccess) {
@@ -155,7 +155,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setErrorMsg("")
         setStep(2)
       } else {
-        const rawErr = data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
+        const rawErr = data.error || data.mensaje || data.message || (language === "es" ? "Codigo Incompleto o no valido" : "Invalid code")
         setErrorMsg(cleanErrorForUI(rawErr))
       }
     } catch {
