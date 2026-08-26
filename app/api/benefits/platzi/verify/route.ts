@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
 
 function sanitizeString(str: string): string {
   if (!str) return ""
@@ -94,24 +93,11 @@ export async function POST(request: Request) {
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
 
-    // Resolve exact discount plan details using centralized resolver
-    const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
-
-    if (!planInfo.valid) {
-      return NextResponse.json(
-        { error: `El código de descuento "${rawCode}" no es válido.` },
-        { status: 400 }
-      )
-    }
-
-    // Clean payload matching exact form fields + inputCode
+    // Clean payload matching exact form fields + inputCode sent directly to n8n
     const payloadToWebhook = {
       event: "verify_code_and_activate",
       step: 2,
       product: "Platzi",
-      planName: planInfo.planName,
-      duration: planInfo.duration,
-      totalPrice: planInfo.formattedPrice,
       currency: currency || "COP",
       inputCode: String(inputCode).trim(),
       codigo: String(inputCode).trim(),
@@ -216,7 +202,7 @@ export async function POST(request: Request) {
       {
         success: true,
         message: extractCleanErrorMessage(webhookResponseData, "¡Beneficio de Platzi activado exitosamente!"),
-        planInfo,
+        planInfo: webhookResponseData?.planInfo || null,
         details: webhookResponseData,
       },
       { status: 200 }

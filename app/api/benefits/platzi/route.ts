@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
 
 // In-memory rate limiting store (max 20 requests per 15 mins per IP)
@@ -178,24 +177,11 @@ export async function POST(request: Request) {
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
 
-    // Resolve exact discount plan details using centralized resolver
-    const planInfo = resolveDiscountPlan(rawCode, currency || "COP")
-
-    if (!planInfo.valid) {
-      return NextResponse.json(
-        { error: `El código de descuento "${rawCode}" no es válido.` },
-        { status: 400 }
-      )
-    }
-
-    // Clean payload matching exact form fields
+    // Clean payload matching exact form fields sent directly to n8n
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
       product: "Platzi",
-      planName: planInfo.planName,
-      duration: planInfo.duration,
-      totalPrice: planInfo.formattedPrice,
       currency: currency || "COP",
       name: String(name).trim(),
       phone: String(phone).trim(),
@@ -283,7 +269,7 @@ export async function POST(request: Request) {
         success: true,
         verificationRequired: true,
         message: extractCleanErrorMessage(webhookResData, `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`),
-        planInfo,
+        planInfo: webhookResData?.planInfo || null,
         details: webhookResData,
       },
       { status: 200 }
