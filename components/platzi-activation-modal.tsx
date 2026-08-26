@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag, Check, AlertCircle } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -58,17 +58,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [platziAccountEmail, setPlatziAccountEmail] = useState("")
   const [discountCode, setDiscountCode] = useState("")
 
-  // Dynamic Discount & Price States
+  // Dynamic Display States
   const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
   const [displayDuration, setDisplayDuration] = useState<string>("1 año")
   const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
   const [displayDiscountLabel, setDisplayDiscountLabel] = useState<string>("")
-  
-  // Coupon Validation States: 'idle' | 'valid' | 'invalid'
-  const [couponStatus, setCouponStatus] = useState<"idle" | "valid" | "invalid">("idle")
-  const [couponMessage, setCouponMessage] = useState<string>("")
-  const [couponError, setCouponError] = useState<string>("")
-  const [isValidatingCode, setIsValidatingCode] = useState(false)
 
   // Step States: 1 (Form) | 2 (Verification PIN) | 3 (Success)
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -80,10 +74,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   // Update default display price when geolocation resolves
   useEffect(() => {
-    if (couponStatus === "idle" && formattedPlatziPrice) {
+    if (formattedPlatziPrice) {
       setDisplayPrice(formattedPlatziPrice)
     }
-  }, [formattedPlatziPrice, couponStatus])
+  }, [formattedPlatziPrice])
 
   if (!isOpen) return null
 
@@ -93,9 +87,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setErrorMsg("")
     setSuccessMessage("")
     setDiscountCode("")
-    setCouponStatus("idle")
-    setCouponMessage("")
-    setCouponError("")
     setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
     setDisplayDuration("1 año")
     setDisplayPlanName("Plan Basic")
@@ -103,108 +94,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     onClose()
   }
 
-  // Validate Discount Code with n8n Webhook
-  const handleValidateCoupon = async (codeToValidate: string): Promise<boolean> => {
-    const cleanCode = codeToValidate.trim()
-    if (!cleanCode) {
-      // If code is empty, reset price to default standard
-      setDisplayPrice(formattedPlatziPrice || (userCurrency === "USD" ? "$105 USD" : "$400.909,75 COP"))
-      setDisplayDuration("1 año")
-      setDisplayPlanName("Plan Basic")
-      setDisplayDiscountLabel("")
-      setCouponMessage("")
-      setCouponError("")
-      setCouponStatus("idle")
-      return true
-    }
-
-    setIsValidatingCode(true)
-    setCouponError("")
-    setCouponMessage("")
-
-    try {
-      const res = await fetch("/api/benefits/platzi/validate-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: cleanCode,
-          currency: userCurrency,
-          validarCupon: true,
-          VALIDARCUPON: true,
-        }),
-      })
-
-      const rawResponse = await res.json()
-      // Support array or object response from n8n
-      const resolved = Array.isArray(rawResponse) ? rawResponse[0] : rawResponse
-
-      // Check n8n keys: aplica, continuar, valid, valido, success
-      const isApplicable = Boolean(
-        resolved?.aplica ??
-        resolved?.valid ??
-        resolved?.valido ??
-        resolved?.success ??
-        (resolved && !resolved.error && !resolved.mensajeError)
-      )
-
-      const canContinue = Boolean(
-        resolved?.continuar ??
-        resolved?.aplica ??
-        resolved?.valid ??
-        true
-      )
-
-      if (res.ok && resolved && isApplicable && canContinue) {
-        const rawValor = resolved.Valor ?? resolved.valor ?? resolved.priceCop ?? resolved.price
-        let priceStr = ""
-
-        if (typeof rawValor === "number") {
-          if (userCurrency === "USD") {
-            priceStr = rawValor === 0 ? "$0 USD" : `$${Math.round(rawValor / 3800)} USD`
-          } else {
-            priceStr = rawValor === 0 ? "$0 COP" : `$${Math.round(rawValor).toLocaleString("es-CO")} COP`
-          }
-        } else if (typeof rawValor === "string" && rawValor.trim()) {
-          priceStr = rawValor
-        } else {
-          priceStr = resolved.formattedPrice || resolved.precioFormateado || (userCurrency === "USD" ? "$20 USD" : "$75.000 COP")
-        }
-
-        const featureStr = resolved.Caracteriscica || resolved.caracteristica || resolved.duration || resolved.duracion || "1 año"
-        const msgStr = resolved.mensaje || resolved.message || (language === "es" ? "El código es válido" : "Discount code is valid")
-        const codeName = resolved.Codigo || resolved.codigo || cleanCode.toUpperCase()
-
-        setDisplayPrice(priceStr)
-        setDisplayDuration(featureStr)
-        setDisplayPlanName(`Plan ${codeName}`)
-        setDisplayDiscountLabel(msgStr)
-        setCouponMessage(msgStr)
-        setCouponError("")
-        setCouponStatus("valid")
-        return true
-      } else {
-        const errorText =
-          resolved?.mensaje ||
-          resolved?.message ||
-          resolved?.error ||
-          resolved?.mensajeError ||
-          (language === "es" ? "El código no existe o no está vigente" : "Code does not exist or is expired")
-
-        setCouponError(errorText)
-        setCouponMessage("")
-        setCouponStatus("invalid")
-        return false
-      }
-    } catch {
-      setCouponError(language === "es" ? "Error de conexión al validar el código." : "Connection error validating code.")
-      setCouponStatus("invalid")
-      return false
-    } finally {
-      setIsValidatingCode(false)
-    }
-  }
-
-  // Submit Main Form (Step 1)
+  // Submit Main Form (Step 1) -> Validates code and sends activation email via n8n backend
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
@@ -212,15 +102,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     if (!name.trim() || !phone.trim() || !email.trim() || !platziAccountEmail.trim()) {
       setErrorMsg(language === "es" ? "Por favor completa todos los campos obligatorios." : "Please fill in all required fields.")
       return
-    }
-
-    // If a discount code was entered and has NOT been validated yet, validate it first
-    if (discountCode.trim() && couponStatus !== "valid") {
-      const isValid = await handleValidateCoupon(discountCode)
-      if (!isValid) {
-        // If code is invalid (aplica: false / continuar: false), stop submission and let user fix/clear it
-        return
-      }
     }
 
     setIsSubmitting(true)
@@ -380,7 +261,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         </button>
 
         {step === 3 ? (
-          /* STEP 3: ACTIVATION SUCCESS */
+          /* STEP 3: ACTIVATION SUCCESS CELEBRATION */
           <div className="text-center py-6 space-y-6">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
@@ -405,7 +286,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </button>
           </div>
         ) : step === 2 ? (
-          /* STEP 2: CODE VERIFICATION */
+          /* STEP 2: SECURITY CODE VERIFICATION PIN INPUT */
           <form onSubmit={handleStep2Verify} className="space-y-5">
             <div className="space-y-2">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
@@ -467,7 +348,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             </div>
           </form>
         ) : (
-          /* STEP 1: SINGLE UNIFIED REGISTRATION FORM WITH OPTIONAL DISCOUNT CODE */
+          /* STEP 1: CLEAN UNIFIED FORM WITH OPTIONAL DISCOUNT CODE */
           <form onSubmit={handleStep1Submit} className="space-y-5">
             
             {/* Header Title & Dynamic Price Banner */}
@@ -566,64 +447,21 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </p>
               </div>
 
-              {/* Field 5: Código de Descuento (Opcional) con botón de validación al lado */}
+              {/* Field 5: Código de Descuento (Opcional) - Single Clean Input Field */}
               <div className="space-y-1 pt-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
                   {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
-                    <input
-                      type="text"
-                      value={discountCode}
-                      onChange={(e) => {
-                        setDiscountCode(e.target.value)
-                        if (couponStatus !== "idle") {
-                          setCouponStatus("idle")
-                          setCouponError("")
-                          setCouponMessage("")
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault()
-                          handleValidateCoupon(discountCode)
-                        }
-                      }}
-                      placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
-                      className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleValidateCoupon(discountCode)}
-                    disabled={isValidatingCode || !discountCode.trim()}
-                    className="px-4 py-2.5 rounded-xl bg-black/5 hover:bg-black/10 border border-black/15 text-xs font-mono font-bold text-[#111] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center min-w-[80px]"
-                  >
-                    {isValidatingCode ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                    ) : (
-                      <span>{language === "es" ? "APLICAR" : "APPLY"}</span>
-                    )}
-                  </button>
+                <div className="relative">
+                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value)}
+                    placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
+                  />
                 </div>
-
-                {/* Feedback status for coupon validation */}
-                {couponStatus === "valid" && couponMessage && (
-                  <p className="text-[11px] font-mono text-emerald-700 font-bold flex items-center gap-1.5 pt-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    {couponMessage}
-                  </p>
-                )}
-
-                {couponStatus === "invalid" && couponError && (
-                  <p className="text-[11px] font-mono text-red-600 font-medium flex items-center gap-1.5 pt-1">
-                    <AlertCircle className="w-3.5 h-3.5 text-red-600" />
-                    {couponError}
-                  </p>
-                )}
               </div>
 
             </div>
