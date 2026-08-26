@@ -168,9 +168,14 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         }),
       })
 
-      const data = await res.json()
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        data = { error: "Respuesta inesperada del servidor al procesar la solicitud." }
+      }
 
-      if (res.ok && data.success) {
+      if (res.ok && data?.success) {
         if (data.planInfo) {
           setDisplayPlanName(data.planInfo.planName)
           setDisplayPrice(data.planInfo.formattedPrice)
@@ -178,10 +183,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         }
         setStep(2)
       } else {
-        const rawErr = data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
+        const rawErr = data?.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
         setErrorMsg(cleanErrorForUI(rawErr))
       }
-    } catch {
+    } catch (err: any) {
+      console.error("[PLATZI MODAL SUBMIT ERROR]", err)
       setErrorMsg(language === "es" ? "Error de conexión al enviar la solicitud." : "Connection error.")
     } finally {
       setIsSubmitting(false)
