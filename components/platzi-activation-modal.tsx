@@ -138,12 +138,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         }),
       })
 
-      const data = await res.json()
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        data = { error: "Respuesta inesperada del servidor al procesar la solicitud." }
+      }
 
       const isSuccess = Boolean(
         res.ok &&
-        data.success !== false &&
-        !data.error
+        data?.success !== false &&
+        !data?.error
       )
 
       if (isSuccess) {
@@ -155,10 +160,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setErrorMsg("")
         setStep(2)
       } else {
-        const rawErr = data.error || data.mensaje || data.message || (language === "es" ? "Codigo Incompleto o no valido" : "Invalid code")
+        const rawErr = data?.error || data?.mensaje || data?.message || (language === "es" ? "Codigo Incompleto o no valido" : "Invalid code")
         setErrorMsg(cleanErrorForUI(rawErr))
       }
-    } catch {
+    } catch (err: any) {
+      console.error("[PLATZI MODAL SUBMIT ERROR]", err)
       setErrorMsg(language === "es" ? "Error de conexión al enviar la solicitud." : "Connection error.")
     } finally {
       setIsSubmitting(false)

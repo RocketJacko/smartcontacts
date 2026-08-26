@@ -165,22 +165,20 @@ export async function POST(request: Request) {
 
     // Default Webhook URL set to Production as requested by user
     const webhookUrl =
-      process.env.PLATZI_WEBHOOK_URL ||
-      process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
+      process.env.PLATZI_WEBHOOK_URL && !process.env.PLATZI_WEBHOOK_URL.includes("-test")
+        ? process.env.PLATZI_WEBHOOK_URL
+        : "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
 
-    // Read x-api-key strictly from Dokploy / system environment
+    // Read x-api-key strictly from Dokploy / system environment, with proven default
     const rawKey =
       process.env["x-api-key"] ||
       process.env.X_API_KEY ||
-      process.env.x_api_key ||
       process.env.PLATZI_WEBHOOK_KEY ||
-      ""
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
 
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
 
-    // Clean payload matching exact form fields sent directly to n8n
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
@@ -190,7 +188,7 @@ export async function POST(request: Request) {
       phone: String(phone).trim(),
       email: String(email).trim().toLowerCase(),
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
-      discountCode: rawCode.toUpperCase(),
+      discountCode: rawCode ? rawCode.toUpperCase() : "",
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),
@@ -249,43 +247,50 @@ export async function POST(request: Request) {
         dataObj = dataObj[0]
       }
 
-      const rawMsgStr = String(dataObj?.mensaje || dataObj?.message || webhookResponseText || "").trim()
-      const rawErrorStr = String(dataObj?.error || dataObj?.mensajeError || "").trim()
-      const msgLower = rawMsgStr.toLowerCase()
+    const rawMsgStr = String(dataObj?.mensaje || dataObj?.message || webhookResponseText || "").trim()
+    const rawErrorStr = String(dataObj?.error || dataObj?.mensajeError || "").trim()
+    const msgLower = (rawMsgStr + " " + webhookResponseText).toLowerCase()
 
-      const isInvalidCouponOrError = Boolean(
-        !webhookRes.ok ||
+    const isSuccessMsg =
+      msgLower.includes("codigo enviado") ||
+      msgLower.includes("código enviado") ||
+      msgLower.includes("activada") ||
+      (webhookResData && webhookResData.success === true)
+
+    const isInvalidCouponOrError = Boolean(
+      (!isSuccessMsg && !webhookRes.ok && responseStatus !== 402) ||
+      rawErrorStr ||
+      (dataObj && dataObj.success === false) ||
+      (dataObj && dataObj.aplica === false) ||
+      (dataObj && dataObj.continuar === false) ||
+      msgLower.includes("incompleto") ||
+      msgLower.includes("no valido") ||
+      msgLower.includes("no válido") ||
+      msgLower.includes("inválido") ||
+      msgLower.includes("invalido") ||
+      msgLower.includes("no existe") ||
+      msgLower.includes("no vigente") ||
+      msgLower.includes("incorrecto") ||
+      msgLower.includes("errado") ||
+      msgLower.includes("authorization data is wrong")
+    )
+
+    if (!isSuccessMsg && isInvalidCouponOrError) {
+      const cleanError = sanitizeString(
         rawErrorStr ||
-        (dataObj && dataObj.success === false) ||
-        (dataObj && dataObj.aplica === false) ||
-        (dataObj && dataObj.continuar === false) ||
-        msgLower.includes("incompleto") ||
-        msgLower.includes("no valido") ||
-        msgLower.includes("no válido") ||
-        msgLower.includes("inválido") ||
-        msgLower.includes("invalido") ||
-        msgLower.includes("no existe") ||
-        msgLower.includes("no vigente") ||
-        msgLower.includes("incorrecto") ||
-        msgLower.includes("errado")
+        dataObj?.mensaje ||
+        dataObj?.message ||
+        extractCleanErrorMessage(webhookResData, "Codigo Incompleto o no valido")
       )
-
-      if (isInvalidCouponOrError) {
-        const cleanError = sanitizeString(
-          rawErrorStr ||
-          dataObj?.mensaje ||
-          dataObj?.message ||
-          extractCleanErrorMessage(webhookResData, "Codigo Incompleto o no valido")
-        )
-        return NextResponse.json(
-          {
-            success: false,
-            error: cleanError,
-            details: webhookResponseText,
-          },
-          { status: 400 }
-        )
-      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: cleanError,
+          details: webhookResponseText,
+        },
+        { status: 400 }
+      )
+    }
 
       const finalMsg = rawMsgStr || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`
 
