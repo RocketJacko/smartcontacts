@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // In-memory rate limiting store (max 20 requests per 15 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
