@@ -106,9 +106,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       if (res.ok && resolved) {
         if (!resolved.valid && codeToValidate !== "") {
           setErrorMsg(
-            language === "es"
+            resolved.error ||
+            resolved.message ||
+            (language === "es"
               ? `El código "${codeToValidate}" no es un código de descuento válido.`
-              : `Invalid discount code "${codeToValidate}".`
+              : `Invalid discount code "${codeToValidate}".`)
           )
           setIsValidatingCode(false)
           return
@@ -121,7 +123,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setErrorMsg("")
         setStep1SubStage("details")
       } else {
-        setErrorMsg(language === "es" ? "Error validando el código de descuento." : "Error validating discount code.")
+        setErrorMsg(resolved.error || resolved.message || (language === "es" ? "Error validando el código de descuento." : "Error validating discount code."))
       }
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al validar el código." : "Network error validating discount code.")
