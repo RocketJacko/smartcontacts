@@ -67,6 +67,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
   const [displayDiscountLabel, setDisplayDiscountLabel] = useState<string>("")
   const [isCodeValid, setIsCodeValid] = useState<boolean>(true)
+  const [isCouponValidated, setIsCouponValidated] = useState<boolean>(false)
 
   // Flow & Step States
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -86,12 +87,21 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setErrorMsg("")
     setSuccessMessage("")
     setDisplayDiscountLabel("")
+    setIsCouponValidated(false)
     onClose()
   }
 
-  // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input) - Validation triggered strictly on submit click
+  // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input)
   const handleContinueToDetails = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // If coupon has already been validated and confirmed by server, user click on 'ACTIVAR' proceeds to details form
+    if (isCouponValidated) {
+      setErrorMsg("")
+      setStep1SubStage("details")
+      return
+    }
+
     setErrorMsg("")
     setIsValidatingCode(true)
 
@@ -101,7 +111,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const res = await fetch("/api/benefits/platzi/validate-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codeToValidate, currency: userCurrency }),
+        body: JSON.stringify({
+          code: codeToValidate,
+          currency: userCurrency,
+          validarCupon: true,
+          VALIDARCUPON: true,
+        }),
       })
       const resolved = await res.json()
 
@@ -114,6 +129,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               ? `El código "${codeToValidate}" no es un código de descuento válido.`
               : `Invalid discount code "${codeToValidate}".`)
           )
+          setIsCouponValidated(false)
           setIsValidatingCode(false)
           return
         }
@@ -123,8 +139,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         setDisplayPlanName(resolved.planName || resolved.plan || "Plan Basic")
         setDisplayDiscountLabel(resolved.discountLabel || "")
         setIsCodeValid(resolved.valid)
+        setIsCouponValidated(true)
         setErrorMsg("")
-        setStep1SubStage("details")
       } else {
         setErrorMsg(resolved.error || resolved.message || (language === "es" ? "Error validando el código de descuento." : "Error validating discount code."))
       }
@@ -413,12 +429,40 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   <input
                     type="text"
                     value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
+                    onChange={(e) => {
+                      setDiscountCode(e.target.value)
+                      setIsCouponValidated(false)
+                    }}
                     placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
                     className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
                   />
                 </div>
               </div>
+
+              {/* Tarjeta de Confirmación de Plan detectado por el Backend */}
+              {isCouponValidated && (
+                <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200/80 space-y-1.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      {language === "es" ? "Plan Confirmado por el Servidor" : "Server Plan Confirmed"}
+                    </span>
+                    {discountCode.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCouponValidated(false)}
+                        className="text-[10px] font-mono text-emerald-700 underline hover:text-emerald-900 cursor-pointer"
+                      >
+                        {language === "es" ? "Editar código" : "Edit code"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-mono text-emerald-950 pt-0.5">
+                    <span className="font-bold">{displayPlanName}</span>
+                    <span className="font-bold text-emerald-700">{displayPrice}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {errorMsg && (
@@ -435,8 +479,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {isValidatingCode ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>{language === "es" ? "VALIDANDO CÓDIGO..." : "VALIDATING CODE..."}</span>
+                  <span>{language === "es" ? "VALIDANDO CON SERVIDOR..." : "VERIFYING WITH SERVER..."}</span>
                 </>
+              ) : isCouponValidated ? (
+                <span>{language === "es" ? "ACTIVAR" : "ACTIVATE"}</span>
               ) : (
                 <span>{language === "es" ? "CONTINUAR" : "CONTINUE"}</span>
               )}
