@@ -69,7 +69,7 @@ export function StackingPlatformCards() {
                 willChange: "transform",
               }}
             >
-              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-8 sm:p-10 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
+              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-5 sm:p-8 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
                 <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between">
                   <div className="max-w-xl space-y-4">
                     <div className="w-10 h-10 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
@@ -125,7 +125,7 @@ export function StackingPlatformCards() {
                 willChange: "transform",
               }}
             >
-              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-8 sm:p-10 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
+              <div className="group relative rounded-2xl border border-black/[0.08] bg-white p-5 sm:p-8 md:p-12 shadow-sm transition-all hover:border-black/[0.15]">
                 <div className="max-w-2xl space-y-4">
                   <div className="w-10 h-10 rounded-xl border border-black/10 bg-black/[0.02] flex items-center justify-center">
                     <PixelIcon type="integrations" size={24} />

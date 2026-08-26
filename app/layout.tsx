@@ -9,10 +9,13 @@ const _geistMono = Geist_Mono({ subsets: ["latin"], display: "swap" });
 const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"], display: "swap" });
 const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"], display: "swap" });
 
-export const viewport = {
+import type { Viewport } from 'next'
+
+export const viewport: Viewport = {
   themeColor: '#F5F4F0',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
 }
 
 export const metadata: Metadata = {
@@ -201,7 +204,6 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com" />
@@ -210,9 +212,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`font-sans antialiased w-full max-w-full overflow-x-hidden`}>
         <LanguageProvider>
-          <main id="main-content">
+          <main id="main-content" className="w-full max-w-full overflow-x-hidden">
             {children}
           </main>
           <FloatingWhatsApp />

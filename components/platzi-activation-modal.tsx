@@ -5,7 +5,6 @@ import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag } from "lucide-reac
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
-import { resolveDiscountPlan } from "@/lib/platzi-plan-resolver"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
 
 interface PlatziActivationModalProps {
@@ -76,22 +75,61 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Instant client-side plan resolution + strict validation
+  // Server-side async plan resolution via API (Zero client-side secrets exposure)
   useEffect(() => {
-    const resolved = resolveDiscountPlan(discountCode, userCurrency)
-    setDisplayPrice(resolved.formattedPrice)
-    setDisplayDuration(resolved.duration)
-    setDisplayPlanName(resolved.planName)
-    setIsCodeValid(resolved.valid)
+    let isMounted = true
+    const controller = new AbortController()
 
-    if (discountCode.trim() && !resolved.valid) {
-      setErrorMsg(
-        language === "es"
-          ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
-          : `Invalid discount code "${discountCode.trim()}".`
-      )
-    } else {
-      setErrorMsg("")
+    const validateAsync = async () => {
+      if (!discountCode.trim()) {
+        if (isMounted) {
+          setDisplayPrice(userCurrency === "USD" ? "$105 USD" : "$400.909,75 COP")
+          setDisplayDuration("1 año")
+          setDisplayPlanName("Plan Basic")
+          setIsCodeValid(true)
+          setErrorMsg("")
+        }
+        return
+      }
+
+      try {
+        const res = await fetch("/api/benefits/platzi/validate-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: discountCode, currency: userCurrency }),
+          signal: controller.signal,
+        })
+        const data = await res.json()
+        if (isMounted) {
+          if (res.ok && data) {
+            setDisplayPrice(data.formattedPrice)
+            setDisplayDuration(data.duration)
+            setDisplayPlanName(data.planName)
+            setIsCodeValid(data.valid)
+
+            if (!data.valid) {
+              setErrorMsg(
+                language === "es"
+                  ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
+                  : `Invalid discount code "${discountCode.trim()}".`
+              )
+            } else {
+              setErrorMsg("")
+            }
+          }
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError" && isMounted) {
+          // If error occurs, keep standard state
+        }
+      }
+    }
+
+    validateAsync()
+
+    return () => {
+      isMounted = false
+      controller.abort()
     }
   }, [discountCode, userCurrency, language])
 
@@ -107,21 +145,37 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   }
 
   // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input)
-  const handleContinueToDetails = (e: React.FormEvent) => {
+  const handleContinueToDetails = async (e: React.FormEvent) => {
     e.preventDefault()
-    const resolved = resolveDiscountPlan(discountCode, userCurrency)
 
-    if (discountCode.trim() && !resolved.valid) {
-      setErrorMsg(
-        language === "es"
-          ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
-          : `Invalid discount code "${discountCode.trim()}".`
-      )
+    if (!discountCode.trim()) {
+      setErrorMsg("")
+      setStep1SubStage("details")
       return
     }
 
-    setErrorMsg("")
-    setStep1SubStage("details")
+    try {
+      const res = await fetch("/api/benefits/platzi/validate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: discountCode, currency: userCurrency }),
+      })
+      const resolved = await res.json()
+
+      if (!resolved.valid) {
+        setErrorMsg(
+          language === "es"
+            ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
+            : `Invalid discount code "${discountCode.trim()}".`
+        )
+        return
+      }
+
+      setErrorMsg("")
+      setStep1SubStage("details")
+    } catch {
+      setErrorMsg(language === "es" ? "Error validando el código de descuento." : "Error validating discount code.")
+    }
   }
 
   // Step 1 Final Submit (SubStage 1B) -> Webhook sends email verification code to user
@@ -269,7 +323,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl border border-black/10 shadow-2xl p-6 sm:p-8 space-y-6 my-auto">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-3xl border border-black/10 shadow-2xl p-6 sm:p-8 space-y-6 my-auto">
         
         {/* Close Button */}
         <button
@@ -398,7 +452,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                     type="text"
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder="Ej. COMPUESTUDIO"
+                    placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
                     className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
                   />
                 </div>

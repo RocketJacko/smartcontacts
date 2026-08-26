@@ -57,7 +57,7 @@ export function Footer() {
               </a>
             </p>
             <p>
-              <a href="mailto:codificandoandoacces@gmail.com" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4">
+              <a href="mailto:codificandoandoacces@gmail.com" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4 break-all">
                 codificandoandoacces@gmail.com
               </a>
             </p>

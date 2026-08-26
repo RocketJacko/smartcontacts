@@ -222,8 +222,8 @@ export function ColombiaMapSection() {
             </div>
           </div>
 
-          {/* Desktop Executive Data Inspection Panel (Hidden on Mobile) */}
-          <div className="hidden lg:flex lg:col-span-5 space-y-5 p-8 lg:p-10 rounded-2xl border border-black/[0.08] bg-white shadow-sm flex-col justify-between hover:border-black/[0.15] transition-all">
+          {/* Executive Data Inspection Panel (Responsive on Mobile & Desktop) */}
+          <div className="flex lg:col-span-5 space-y-5 p-6 sm:p-8 lg:p-10 rounded-2xl border border-black/[0.08] bg-white shadow-sm flex-col justify-between hover:border-black/[0.15] transition-all">
             <div className="space-y-4">
               {/* Header */}
               <div className="border-b border-black/[0.08] pb-4">

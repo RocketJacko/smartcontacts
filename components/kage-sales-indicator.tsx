@@ -98,7 +98,7 @@ export function KageSalesIndicator() {
 
       {/* ── KAGE STYLE SLIDER & TICK HEAD INDICATOR ─────────────────────── */}
       <div className="space-y-4 pt-2">
-        <div className="flex items-center justify-between text-xs font-mono text-black/75 font-medium">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] sm:text-xs font-mono text-black/75 font-medium">
           <span>{language === "es" ? "MÍNIMO: Prospección Tradicional" : "MIN: Traditional Sales"}</span>
           <span>{language === "es" ? "MÁXIMO: Canal Agéntico 24/7" : "MAX: 24/7 Agentic Channel"}</span>
         </div>
@@ -142,12 +142,12 @@ export function KageSalesIndicator() {
       </div>
 
       {/* Bottom Subtext */}
-      <div className="flex items-center justify-between pt-2 border-t border-black/[0.06] text-[11px] text-black/50 font-mono">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-black/[0.06] text-[11px] text-black/50 font-mono">
         <span>{language === "es" ? "Arrastra la barra para calcular proyección comercial" : "Drag slider to calculate commercial projection"}</span>
         <button
           type="button"
           onClick={() => setIsAuto(!isAuto)}
-          className="text-black/80 hover:text-black font-semibold underline"
+          className="text-black/80 hover:text-black font-semibold underline shrink-0"
         >
           {isAuto ? (language === "es" ? "Pausar Animación" : "Pause Auto") : (language === "es" ? "Reproducir Proyección" : "Play Auto")}
         </button>

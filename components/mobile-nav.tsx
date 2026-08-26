@@ -54,9 +54,9 @@ export function MobileNav() {
           </div>
 
           {/* Actions & Language Switcher */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Language Switcher with Touch-Friendly 48px Height */}
-            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[11px] font-mono shrink-0 select-none overflow-hidden min-h-[48px]">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Language Switcher with Touch-Friendly Height */}
+            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[10px] sm:text-[11px] font-mono shrink-0 select-none overflow-hidden min-h-[40px] sm:min-h-[48px]">
               {/* Sliding Indicator Pill */}
               <div
                 className="absolute top-0.5 bottom-0.5 rounded-lg bg-white shadow-xs transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -68,7 +68,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('es')}
-                className={`relative z-10 px-3.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-2.5 sm:px-3.5 min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'es' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -77,7 +77,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`relative z-10 px-3.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-2.5 sm:px-3.5 min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'en' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -98,7 +98,7 @@ export function MobileNav() {
             <button
               type="button"
               onClick={() => setOpen(v => !v)}
-              className="flex lg:hidden flex-col justify-center items-center w-12 h-12 min-w-[48px] min-h-[48px] gap-[5px] rounded-xl hover:bg-black/[0.05] active:bg-black/10 transition-colors shrink-0 cursor-pointer"
+              className="flex lg:hidden flex-col justify-center items-center w-10 h-10 sm:w-12 sm:h-12 min-w-[40px] sm:min-w-[48px] min-h-[40px] sm:min-h-[48px] gap-[5px] rounded-xl hover:bg-black/[0.05] active:bg-black/10 transition-colors shrink-0 cursor-pointer"
               aria-label={open ? "Close menu" : "Open menu"}
             >
               <span
@@ -129,11 +129,11 @@ export function MobileNav() {
 
         {/* Mobile dropdown */}
         <div
-          className="lg:hidden mt-2 overflow-hidden transition-all duration-300 ease-in-out"
-          style={{ maxHeight: open ? "420px" : "0px", opacity: open ? 1 : 0 }}
+          className="lg:hidden mt-2 overflow-hidden transition-all duration-300 ease-in-out max-h-[80vh] overflow-y-auto"
+          style={{ maxHeight: open ? "80vh" : "0px", opacity: open ? 1 : 0 }}
         >
           <div
-            className="rounded-2xl border border-black/[0.06] px-2 py-2 flex flex-col space-y-1"
+            className="rounded-2xl border border-black/[0.06] px-2 py-2 flex flex-col space-y-1 max-h-[75vh] overflow-y-auto"
             style={NAV_STYLE}
           >
             {navLinks.map(l => (

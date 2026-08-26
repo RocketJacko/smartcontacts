@@ -111,7 +111,7 @@ export default function AgenticPage() {
   }, [])
 
   return (
-    <div className="bg-[#F5F4F0] text-[#111] min-h-screen font-sans antialiased">
+    <div className="bg-[#F5F4F0] text-[#111] min-h-screen font-sans antialiased w-full max-w-full overflow-x-hidden">
 
       {/* ── INTRO ANIMATION ───────────────────────────────────────────────── */}
       <IntroAnimation onDone={handleIntroDone} />
@@ -120,7 +120,7 @@ export default function AgenticPage() {
       <MobileNav />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden">
+      <section id="hero" className="relative min-h-[70vh] flex flex-col justify-center items-center pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 bg-[#F5F4F0] border-b border-black/[0.06] overflow-hidden w-full">
 
         {/* Hero Background Video (Desktop Only) */}
         <div className="hidden sm:block absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-35 mix-blend-multiply">
@@ -142,7 +142,7 @@ export default function AgenticPage() {
         </div>
 
         {/* Title + metrics — positioned with safe top padding */}
-        <div className="relative z-30 flex flex-col px-6 md:px-12 max-w-4xl">
+        <div className="relative z-30 flex flex-col px-4 sm:px-6 md:px-12 w-full max-w-5xl mx-auto">
 
 
           {/* Title */}
