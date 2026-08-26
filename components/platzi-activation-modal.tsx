@@ -259,12 +259,19 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
       const data = await res.json()
 
-      if (res.ok && data.success) {
+      const isSuccess = Boolean(
+        res.ok &&
+        !data.error &&
+        (data.success || data.verificationRequired || data.message || data.mensaje)
+      )
+
+      if (isSuccess) {
         if (data.planInfo) {
           setDisplayPlanName(data.planInfo.planName)
           setDisplayPrice(data.planInfo.formattedPrice)
           setDisplayDuration(data.planInfo.duration)
         }
+        setErrorMsg("")
         setStep(2)
       } else {
         const rawErr = data.error || (language === "es" ? "Ocurrió un error al enviar el código de seguridad." : "An error occurred.")
