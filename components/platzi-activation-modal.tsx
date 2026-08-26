@@ -148,7 +148,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       const isSuccess = Boolean(
         res.ok &&
         data?.success !== false &&
-        !data?.error
+        !data?.error &&
+        !String(data?.error || data?.mensaje || data?.message || "").toLowerCase().includes("incompleto") &&
+        !String(data?.error || data?.mensaje || data?.message || "").toLowerCase().includes("no valido") &&
+        !String(data?.error || data?.mensaje || data?.message || "").toLowerCase().includes("no válido") &&
+        !String(data?.error || data?.mensaje || data?.message || "").toLowerCase().includes("inválido") &&
+        !String(data?.error || data?.mensaje || data?.message || "").toLowerCase().includes("invalido")
       )
 
       if (isSuccess) {
