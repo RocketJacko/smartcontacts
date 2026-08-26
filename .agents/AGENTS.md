@@ -44,3 +44,6 @@
 - **Ubicación Exclusiva**: Todas las variables de entorno del proyecto (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `CHECK_DOMAIN_SECRET`) residen e inyectan **exclusivamente desde el panel de producción de Dokploy** (`https://smartcontacts.cloud` / Contenedor Docker).
 - **Prohibido Pedir Re-Autenticación o Llaves**: Queda estrictamente prohibido asumir falta de credenciales en producción o pedir al usuario que vuelva a ingresar llaves, descargue archivos `credentials.json` o realice inicios de sesión interactivos. Todo el código debe consumir directamente `process.env`.
 
+## 9. Flujo Estricto de Commits y Despliegue Directo en Git (`git push origin main`)
+- **Compilación y Verificación Previa**: Antes de finalizar cualquier tarea, se debe ejecutar la validación de tipos `npx tsc --noEmit` para garantizar 0 errores.
+- **Commit Estructurado y Push Obligatorio**: Tras realizar y validar cualquier corrección o funcionalidad en el código fuente, se deben confirmar los cambios mediante `git commit -am "fix/feat: descripción"` y enviar de inmediato a producción ejecutando `git push origin main`. Esto garantiza que Dokploy detecte el cambio y compile automáticamente el nuevo contenedor en `smartcontacts.cloud`.
