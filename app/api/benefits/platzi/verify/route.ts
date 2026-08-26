@@ -191,16 +191,28 @@ export async function POST(request: Request) {
         )
       }
 
-      const cleanSuccessMsg = extractCleanErrorMessage(
-        webhookResponseData,
-        "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
-      )
+      const cleanSuccessMsg =
+        dataObj?.resultado ||
+        dataObj?.mensaje ||
+        dataObj?.message ||
+        extractCleanErrorMessage(
+          webhookResponseData,
+          "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
+        )
+
+      const planText = dataObj?.plan || dataObj?.planName || dataObj?.producto || "Platzi"
+      const valorText = dataObj?.valor || dataObj?.formattedPrice || dataObj?.price || "0 COP"
 
       return NextResponse.json(
         {
           success: true,
           message: cleanSuccessMsg,
-          planInfo: dataObj?.planInfo || null,
+          resultado: cleanSuccessMsg,
+          planInfo: {
+            planName: planText,
+            formattedPrice: valorText,
+            duration: planText,
+          },
           details: webhookResponseData,
         },
         { status: 200 }

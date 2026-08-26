@@ -220,11 +220,16 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       }
 
       if (data.planInfo) {
-        setDisplayPlanName(data.planInfo.planName)
-        setDisplayPrice(data.planInfo.formattedPrice)
-        setDisplayDuration(data.planInfo.duration)
+        setDisplayPlanName(data.planInfo.planName || "5 MESES + 7 MESES EXTRAS CONDICIONALES AL CONVENIO")
+        setDisplayPrice(data.planInfo.formattedPrice || "0 COP")
+        setDisplayDuration(data.planInfo.duration || data.planInfo.planName)
+      } else if (data.details) {
+        const rawDetail = Array.isArray(data.details) ? data.details[0] : data.details
+        if (rawDetail?.plan) setDisplayPlanName(rawDetail.plan)
+        if (rawDetail?.valor) setDisplayPrice(rawDetail.valor)
       }
-      setSuccessMessage(data.message || "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!")
+
+      setSuccessMessage(data.resultado || data.message || "Cuenta activada exitosamente")
       setErrorMsg("")
       setStep(3)
     } catch {
@@ -233,19 +238,6 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       setIsSubmitting(false)
     }
   }
-
-  const isRawN8nTestMsg =
-    !successMessage ||
-    successMessage.includes("is not registered") ||
-    successMessage.includes("Execute workflow") ||
-    successMessage.includes("webhook") ||
-    successMessage.includes("threadId") ||
-    successMessage.includes("labelIds") ||
-    successMessage.includes('"SENT"')
-
-  const cleanSuccessMsgText = isRawN8nTestMsg
-    ? "¡Tu solicitud de beneficio Platzi ha sido recibida y confirmada exitosamente!"
-    : successMessage
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/50 backdrop-blur-sm animate-fadeIn">
@@ -261,26 +253,46 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         </button>
 
         {step === 3 ? (
-          /* STEP 3: ACTIVATION SUCCESS CELEBRATION */
-          <div className="text-center py-6 space-y-6">
+          /* STEP 3: ACTIVATION SUCCESS CELEBRATION WITH N8N CONFIRMATION DETAILS */
+          <div className="text-center py-4 space-y-5">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-medium text-[#111]">
+
+            <div className="space-y-3">
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
                 {language === "es" ? "¡Activación Confirmada!" : "Activation Confirmed!"}
               </h3>
-              <p className="text-xs sm:text-sm text-black/75 leading-relaxed max-w-sm mx-auto">
-                {cleanSuccessMsgText}
+              
+              <p className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50/80 py-2.5 px-4 rounded-xl border border-emerald-200/80 max-w-sm mx-auto">
+                {successMessage || "Cuenta activada exitosamente"}
               </p>
-              <p className="text-[11px] font-mono text-black/60 pt-2 border-t border-black/[0.06] mt-2">
-                Se activó el <span className="font-semibold text-black">{displayPlanName}</span> para la cuenta <span className="font-semibold text-black">{platziAccountEmail}</span> por {displayDuration} ({displayPrice}).
-              </p>
+
+              {/* Structured Card displaying n8n activation details */}
+              <div className="text-xs font-mono text-black/70 pt-3 space-y-2 text-left bg-[#FAF9F5] p-4 rounded-2xl border border-black/10">
+                <div className="flex items-center justify-between border-b border-black/5 pb-2">
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Producto</span>
+                  <span className="font-bold text-black">Platzi</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-black/5 py-2">
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Cuenta Platzi</span>
+                  <span className="font-bold text-black">{platziAccountEmail}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-b border-black/5 py-2">
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Plan Activado</span>
+                  <span className="font-bold text-emerald-700 text-xs leading-snug">{displayPlanName}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Valor</span>
+                  <span className="font-bold text-black text-sm">{displayPrice}</span>
+                </div>
+              </div>
             </div>
+
             <button
               type="button"
               onClick={handleResetModal}
-              className="px-6 py-3 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-wider hover:bg-black/80 transition-all font-semibold cursor-pointer"
+              className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-wider hover:bg-black/90 transition-all font-bold shadow-md cursor-pointer"
             >
               {language === "es" ? "FINALIZAR" : "FINISH"}
             </button>
