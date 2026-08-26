@@ -72,66 +72,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [inputCode, setInputCode] = useState("")
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isValidatingCode, setIsValidatingCode] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
-
-  // Server-side async plan resolution via API (Zero client-side secrets exposure)
-  useEffect(() => {
-    let isMounted = true
-    const controller = new AbortController()
-
-    const validateAsync = async () => {
-      if (!discountCode.trim()) {
-        if (isMounted) {
-          setDisplayPrice(userCurrency === "USD" ? "$105 USD" : "$400.909,75 COP")
-          setDisplayDuration("1 año")
-          setDisplayPlanName("Plan Basic")
-          setIsCodeValid(true)
-          setErrorMsg("")
-        }
-        return
-      }
-
-      try {
-        const res = await fetch("/api/benefits/platzi/validate-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: discountCode, currency: userCurrency }),
-          signal: controller.signal,
-        })
-        const data = await res.json()
-        if (isMounted) {
-          if (res.ok && data) {
-            setDisplayPrice(data.formattedPrice)
-            setDisplayDuration(data.duration)
-            setDisplayPlanName(data.planName)
-            setIsCodeValid(data.valid)
-
-            if (!data.valid) {
-              setErrorMsg(
-                language === "es"
-                  ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
-                  : `Invalid discount code "${discountCode.trim()}".`
-              )
-            } else {
-              setErrorMsg("")
-            }
-          }
-        }
-      } catch (err: any) {
-        if (err.name !== "AbortError" && isMounted) {
-          // If error occurs, keep standard state
-        }
-      }
-    }
-
-    validateAsync()
-
-    return () => {
-      isMounted = false
-      controller.abort()
-    }
-  }, [discountCode, userCurrency, language])
 
   if (!isOpen) return null
 
@@ -144,37 +87,46 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     onClose()
   }
 
-  // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input)
+  // Advance from SubStage 1A (Code Input) to SubStage 1B (Data Input) - Validation triggered strictly on submit click
   const handleContinueToDetails = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMsg("")
+    setIsValidatingCode(true)
 
-    if (!discountCode.trim()) {
-      setErrorMsg("")
-      setStep1SubStage("details")
-      return
-    }
+    const codeToValidate = discountCode.trim()
 
     try {
       const res = await fetch("/api/benefits/platzi/validate-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: discountCode, currency: userCurrency }),
+        body: JSON.stringify({ code: codeToValidate, currency: userCurrency }),
       })
       const resolved = await res.json()
 
-      if (!resolved.valid) {
-        setErrorMsg(
-          language === "es"
-            ? `El código "${discountCode.trim()}" no es un código de descuento válido.`
-            : `Invalid discount code "${discountCode.trim()}".`
-        )
-        return
-      }
+      if (res.ok && resolved) {
+        if (!resolved.valid && codeToValidate !== "") {
+          setErrorMsg(
+            language === "es"
+              ? `El código "${codeToValidate}" no es un código de descuento válido.`
+              : `Invalid discount code "${codeToValidate}".`
+          )
+          setIsValidatingCode(false)
+          return
+        }
 
-      setErrorMsg("")
-      setStep1SubStage("details")
+        setDisplayPrice(resolved.formattedPrice)
+        setDisplayDuration(resolved.duration)
+        setDisplayPlanName(resolved.planName)
+        setIsCodeValid(resolved.valid)
+        setErrorMsg("")
+        setStep1SubStage("details")
+      } else {
+        setErrorMsg(language === "es" ? "Error validando el código de descuento." : "Error validating discount code.")
+      }
     } catch {
-      setErrorMsg(language === "es" ? "Error validando el código de descuento." : "Error validating discount code.")
+      setErrorMsg(language === "es" ? "Error de conexión al validar el código." : "Network error validating discount code.")
+    } finally {
+      setIsValidatingCode(false)
     }
   }
 
@@ -465,15 +417,20 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </p>
             )}
 
-            {/* BUTTON IS ONLY VISIBLE WHEN THE CODE IS VALID (OR EMPTY) */}
-            {isCodeValid && (
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
-              >
+            <button
+              type="submit"
+              disabled={isValidatingCode}
+              className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isValidatingCode ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>{language === "es" ? "VALIDANDO CÓDIGO..." : "VALIDATING CODE..."}</span>
+                </>
+              ) : (
                 <span>{language === "es" ? "CONTINUAR" : "CONTINUE"}</span>
-              </button>
-            )}
+              )}
+            </button>
           </form>
         ) : (
           /* STEP 1B: USER DATA INPUTS (WITH REAL DNS DOMAIN VALIDATION) */
