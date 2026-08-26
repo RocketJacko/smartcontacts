@@ -241,7 +241,22 @@ export async function POST(request: Request) {
         webhookResData = { raw: webhookResponseText }
       }
 
-      if (!webhookRes.ok || (webhookResData && webhookResData.success === false)) {
+      let dataObj = webhookResData
+      if (Array.isArray(dataObj) && dataObj.length > 0) {
+        dataObj = dataObj[0]
+      }
+
+      const rawMsgStr = String(dataObj?.mensaje || dataObj?.message || webhookResponseText || "").trim()
+      const rawErrorStr = String(dataObj?.error || dataObj?.mensajeError || "").trim()
+
+      const isExplicitError = Boolean(
+        rawErrorStr ||
+        (dataObj && dataObj.success === false) ||
+        (dataObj && dataObj.aplica === false) ||
+        (dataObj && dataObj.continuar === false)
+      )
+
+      if (!webhookRes.ok && isExplicitError) {
         const cleanError = extractCleanErrorMessage(
           webhookResData,
           webhookResponseText || "Ocurrió un error al procesar la solicitud."
@@ -254,6 +269,19 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+
+      const finalMsg = rawMsgStr || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`
+
+      return NextResponse.json(
+        {
+          success: true,
+          verificationRequired: true,
+          message: sanitizeString(finalMsg),
+          planInfo: dataObj?.planInfo || null,
+          details: webhookResData,
+        },
+        { status: 200 }
+      )
     } catch (whErr: any) {
       console.error("[PLATZI STEP 1 FETCH ERROR]", whErr)
       return NextResponse.json(
@@ -263,17 +291,6 @@ export async function POST(request: Request) {
         { status: 502 }
       )
     }
-
-    return NextResponse.json(
-      {
-        success: true,
-        verificationRequired: true,
-        message: extractCleanErrorMessage(webhookResData, `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`),
-        planInfo: webhookResData?.planInfo || null,
-        details: webhookResData,
-      },
-      { status: 200 }
-    )
   } catch (error: any) {
     console.error("[API PLATZI ACTIVATION STEP 1 ERROR]", error)
     return NextResponse.json(
