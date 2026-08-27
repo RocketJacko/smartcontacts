@@ -99,8 +99,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     e.preventDefault()
     setErrorMsg("")
 
-    if (!name.trim() || !phone.trim() || !email.trim() || !platziAccountEmail.trim()) {
-      setErrorMsg(language === "es" ? "Por favor completa todos los campos obligatorios." : "Please fill in all required fields.")
+    if (!name.trim() || !phone.trim() || !email.trim() || !platziAccountEmail.trim() || !discountCode.trim()) {
+      setErrorMsg(language === "es" ? "Por favor completa todos los campos obligatorios, incluyendo el código de descuento." : "Please fill in all required fields, including the discount code.")
       return
     }
 
@@ -470,15 +470,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </p>
               </div>
 
-              {/* Field 5: Código de Descuento (Opcional) - Single Clean Input Field */}
+              {/* Field 5: Código de Descuento (Requerido) */}
               <div className="space-y-1 pt-1">
                 <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Código de Descuento (Opcional)" : "Discount Code (Optional)"}
+                  {language === "es" ? "Código de Descuento " : "Discount Code "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
                   <input
                     type="text"
+                    required
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
                     placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
