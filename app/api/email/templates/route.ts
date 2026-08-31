@@ -80,8 +80,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, templates: Object.values(templatesMap) })
   } catch (error: any) {
-    console.error('[API TEMPLATES GET ERROR]', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error al obtener plantillas' }, { status: 500 })
   }
 }
 
@@ -140,14 +139,11 @@ export async function PUT(request: Request) {
     }
 
     if (!upsertRes.ok) {
-      const errText = await upsertRes.text()
-      console.error('[UPSERT TEMPLATE ERROR]', upsertRes.status, errText)
       return NextResponse.json({ success: false, error: 'No se pudo actualizar la plantilla en Supabase.' }, { status: 400 })
     }
 
     return NextResponse.json({ success: true, message: 'Plantilla actualizada exitosamente' })
   } catch (error: any) {
-    console.error('[API TEMPLATES PUT ERROR]', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error al actualizar plantilla' }, { status: 500 })
   }
 }

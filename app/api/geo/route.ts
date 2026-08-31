@@ -58,8 +58,7 @@ export async function GET(request: Request) {
       isCertain: false,
     }, { status: 200 })
 
-  } catch (error) {
-    console.error('[API GEO ERROR]', error)
+  } catch {
     const defaultCountry = getCountryByCode('CO')
     return NextResponse.json({
       countryCode: defaultCountry.code,

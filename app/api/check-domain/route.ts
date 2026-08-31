@@ -13,8 +13,7 @@ export async function POST(request: Request) {
       valid: domainValidation.valid,
       message: domainValidation.reason || (domainValidation.valid ? 'Dominio de correo válido' : 'Dominio de correo no válido'),
     }, { status: 200 })
-  } catch (error) {
-    console.error('[API CHECK DOMAIN ERROR]', error)
+  } catch {
     return NextResponse.json({ valid: true, message: 'Fail-open' }, { status: 200 })
   }
 }

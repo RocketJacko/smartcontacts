@@ -62,8 +62,8 @@ export async function GET() {
               headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({ recordatorio_8am_enviado: true }),
             })
-          } catch (eErr) {
-            console.error('[CRON 8AM EMAIL ERROR]', eErr)
+          } catch {
+            // Ignorar fallo de envío individual
           }
         }
 
@@ -86,8 +86,8 @@ export async function GET() {
               headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({ recordatorio_30m_enviado: true }),
             })
-          } catch (mErr) {
-            console.error('[CRON 30M EMAIL ERROR]', mErr)
+          } catch {
+            // Ignorar fallo de envío individual
           }
         }
       }
@@ -101,7 +101,6 @@ export async function GET() {
       logs,
     })
   } catch (error: any) {
-    console.error('[CRON REMINDERS EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error ejecutando cron' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error ejecutando cron' }, { status: 500 })
   }
 }

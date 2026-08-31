@@ -34,8 +34,8 @@ export async function GET(request: Request) {
           prospectosMap[p.id] = p
         })
       }
-    } catch (pErr) {
-      console.warn('[PROSPECTOS FETCH WARN]', pErr)
+    } catch {
+      // Fallback silencioso
     }
 
     // 2. Consultar eventos en Supabase
@@ -48,8 +48,8 @@ export async function GET(request: Request) {
       if (eventosRes.ok) {
         eventosList = await eventosRes.json()
       }
-    } catch (eErr) {
-      console.warn('[EVENTOS FETCH WARN]', eErr)
+    } catch {
+      // Fallback silencioso
     }
 
     // Mapear eventos con prospectos
@@ -207,8 +207,8 @@ export async function GET(request: Request) {
           }
         }
       }
-    } catch (gErr) {
-      console.warn('[GOOGLE CALENDAR API PARSE WARN]', gErr)
+    } catch {
+      // Fallback silencioso
     }
 
     // Calculate unconfirmed / unmanaged today count for Alert Banner
@@ -236,8 +236,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, count: records.length, unconfirmedTodayCount, records }, { status: 200 })
   } catch (error: any) {
-    console.error('[CALENDAR CRUD GET EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error interno del servidor' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error interno del servidor' }, { status: 500 })
   }
 }
 
@@ -308,8 +307,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Agendamiento registrado exitosamente', record: prospectoData[0] }, { status: 201 })
   } catch (error: any) {
-    console.error('[CALENDAR CRUD POST EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error al crear agendamiento' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error al crear agendamiento' }, { status: 500 })
   }
 }
 
@@ -360,8 +358,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Agendamiento e historial actualizados correctamente' }, { status: 200 })
   } catch (error: any) {
-    console.error('[CALENDAR CRUD PUT EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error al actualizar agendamiento' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error al actualizar agendamiento' }, { status: 500 })
   }
 }
 
@@ -383,7 +380,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Agendamiento eliminado correctamente' }, { status: 200 })
   } catch (error: any) {
-    console.error('[CALENDAR CRUD DELETE EXCEPTION]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error al eliminar agendamiento' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error al eliminar agendamiento' }, { status: 500 })
   }
 }

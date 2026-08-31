@@ -119,8 +119,8 @@ export function ColombiaMapSection() {
           setDeptList(merged)
         }
       })
-      .catch((err) => {
-        console.warn("Using default department coverage dataset:", err)
+      .catch(() => {
+        // Uso de dataset por defecto
       })
   }, [])
 

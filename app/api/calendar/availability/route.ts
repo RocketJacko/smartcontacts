@@ -26,7 +26,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, date: dateParam, slots }, { status: 200 })
 
   } catch (error: any) {
-    console.error('[API AVAILABILITY ERROR]', error)
-    return NextResponse.json({ error: error.message || 'Error procesando disponibilidad' }, { status: 500 })
+    return NextResponse.json({ error: error?.message || 'Error procesando disponibilidad' }, { status: 500 })
   }
 }

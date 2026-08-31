@@ -194,8 +194,6 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString(),
     }
 
-    console.log(`[PLATZI STEP 1 WEBHOOK CALL] URL: ${webhookUrl}`)
-
     const headersJson: Record<string, string> = {
       "Content-Type": "application/json",
     }
@@ -223,7 +221,6 @@ export async function POST(request: Request) {
 
       // Retry with text/plain if n8n body parser rejects application/json with HTTP 422
       if (responseStatus === 422 || webhookResponseText.includes("Failed to parse request body")) {
-        console.warn("[PLATZI WEBHOOK 422 RETRY WITH TEXT/PLAIN]")
         webhookRes = await fetch(webhookUrl, {
           method: "POST",
           headers: headersText,
@@ -232,9 +229,6 @@ export async function POST(request: Request) {
         responseStatus = webhookRes.status
         webhookResponseText = await webhookRes.text()
       }
-
-      console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE STATUS] ${responseStatus}`)
-      console.log(`[PLATZI STEP 1 WEBHOOK RESPONSE BODY] ${webhookResponseText}`)
 
       try {
         webhookResData = JSON.parse(webhookResponseText)
@@ -305,18 +299,16 @@ export async function POST(request: Request) {
         { status: 200 }
       )
     } catch (whErr: any) {
-      console.error("[PLATZI STEP 1 FETCH ERROR]", whErr)
       return NextResponse.json(
         {
-          error: `Error de conexión al llamar al webhook de n8n (${webhookUrl}): ${whErr.message || String(whErr)}`,
+          error: "Error de conexión temporal con el servicio de validación.",
         },
         { status: 502 }
       )
     }
   } catch (error: any) {
-    console.error("[API PLATZI ACTIVATION STEP 1 ERROR]", error)
     return NextResponse.json(
-      { error: `Ocurrió un error en el servidor: ${error.message || String(error)}` },
+      { error: "Ocurrió un error en el servidor al procesar la solicitud." },
       { status: 500 }
     )
   }

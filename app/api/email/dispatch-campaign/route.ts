@@ -128,8 +128,8 @@ export async function POST(request: Request) {
         const rows = await resCuerpos.json()
         if (rows.length > 0) poolCuerpos = rows.map((r: any) => r.cuerpo_html)
       }
-    } catch (poolErr) {
-      console.warn('[POOL FETCH WARN]', poolErr)
+    } catch {
+      // Continuar con pools predeterminados
     }
 
     // 5. Consultar contactos pendientes ESPECÍFICOS DE ESTA CAMPAÑA

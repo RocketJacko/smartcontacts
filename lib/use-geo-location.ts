@@ -54,8 +54,8 @@ export function useGeoLocation(): GeoLocationState {
           }
           return
         }
-      } catch (e) {
-        console.warn("Error reading URL search params for country:", e)
+      } catch {
+        // Ignorar error de lectura de params
       }
 
       // 2. Fetch internal /api/geo endpoint
@@ -75,8 +75,8 @@ export function useGeoLocation(): GeoLocationState {
             return
           }
         }
-      } catch (err) {
-        console.warn("Error fetching /api/geo:", err)
+      } catch {
+        // Fallback continuo
       }
 
       // 3. Fallback to ipapi.co
@@ -96,8 +96,8 @@ export function useGeoLocation(): GeoLocationState {
             return
           }
         }
-      } catch (err) {
-        console.warn("Error fetching ipapi.co fallback:", err)
+      } catch {
+        // Fallback silencioso
       }
 
       if (active) {

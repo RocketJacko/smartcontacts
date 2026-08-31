@@ -84,8 +84,8 @@ export async function GET() {
                 if (totalReqs > 0) gmailSentToday = totalReqs
               }
             }
-          } catch (mErr) {
-            console.warn('[CLOUD MONITORING API FETCH WARN]', mErr)
+          } catch {
+            // Ignorar fallo de Cloud Monitoring
           }
 
           // B) Query Google Calendar API directly for events created today
@@ -127,8 +127,7 @@ export async function GET() {
           }
         }
       }
-    } catch (googleErr) {
-      console.error('[DIRECT GOOGLE API ERROR]', googleErr)
+    } catch {
       googleStatus = 'DEGRADADO'
     }
 
@@ -148,8 +147,8 @@ export async function GET() {
           totalProspectos = prospectosData.length
           habeasDataAceptados = prospectosData.filter((p) => p.acepta_tratamiento_datos !== false).length
         }
-      } catch (dbErr) {
-        console.warn('[SUPABASE METRICS QUERY WARN]', dbErr)
+      } catch {
+        // Fallback silencioso
       }
     }
 
@@ -193,7 +192,6 @@ export async function GET() {
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('[DASHBOARD METRICS ERROR]', error)
-    return NextResponse.json({ success: false, error: error.message || 'Error consultando métricas de Google' }, { status: 500 })
+    return NextResponse.json({ success: false, error: error?.message || 'Error consultando métricas de Google' }, { status: 500 })
   }
 }

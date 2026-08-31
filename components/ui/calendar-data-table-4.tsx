@@ -97,8 +97,8 @@ export function CalendarDataTable4() {
         })
         setEditingComments(initialComments)
       }
-    } catch (err) {
-      console.error("Error loading calendar records:", err)
+    } catch {
+      // Manejo silencioso de error de carga
     } finally {
       setIsLoading(false)
     }
@@ -130,8 +130,8 @@ export function CalendarDataTable4() {
         alert("Comentario actualizado y guardado correctamente.")
         loadRecords()
       }
-    } catch (err) {
-      console.error("Error saving comment:", err)
+    } catch {
+      alert("No se pudo guardar el comentario.")
     }
   }
 
@@ -151,8 +151,8 @@ export function CalendarDataTable4() {
         setNewNoteTexts((prev) => ({ ...prev, [id]: "" }))
         loadRecords()
       }
-    } catch (err) {
-      console.error("Error adding note:", err)
+    } catch {
+      alert("No se pudo agregar la nota.")
     }
   }
 
@@ -168,8 +168,8 @@ export function CalendarDataTable4() {
       if (data.success) {
         loadRecords()
       }
-    } catch (err) {
-      console.error("Error updating status:", err)
+    } catch {
+      alert("No se pudo actualizar el estado.")
     }
   }
 
@@ -184,8 +184,8 @@ export function CalendarDataTable4() {
       if (data.success) {
         loadRecords()
       }
-    } catch (err) {
-      console.error("Error deleting record:", err)
+    } catch {
+      alert("No se pudo eliminar el registro.")
     }
   }
 
@@ -216,8 +216,8 @@ export function CalendarDataTable4() {
       } else {
         alert("Error: " + data.error)
       }
-    } catch (err) {
-      console.error("Error creating booking:", err)
+    } catch {
+      alert("Error de conexión al crear el agendamiento.")
     } finally {
       setIsSubmitting(false)
     }

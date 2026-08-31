@@ -330,8 +330,7 @@ export default function SidebarNavPreview() {
         }
         setIsLoading(false)
       })
-      .catch((err) => {
-        console.warn("Google metrics fetch error:", err)
+      .catch(() => {
         setIsLoading(false)
       })
   }
@@ -345,9 +344,7 @@ export default function SidebarNavPreview() {
           setGeneralMetrics(data)
         }
       })
-      .catch((err) => {
-        console.warn("General metrics fetch error:", err)
-      })
+      .catch(() => {})
   }
 
   useEffect(() => {

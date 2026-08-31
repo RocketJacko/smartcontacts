@@ -50,9 +50,7 @@ export async function POST(request: Request) {
         source: 'smartcontacts.cloud',
         ...result.data,
       }),
-    }).catch((n8nErr) => {
-      console.warn('[N8N DISPATCH WARNING]', n8nErr)
-    })
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
@@ -64,7 +62,6 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ success: false, error: 'Datos inválidos', details: error.errors }, { status: 400 })
     }
-    console.error('[API BOOKING ERROR]', error)
     return NextResponse.json({ success: false, error: 'Error procesando la solicitud' }, { status: 500 })
   }
 }

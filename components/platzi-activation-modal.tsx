@@ -168,8 +168,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         const rawErr = data?.error || data?.mensaje || data?.message || (language === "es" ? "Codigo Incompleto o no valido" : "Invalid code")
         setErrorMsg(cleanErrorForUI(rawErr))
       }
-    } catch (err: any) {
-      console.error("[PLATZI MODAL SUBMIT ERROR]", err)
+    } catch {
       setErrorMsg(language === "es" ? "Error de conexión al enviar la solicitud." : "Connection error.")
     } finally {
       setIsSubmitting(false)

@@ -62,14 +62,12 @@ export async function isDomainBlocked(email: string): Promise<boolean> {
     })
 
     if (!response.ok) {
-      console.warn('[SUPABASE DOMAIN CHECK WARNING]', response.statusText)
       return false
     }
 
     const data = await response.json()
     return Array.isArray(data) && data.length > 0
-  } catch (err) {
-    console.error('[SUPABASE DOMAIN CHECK ERROR]', err)
+  } catch {
     return false
   }
 }

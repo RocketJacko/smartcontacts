@@ -90,8 +90,7 @@ export const verificarDominioCorreoValido = async (domainOrEmail: string): Promi
 
     // Si no tiene ni MX ni A, el dominio no puede recibir correos
     return { valid: false, reason: `El dominio "@${domain}" no tiene servidores de correo activos.` }
-  } catch (error) {
-    console.warn('[EMAIL DOMAIN VALIDATOR TIMEOUT/WARN]', error)
+  } catch {
     // Fail-open: si falla el DNS por timeout o red, permitimos pasar para no bloquear usuarios legítimos
     return { valid: true }
   }

@@ -208,12 +208,10 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[GMAIL SEND ERROR]', res.status, errText)
       return { success: false, error: errText }
     }
 
     const data = await res.json()
-    console.log('[GMAIL SEND SUCCESS] Mensaje enviado con éxito. ID:', data.id)
 
     // Sistema de Goteo Aleatorio (Drip Rate-Limiting: 3 a 5 segundos)
     const dripDelay = Math.floor(Math.random() * 2000) + 3000
@@ -222,8 +220,7 @@ export async function sendBookingConfirmationEmail(params: BookingEmailParams): 
     return { success: true, messageId: data.id, dripDelaySeconds: (dripDelay / 1000).toFixed(1) }
 
   } catch (error: any) {
-    console.error('[GMAIL SEND EXCEPTION]', error)
-    return { success: false, error: error.message || 'Error inesperado enviando correo' }
+    return { success: false, error: error?.message || 'Error inesperado enviando correo' }
   }
 }
 
@@ -316,17 +313,14 @@ export async function send30MinReminderEmail(params: {
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[GMAIL REMINDER SEND ERROR]', res.status, errText)
       return { success: false, error: errText }
     }
 
     const data = await res.json()
-    console.log('[GMAIL REMINDER SUCCESS] Recordatorio 30m enviado a:', params.toEmail, 'ID:', data.id)
     return { success: true, messageId: data.id }
 
   } catch (error: any) {
-    console.error('[GMAIL REMINDER EXCEPTION]', error)
-    return { success: false, error: error.message || 'Error enviando recordatorio' }
+    return { success: false, error: error?.message || 'Error enviando recordatorio' }
   }
 }
 
@@ -388,14 +382,12 @@ export async function sendGmailCustomEmail(params: {
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[GMAIL CUSTOM SEND ERROR]', res.status, errText)
       return { success: false, error: errText }
     }
 
     const data = await res.json()
     return { success: true, messageId: data.id }
   } catch (error: any) {
-    console.error('[GMAIL CUSTOM SEND EXCEPTION]', error)
-    return { success: false, error: error.message || 'Error en envío de correo' }
+    return { success: false, error: error?.message || 'Error en envío de correo' }
   }
 }

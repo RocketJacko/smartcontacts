@@ -35,8 +35,8 @@ export function PhoneInput({
           setSelectedCountry(detected)
         }
       })
-      .catch((err) => {
-        console.warn('GeoIP detection error:', err)
+      .catch(() => {
+        // Fallback al país por defecto
       })
   }, [])
 

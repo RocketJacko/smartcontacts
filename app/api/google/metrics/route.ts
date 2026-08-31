@@ -6,9 +6,8 @@ export async function GET() {
     const data = await fetchGoogleMetrics()
     return NextResponse.json(data, { status: 200 })
   } catch (error: any) {
-    console.error('[API GOOGLE METRICS ERROR]', error)
     return NextResponse.json(
-      { success: false, error: error.message || 'Error consultando métricas de Google' },
+      { success: false, error: error?.message || 'Error consultando métricas de Google' },
       { status: 500 }
     )
   }
