@@ -42,14 +42,15 @@ import {
   Check,
   Download,
   Users,
+  Key,
 } from "lucide-react"
 
 export function EmailAutomationModule({
   initialTab = "contacts",
 }: {
-  initialTab?: "templates" | "contacts" | "roundrobin" | "dispatch"
+  initialTab?: "templates" | "contacts" | "roundrobin" | "dispatch" | "accounts"
 }) {
-  const [activeTab, setActiveTab] = useState<"templates" | "contacts" | "roundrobin" | "dispatch">(initialTab)
+  const [activeTab, setActiveTab] = useState<"templates" | "contacts" | "roundrobin" | "dispatch" | "accounts">(initialTab)
 
   useEffect(() => {
     if (initialTab) {
@@ -192,6 +193,10 @@ export function EmailAutomationModule({
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }
+
+  // State for Gmail Accounts
+  const [gmailAccounts, setGmailAccounts] = useState<any[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
 
   // State for Notifications
   const [uiNotification, setUiNotification] = useState<{
@@ -351,6 +356,22 @@ export function EmailAutomationModule({
     }
   }
 
+  // Cargar cuentas de Gmail registradas
+  const loadGmailAccounts = async () => {
+    setIsLoadingAccounts(true)
+    try {
+      const res = await fetch("/api/email/accounts")
+      const data = await res.json()
+      if (data.success && Array.isArray(data.accounts)) {
+        setGmailAccounts(data.accounts)
+      }
+    } catch {
+      // Ignorar fallback
+    } finally {
+      setIsLoadingAccounts(false)
+    }
+  }
+
   // CRUD 4: Eliminar selección múltiple de contactos
   const handleBulkDeleteContacts = async () => {
     if (selectedContactIds.length === 0) return
@@ -437,6 +458,7 @@ export function EmailAutomationModule({
     loadTemplates()
     loadCampaigns()
     loadRoundRobinPools()
+    loadGmailAccounts()
   }, [])
 
   useEffect(() => {
@@ -870,6 +892,74 @@ export function EmailAutomationModule({
         </div>
       </div>
 
+      {/* ── BARRA HORIZONTAL DE PESTAÑAS (DISEÑO SOBRIO MINIMALISTA) ─────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-black/[0.06] font-mono text-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab("contacts")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "contacts"
+              ? "bg-[#111] text-white border-[#111] shadow-2xs"
+              : "bg-white text-black/70 border-black/[0.08] hover:bg-black/[0.03] hover:text-[#111]"
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Base de Contactos ({totalCount.toLocaleString("es-CO")})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("dispatch")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "dispatch"
+              ? "bg-[#111] text-white border-[#111] shadow-2xs"
+              : "bg-white text-black/70 border-black/[0.08] hover:bg-black/[0.03] hover:text-[#111]"
+          }`}
+        >
+          <Play className="w-3.5 h-3.5" />
+          <span>Despacho & Goteo</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("roundrobin")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "roundrobin"
+              ? "bg-[#111] text-white border-[#111] shadow-2xs"
+              : "bg-white text-black/70 border-black/[0.08] hover:bg-black/[0.03] hover:text-[#111]"
+          }`}
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Pool Round-Robin Anti-Spam</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("accounts")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "accounts"
+              ? "bg-[#111] text-white border-[#111] shadow-2xs"
+              : "bg-white text-black/70 border-black/[0.08] hover:bg-black/[0.03] hover:text-[#111]"
+          }`}
+        >
+          <Key className="w-3.5 h-3.5" />
+          <span>Cuentas Remitentes (Multi-Gmail)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("templates")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "templates"
+              ? "bg-[#111] text-white border-[#111] shadow-2xs"
+              : "bg-white text-black/70 border-black/[0.08] hover:bg-black/[0.03] hover:text-[#111]"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Plantillas</span>
+        </button>
+      </div>
+
       {/* ── TOAST NOTIFICACIÓN FLOTANTE DISCRETO (ESQUINA INFERIOR DERECHA) ────── */}
       {uiNotification && (
         <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-3 fade-in duration-200">
@@ -989,6 +1079,32 @@ export function EmailAutomationModule({
                   onChange={(e) => setSenderMask(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
                 />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                  Cuenta Remitente (Multi-Gmail)
+                </label>
+                <select
+                  value={senderEmail}
+                  onChange={(e) => {
+                    setSenderEmail(e.target.value)
+                    const found = gmailAccounts.find((a) => a.email === e.target.value)
+                    if (found) setSenderMask(`${found.name} <${found.email}>`)
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono text-[#111] outline-none focus:border-black/30"
+                >
+                  <option value="jesus.carmona966@pascualbravo.edu.co">
+                    jesus.carmona966@pascualbravo.edu.co (Principal - 2,000/día)
+                  </option>
+                  {gmailAccounts
+                    .filter((a) => a.email !== "jesus.carmona966@pascualbravo.edu.co")
+                    .map((a) => (
+                      <option key={a.id} value={a.email}>
+                        {a.email} ({a.name} - {a.dailyLimit}/día)
+                      </option>
+                    ))}
+                </select>
               </div>
             </div>
           </div>
@@ -1814,6 +1930,146 @@ export function EmailAutomationModule({
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: CUENTAS REMITENTES DE GMAIL (MULTI-ACCOUNT MANAGER) ─────────── */}
+      {activeTab === "accounts" && (
+        <div className="space-y-6 font-sans text-xs">
+          <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+            <div className="border-b border-black/[0.06] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-[#111]">
+                  Cuentas Remitentes de Gmail (Multi-Account & Balanceo de Cuotas)
+                </h3>
+                <p className="text-xs text-black/60 mt-0.5">
+                  Gestiona múltiples identidades de envío para rotar automáticamente cuando una cuenta alcance su límite diario anti-spam.
+                </p>
+              </div>
+              <button
+                onClick={loadGmailAccounts}
+                disabled={isLoadingAccounts}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[#111] text-xs font-mono font-medium transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAccounts ? "animate-spin" : ""}`} />
+                <span>Actualizar Cuentas</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  CUENTAS ACTIVAS
+                </span>
+                <div className="text-2xl font-bold font-mono text-[#111]">
+                  {gmailAccounts.filter((a) => a.active).length} / {gmailAccounts.length || 1}
+                </div>
+                <p className="text-[11px] text-black/60">Rotación automática activada</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  CAPACIDAD TOTAL DIARIA
+                </span>
+                <div className="text-2xl font-bold font-mono text-emerald-700">
+                  {gmailAccounts.reduce((sum, a) => sum + (a.active ? a.dailyLimit : 0), 2000).toLocaleString("es-CO")}
+                </div>
+                <p className="text-[11px] text-black/60">Correos por día permitidos</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  PROTECCIÓN ANTI-SPAM
+                </span>
+                <div className="text-2xl font-bold font-mono text-purple-700">
+                  Goteo + Round-Robin
+                </div>
+                <p className="text-[11px] text-black/60">3s a 5s por correo despachado</p>
+              </div>
+            </div>
+
+            {/* LISTADO DE CUENTAS */}
+            <div className="space-y-3 pt-2">
+              <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                INVENTARIO DE REMITENTES VERIFICADOS EN DOKPLOY & GOOGLE CLOUD
+              </span>
+
+              <div className="space-y-2">
+                {gmailAccounts.length > 0 ? (
+                  gmailAccounts.map((acc) => (
+                    <div
+                      key={acc.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#111] text-white flex items-center justify-center font-mono font-bold text-xs shrink-0">
+                          {acc.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-[#111] truncate">{acc.name}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white border border-black/10 text-black/60">
+                              {acc.email.split("@")[1]}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-black/50 font-mono block truncate mt-0.5">
+                            {acc.email}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 shrink-0 font-mono text-[11px]">
+                        <div className="text-right">
+                          <span className="text-[10px] text-black/40 uppercase block font-bold">Límite Diario</span>
+                          <span className="text-[#111] font-semibold">{acc.dailyLimit} envíos/día</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-xs text-emerald-800 font-medium">Activa</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#111] text-white flex items-center justify-center font-mono font-bold text-xs">
+                        J
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-[#111]">Agendamiento Smartcontacts (Cuenta Principal)</span>
+                        <span className="text-[11px] text-black/50 font-mono block">jesus.carmona966@pascualbravo.edu.co</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 font-mono text-[11px]">
+                      <span className="text-[#111] font-semibold">2,000 envíos/día</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-xs text-emerald-800 font-medium">Verificada (.env)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* INSTRUCCIÓN DE CÓMO AGREGAR MÁS CUENTAS EN DOKPLOY */}
+              <div className="p-4 rounded-xl bg-white border border-black/[0.08] space-y-2 mt-4">
+                <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold block">
+                  ¿CÓMO AGREGAR MÁS CUENTAS DE GMAIL EN PRODUCCIÓN?
+                </span>
+                <p className="text-xs text-black/70 leading-relaxed">
+                  Para conectar cuentas adicionales, solo debes configurar en el panel de variables de entorno de <strong>Dokploy</strong> la variable:
+                </p>
+                <pre className="p-3 rounded-lg bg-black/[0.03] border border-black/[0.06] text-[11px] font-mono text-[#111] overflow-x-auto">
+GMAIL_ACCOUNTS_JSON='[&#123;"email":"ventas@tuempresa.com","name":"Ventas Smartcontacts","clientId":"...","refreshToken":"...","dailyLimit":2000&#125;]'
+                </pre>
+                <p className="text-[11px] text-black/50">
+                  El sistema detectará automáticamente cada cuenta del JSON, renovará sus Access Tokens por OAuth2 y rotará los envíos de manera balanceada.
+                </p>
+              </div>
             </div>
           </div>
         </div>

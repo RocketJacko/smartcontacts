@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
+import { getEmailSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 export async function GET(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const { searchParams } = new URL(request.url)
     const directorioNombre = searchParams.get('directorio_nombre') || searchParams.get('campana_nombre')
     const page = parseInt(searchParams.get('page') || '1', 10)
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const body = await request.json()
 
     const targetDirectory = body.directorio_nombre || body.campana_nombre || body.categoryName
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

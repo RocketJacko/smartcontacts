@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
+import { getEmailSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 export async function POST(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const body = await request.json()
     const { contacts, categoryName } = body
 

@@ -71,6 +71,7 @@ export function Footer() {
             <Link href="/cobertura" className="text-black/70 hover:text-black transition-colors">{t.nav.coverage}</Link>
             <Link href="/modalidades" className="text-black/70 hover:text-black transition-colors">{t.nav.modalities}</Link>
             <Link href="/beneficios" className="text-black/70 hover:text-black transition-colors">{t.nav.benefits || "Beneficios"}</Link>
+            <Link href="/referidos" className="text-black/70 hover:text-black transition-colors">{t.nav.partners || "Trabaja con Nosotros"}</Link>
             <Link href="/sobre-mi" className="text-black/70 hover:text-black transition-colors">{t.nav.about}</Link>
             <Link href="/agendar" className="text-black/70 hover:text-black transition-colors">{t.nav.schedule}</Link>
           </div>

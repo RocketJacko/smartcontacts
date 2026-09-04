@@ -115,27 +115,26 @@ export default function ReferidosPublicPage() {
 
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-12 sm:mb-16">
-        <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-          <Sparkles className="w-3 h-3 text-emerald-600" />
-          PROGRAMA DE ALIADOS & RECOMPENSAS
+        <span className="inline-flex items-center px-3.5 py-1 rounded-full text-[11px] font-mono tracking-widest text-black/50 bg-black/[0.04] border border-black/[0.06] uppercase">
+          PROGRAMA DE ALIADOS & TRABAJA CON NOSOTROS
         </span>
 
-        <RevealText className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-[#111] leading-tight">
+        <RevealText className="text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-[#111] leading-tight">
           Refiere Nuestros Servicios y Genera Comisiones Directas
         </RevealText>
 
-        <p className="text-sm sm:text-base md:text-lg text-black/70 max-w-2xl mx-auto leading-relaxed font-light">
+        <p className="text-sm sm:text-base md:text-lg text-black/60 max-w-2xl mx-auto leading-relaxed font-light">
           Comparte tu enlace exclusivo con empresas que necesiten multiplicar sus ventas con nuestra fuerza de prospección y agentes de IA. Gana comisiones garantizadas por cada contrato cerrado.
         </p>
       </section>
 
       {/* ── CONSULTA DE ESTADÍSTICAS POR CÓDIGO ──────────────────────────────── */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-16">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/[0.08] shadow-sm space-y-6">
-          <div className="flex items-center gap-2 pb-3 border-b border-black/[0.06]">
-            <Search className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-sm font-semibold font-mono uppercase tracking-wider text-[#111]">
-              Consultar Mis Estadísticas & Saldo de Aliado
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-black/[0.07] shadow-2xs space-y-6">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-black/[0.06]">
+            <span className="w-1.5 h-1.5 rounded-full bg-black/40" />
+            <h2 className="text-xs font-mono font-medium uppercase tracking-widest text-black/70">
+              Consultar Estadísticas y Saldo de Aliado
             </h2>
           </div>
 
@@ -226,11 +225,11 @@ export default function ReferidosPublicPage() {
 
       {/* ── FORMULARIO: REGÍSTRATE COMO NUEVO ALIADO ────────────────────────── */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-16">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-black/[0.08] shadow-sm space-y-6">
-          <div className="flex items-center gap-2 pb-3 border-b border-black/[0.06]">
-            <Award className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-sm font-semibold font-mono uppercase tracking-wider text-[#111]">
-              ¿Aún no tienes código? Regístrate en 30 Segundos
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-black/[0.07] shadow-2xs space-y-6">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-black/[0.06]">
+            <span className="w-1.5 h-1.5 rounded-full bg-black/40" />
+            <h2 className="text-xs font-mono font-medium uppercase tracking-widest text-black/70">
+              Registro Rápido de Nuevo Aliado Comercial
             </h2>
           </div>
 

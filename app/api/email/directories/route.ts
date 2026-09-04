@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
+import { getEmailSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 export async function GET() {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     if (!url || !anonKey) {
       return NextResponse.json({ success: false, error: 'Configuración de Supabase no encontrada' }, { status: 500 })
     }
@@ -32,7 +32,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const body = await request.json()
     const { nombre, descripcion = '' } = body
 

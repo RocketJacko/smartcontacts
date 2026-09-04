@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
+import { getEmailSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 import { GoogleQuotaStore } from '@/lib/infrastructure/google/google-quota-store'
 import { sendGmailCustomEmail } from '@/lib/gmail-service'
+import { GmailAccountsManager } from '@/lib/gmail-accounts-manager'
 
 /**
  * API REST para Despacho de Campañas por Goteo con Rotación Round-Robin Anti-Spam
@@ -9,7 +10,7 @@ import { sendGmailCustomEmail } from '@/lib/gmail-service'
  */
 export async function POST(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const body = await request.json()
     const {
       campana_id,

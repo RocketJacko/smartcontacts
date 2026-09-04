@@ -1,5 +1,4 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+import { getEmailSupabaseConfig } from './infrastructure/supabase/supabase-client'
 
 // Lista estática instantánea de dominios temporales, desechables y typos comunes
 const KNOWN_BLOCKED_DOMAINS = new Set([
@@ -43,19 +42,20 @@ export async function isDomainBlocked(email: string): Promise<boolean> {
     return true
   }
 
-  // 2. Verificación dinámica contra Supabase (public.blocked_domains)
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('dummy')) {
+  // 2. Verificación dinámica contra Supabase (public.blocked_domains en BD pesada)
+  const { url, anonKey } = getEmailSupabaseConfig()
+  if (!url || !anonKey || anonKey.includes('dummy')) {
     return false
   }
 
   try {
-    const endpoint = `${SUPABASE_URL}/rest/v1/blocked_domains?domain=eq.${encodeURIComponent(domain)}&select=domain`
+    const endpoint = `${url}/rest/v1/blocked_domains?domain=eq.${encodeURIComponent(domain)}&select=domain`
     
     const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
         'Content-Type': 'application/json',
       },
       next: { revalidate: 60 },

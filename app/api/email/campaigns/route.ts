@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
+import { getEmailSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 export async function GET(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const { searchParams } = new URL(request.url)
     const directorioNombre = searchParams.get('directorio_nombre')
 
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { url, anonKey } = getSupabaseConfig()
+    const { url, anonKey } = getEmailSupabaseConfig()
     const body = await request.json()
     const { nombre, descripcion = '', directorio_nombre, remitente, mascara_remitente, drip_min, drip_max } = body
 

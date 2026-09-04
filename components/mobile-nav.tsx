@@ -22,6 +22,7 @@ export function MobileNav() {
     { label: t.nav.coverage,   href: "/cobertura" },
     { label: t.nav.modalities, href: "/modalidades" },
     { label: t.nav.benefits || "Beneficios", href: "/beneficios" },
+    { label: t.nav.partners || "Trabaja con Nosotros", href: "/referidos" },
     { label: t.nav.about,      href: "/sobre-mi" },
     { label: t.nav.schedule,   href: "/agendar" },
   ]
@@ -40,13 +41,13 @@ export function MobileNav() {
             SMARTCONTACTS
           </Link>
 
-          {/* Desktop links */}
-          <div className="hidden lg:flex items-center gap-4 xl:gap-6 shrink" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
+          {/* Desktop links — visible from xl (1280px) to guarantee clean margins without crowding */}
+          <div className="hidden xl:flex items-center gap-3.5 2xl:gap-5 shrink" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
             {navLinks.map(l => (
               <Link
                 key={l.label}
                 href={l.href}
-                className="text-[11px] text-black/60 hover:text-black transition-colors duration-200 tracking-wide whitespace-nowrap"
+                className="text-[11px] text-black/60 hover:text-black transition-colors duration-200 tracking-wide whitespace-nowrap px-1 py-1"
               >
                 {l.label}
               </Link>
@@ -54,9 +55,9 @@ export function MobileNav() {
           </div>
 
           {/* Actions & Language Switcher */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Language Switcher with Touch-Friendly Height */}
-            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[10px] sm:text-[11px] font-mono shrink-0 select-none overflow-hidden min-h-[40px] sm:min-h-[48px]">
+            <div className="relative flex items-center bg-black/[0.04] p-0.5 rounded-xl border border-black/10 text-[10px] sm:text-[11px] font-mono shrink-0 select-none overflow-hidden min-h-[38px] sm:min-h-[44px]">
               {/* Sliding Indicator Pill */}
               <div
                 className="absolute top-0.5 bottom-0.5 rounded-lg bg-white shadow-xs transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -68,7 +69,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('es')}
-                className={`relative z-10 px-2.5 sm:px-3.5 min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-2 sm:px-3 min-h-[34px] sm:min-h-[40px] min-w-[32px] sm:min-w-[40px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'es' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -77,7 +78,7 @@ export function MobileNav() {
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
-                className={`relative z-10 px-2.5 sm:px-3.5 min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
+                className={`relative z-10 px-2 sm:px-3 min-h-[34px] sm:min-h-[40px] min-w-[32px] sm:min-w-[40px] flex items-center justify-center text-center transition-colors duration-500 cursor-pointer ${
                   language === 'en' ? "text-black font-semibold" : "text-black/50 hover:text-black font-normal"
                 }`}
               >
@@ -85,20 +86,20 @@ export function MobileNav() {
               </button>
             </div>
 
-            {/* CTA Button — DESKTOP ONLY (hidden on mobile/tablet < lg) */}
+            {/* CTA Button — DESKTOP ONLY (hidden on mobile/tablet < xl) */}
             <Link
               href="/agendar"
-              className="text-[11px] w-[210px] min-h-[48px] hidden lg:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs"
+              className="text-[11px] px-4 min-h-[44px] hidden xl:inline-flex items-center justify-center py-2 shrink-0 rounded-xl border border-black/10 text-black/80 font-medium hover:text-black hover:border-black/25 hover:bg-black/[0.04] transition-all duration-200 tracking-wide text-center shadow-2xs whitespace-nowrap"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
               {t.nav.startBuilding}
             </Link>
 
-            {/* Burger — MOBILE & TABLET ONLY (48px Touch Target) */}
+            {/* Burger — MOBILE & TABLET ONLY (visible < xl) */}
             <button
               type="button"
               onClick={() => setOpen(v => !v)}
-              className="flex lg:hidden flex-col justify-center items-center w-10 h-10 sm:w-12 sm:h-12 min-w-[40px] sm:min-w-[48px] min-h-[40px] sm:min-h-[48px] gap-[5px] rounded-xl hover:bg-black/[0.05] active:bg-black/10 transition-colors shrink-0 cursor-pointer"
+              className="flex xl:hidden flex-col justify-center items-center w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] gap-[5px] rounded-xl hover:bg-black/[0.05] active:bg-black/10 transition-colors shrink-0 cursor-pointer"
               aria-label={open ? "Close menu" : "Open menu"}
             >
               <span
@@ -129,7 +130,7 @@ export function MobileNav() {
 
         {/* Mobile dropdown */}
         <div
-          className="lg:hidden mt-2 overflow-hidden transition-all duration-300 ease-in-out max-h-[80vh] overflow-y-auto"
+          className="xl:hidden mt-2 overflow-hidden transition-all duration-300 ease-in-out max-h-[80vh] overflow-y-auto"
           style={{ maxHeight: open ? "80vh" : "0px", opacity: open ? 1 : 0 }}
         >
           <div

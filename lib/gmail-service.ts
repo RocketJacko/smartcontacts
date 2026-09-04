@@ -337,8 +337,11 @@ export async function send8AMMorningReminderEmail(params: {
   return send30MinReminderEmail(params)
 }
 
+import { GmailAccountsManager } from './gmail-accounts-manager'
+
 /**
- * Envía un correo electrónico personalizado con soporte para máscara de remitente y cuerpo HTML dinámico.
+ * Envía un correo electrónico personalizado con soporte para máscara de remitente,
+ * rotación multi-cuenta y cuerpo HTML dinámico.
  */
 export async function sendGmailCustomEmail(params: {
   toEmail: string
@@ -349,17 +352,31 @@ export async function sendGmailCustomEmail(params: {
   fromMask?: string
   senderEmail?: string
   senderMask?: string
-}): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const { senderEmail, senderName } = getGmailCredentials()
-  const accessToken = await getAccessToken()
+}): Promise<{ success: boolean; messageId?: string; error?: string; senderUsed?: string }> {
+  // Intentar obtener cuenta y token del administrador multi-cuenta
+  const selection = await GmailAccountsManager.selectAvailableAccount(params.senderEmail)
+  
+  let accessToken: string | null = null
+  let effectiveSender = params.senderEmail || 'jesus.carmona966@pascualbravo.edu.co'
+  let effectiveMask = params.senderMask || params.fromMask || 'Agendamiento Smartcontacts'
+
+  if (selection) {
+    accessToken = selection.accessToken
+    effectiveSender = selection.account.email
+    effectiveMask = params.senderMask || `${selection.account.name} <${selection.account.email}>`
+  } else {
+    // Fallback a las credenciales de entorno estándar
+    const { senderEmail, senderName } = getGmailCredentials()
+    accessToken = await getAccessToken()
+    effectiveSender = params.senderEmail || senderEmail
+    effectiveMask = params.senderMask || params.fromMask || senderName
+  }
 
   if (!accessToken) {
-    return { success: false, error: 'Credenciales de Gmail no configuradas' }
+    return { success: false, error: 'Credenciales de Gmail no configuradas o token no obtenido' }
   }
 
   try {
-    const effectiveSender = params.senderEmail || senderEmail
-    const effectiveMask = params.senderMask || params.fromMask || senderName
     const effectiveBody = params.htmlBody || params.body || ''
 
     const rawMessage = createRawMimeMessage(
@@ -386,7 +403,7 @@ export async function sendGmailCustomEmail(params: {
     }
 
     const data = await res.json()
-    return { success: true, messageId: data.id }
+    return { success: true, messageId: data.id, senderUsed: effectiveSender }
   } catch (error: any) {
     return { success: false, error: error?.message || 'Error en envío de correo' }
   }

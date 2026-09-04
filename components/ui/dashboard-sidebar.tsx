@@ -76,8 +76,9 @@ const mockNavGroups: NavGroupData[] = [
         children: [
           { id: "email-contacts", titleKey: "emailContacts", icon: Users },
           { id: "email-dispatch", titleKey: "emailDispatch", icon: Play },
-          { id: "email-templates", titleKey: "emailTemplates", icon: FileText },
           { id: "email-roundrobin", titleKey: "emailRoundRobin", icon: RefreshCw },
+          { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
+          { id: "email-templates", titleKey: "emailTemplates", icon: FileText },
         ],
       },
       { id: "calendar", titleKey: "calendar", icon: Calendar },
@@ -630,6 +631,8 @@ export default function SidebarNavPreview() {
                   ? "templates"
                   : activeId === "email-roundrobin"
                   ? "roundrobin"
+                  : activeId === "email-accounts"
+                  ? "accounts"
                   : "contacts"
               }
             />
