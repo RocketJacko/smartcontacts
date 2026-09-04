@@ -130,6 +130,18 @@ export class ProcessBookingUseCase {
 
         if (!rpcRes.ok) {
           console.error('[SUPABASE CREAR_AGENDAMIENTO ERROR]', rpcRes.status, await rpcRes.text())
+        } else if (data.referralToken) {
+          const rpcData = await rpcRes.json()
+          if (rpcData?.prospecto_id) {
+            const { SupabaseReferralRepository } = await import('@/lib/infrastructure/repositories/supabase-referral-repository')
+            const referralRepo = new SupabaseReferralRepository()
+            await referralRepo.vincularProspectoAgendado(
+              data.referralToken,
+              rpcData.prospecto_id,
+              data.email,
+              data.phone || ''
+            )
+          }
         }
       }
     } catch (dbErr) {

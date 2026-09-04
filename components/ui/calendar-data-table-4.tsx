@@ -21,6 +21,9 @@ import {
   Clock,
   History,
   Save,
+  Share2,
+  DollarSign,
+  Tag,
 } from "lucide-react"
 
 export interface ConversationalNote {
@@ -42,6 +45,17 @@ export interface CalendarBookingRecord {
   fechaCita: string
   horaCita: string
   historialConversacional?: ConversationalNote[]
+  referidoInfo?: {
+    id: string
+    afiliadoId: string
+    afiliadoNombre: string
+    afiliadoEmail?: string
+    tipoAtribucion: string
+    estadoLiquidacion: string
+    montoTransaccion?: number
+    valorComisionCalculado: number
+    motivoAtribucionManual?: string
+  }
   prospecto: {
     id: string
     nombre: string
@@ -66,6 +80,16 @@ export function CalendarDataTable4() {
   // State for inline comment editing & conversational notes
   const [editingComments, setEditingComments] = useState<Record<string, string>>({})
   const [newNoteTexts, setNewNoteTexts] = useState<Record<string, string>>({})
+
+  // Referral manual attribution states
+  const [isManualReferralModalOpen, setIsManualReferralModalOpen] = useState(false)
+  const [targetRecordForReferral, setTargetRecordForReferral] = useState<CalendarBookingRecord | null>(null)
+  const [affiliatesList, setAffiliatesList] = useState<any[]>([])
+  const [selectedAffiliateId, setSelectedAffiliateId] = useState("")
+  const [manualCommissionAmount, setManualCommissionAmount] = useState(150000)
+  const [manualContractAmount, setManualContractAmount] = useState(1500000)
+  const [manualReason, setManualReason] = useState("Acuerdo comercial directo B2B")
+  const [isSavingReferral, setIsSavingReferral] = useState(false)
 
   // Form State for New Booking
   const [formData, setFormData] = useState({
@@ -170,6 +194,86 @@ export function CalendarDataTable4() {
       }
     } catch {
       alert("No se pudo actualizar el estado.")
+    }
+  }
+
+  // Update Resultado Comercial Action (PUT)
+  const handleUpdateResultadoComercial = async (id: string, nuevoResultado: string) => {
+    let monto = 1500000
+    let comision = 150000
+    if (nuevoResultado === "adquirido" || nuevoResultado === "cerrado") {
+      const inputMonto = prompt("Ingrese el valor total del contrato cerrado (COP):", "1500000")
+      if (inputMonto) monto = parseFloat(inputMonto) || 1500000
+      const inputComision = prompt("Ingrese la comisión a liquidar al aliado (COP):", String(Math.round(monto * 0.1)))
+      if (inputComision) comision = parseFloat(inputComision) || 150000
+    }
+
+    try {
+      const res = await fetch("/api/calendar/crud", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, resultadoComercial: nuevoResultado, montoContrato: monto, valorComision: comision }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        loadRecords()
+      }
+    } catch {
+      alert("No se pudo actualizar el resultado comercial.")
+    }
+  }
+
+  // Open Manual Referral Modal
+  const openManualReferralModal = async (rec: CalendarBookingRecord) => {
+    setTargetRecordForReferral(rec)
+    setIsManualReferralModalOpen(true)
+    try {
+      const res = await fetch("/api/referrals/affiliates")
+      const data = await res.json()
+      if (data.success) {
+        setAffiliatesList(data.afiliados || [])
+        if (data.afiliados?.length > 0) {
+          setSelectedAffiliateId(data.afiliados[0].id)
+        }
+      }
+    } catch {
+      // Fallback silencioso
+    }
+  }
+
+  // Save Manual Referral Action (POST)
+  const handleSaveManualReferral = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!targetRecordForReferral || !selectedAffiliateId) return
+    setIsSavingReferral(true)
+
+    try {
+      const res = await fetch("/api/referrals/conversions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          afiliadoId: selectedAffiliateId,
+          prospectoId: targetRecordForReferral.prospecto.id,
+          monto: manualContractAmount,
+          valorComision: manualCommissionAmount,
+          motivo: manualReason,
+          tipoComision: "monto_fijo",
+          autor: "Asesor Comercial CRM",
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        alert("Referido y comisión vinculados exitosamente.")
+        setIsManualReferralModalOpen(false)
+        loadRecords()
+      } else {
+        alert(data.error || "No se pudo vincular el referido.")
+      }
+    } catch {
+      alert("Error al vincular el referido.")
+    } finally {
+      setIsSavingReferral(false)
     }
   }
 
@@ -369,10 +473,18 @@ export function CalendarDataTable4() {
                         </td>
 
                         <td className="py-3 px-3.5">
-                          <span className="text-xs font-semibold text-[#111] flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-black/30 shrink-0" />
-                            {rec.prospecto.nombre}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-semibold text-[#111] flex items-center gap-1.5">
+                              <User className="w-3.5 h-3.5 text-black/30 shrink-0" />
+                              {rec.prospecto.nombre}
+                            </span>
+                            {rec.referidoInfo && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 w-fit font-medium">
+                                <Share2 className="w-2.5 h-2.5" />
+                                Ref: {rec.referidoInfo.afiliadoNombre}
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-3 px-3.5">
@@ -551,22 +663,76 @@ export function CalendarDataTable4() {
                                 </div>
                               </div>
 
-                              {/* Appointment Status Control & Actions */}
-                              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-black/[0.06] text-xs">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-mono text-black/40 uppercase font-bold">
-                                    CAMBIAR ESTADO DE CITA:
+                              {/* PANEL DE REFERIDOS & ATRIBUCIÓN COMERCIAL */}
+                              <div className="p-3.5 rounded-xl bg-[#F5F4F0] border border-black/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                                    <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    TRAZABILIDAD DE AFILIADO & LIQUIDACIÓN
                                   </span>
-                                  <select
-                                    value={rec.estado}
-                                    onChange={(e) => handleUpdateStatus(rec.id, e.target.value)}
-                                    className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-semibold text-[#111] outline-none focus:border-black/30 cursor-pointer"
-                                  >
-                                    <option value="agendado">Agendada (Pendiente)</option>
-                                    <option value="cumplida">Cumplida (Asistió a la Sesión)</option>
-                                    <option value="no_asistio">No Asistió (Abandono)</option>
-                                    <option value="cancelada">Cancelada</option>
-                                  </select>
+                                  {rec.referidoInfo ? (
+                                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                      <span className="font-semibold text-[#111]">{rec.referidoInfo.afiliadoNombre}</span>
+                                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/[0.05] text-black/70">
+                                        Tipo: {rec.referidoInfo.tipoAtribucion === "manual_admin" ? "Manual B2B" : "Enlace Cookie"}
+                                      </span>
+                                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
+                                        Liquidación: {rec.referidoInfo.estadoLiquidacion.toUpperCase()}
+                                      </span>
+                                      <span className="text-[11px] font-mono font-bold text-emerald-700">
+                                        Comisión: ${rec.referidoInfo.valorComisionCalculado.toLocaleString("es-CO")} COP
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <p className="text-[11px] text-black/60 font-sans">
+                                      Este prospecto llegó por canal directo. Si corresponde a una recomendación aliada, puedes vincularlo manualmente.
+                                    </p>
+                                  )}
+                                </div>
+
+                                <button
+                                  onClick={() => openManualReferralModal(rec)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-black/5 border border-black/10 text-[#111] text-xs font-mono font-medium transition-colors shrink-0 cursor-pointer shadow-2xs"
+                                >
+                                  <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{rec.referidoInfo ? "Modificar Afiliado" : "Vincular Afiliado Manual"}</span>
+                                </button>
+                              </div>
+
+                              {/* Appointment Status & Commercial Result Control */}
+                              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-black/[0.06] text-xs">
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-mono text-black/40 uppercase font-bold">
+                                      ESTADO DE CITA:
+                                    </span>
+                                    <select
+                                      value={rec.estado}
+                                      onChange={(e) => handleUpdateStatus(rec.id, e.target.value)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-semibold text-[#111] outline-none focus:border-black/30 cursor-pointer"
+                                    >
+                                      <option value="agendado">Agendada (Pendiente)</option>
+                                      <option value="cumplida">Cumplida (Asistió a la Sesión)</option>
+                                      <option value="no_asistio">No Asistió (Abandono)</option>
+                                      <option value="cancelada">Cancelada</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-mono text-black/40 uppercase font-bold">
+                                      RESULTADO COMERCIAL:
+                                    </span>
+                                    <select
+                                      value={rec.resultadoComercial || "pendiente"}
+                                      onChange={(e) => handleUpdateResultadoComercial(rec.id, e.target.value)}
+                                      className="px-2.5 py-1.5 rounded-xl bg-white border border-black/15 text-xs font-mono font-bold text-[#111] outline-none focus:border-black/40 cursor-pointer shadow-2xs"
+                                    >
+                                      <option value="pendiente">Pendiente de Diagnóstico</option>
+                                      <option value="en_negociacion">En Negociación / Propuesta</option>
+                                      <option value="adquirido">Adquirido / Cerrado Ganado (Liquidar Comisión)</option>
+                                      <option value="no_interesado">No Interesado / Descartado</option>
+                                    </select>
+                                  </div>
                                 </div>
 
                                 <button
@@ -721,6 +887,114 @@ export function CalendarDataTable4() {
                   className="px-3.5 py-1.5 rounded-xl bg-[#111] hover:bg-black/90 text-xs font-medium text-white shadow-xs"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar Agendamiento"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ATRIBUCIÓN MANUAL B2B DE REFERIDOS ───────────────────────── */}
+      {isManualReferralModalOpen && targetRecordForReferral && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-black/15 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in duration-150">
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-black/[0.08]">
+              <h3 className="text-sm font-semibold text-[#111] flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-emerald-600" />
+                <span>Vincular Afiliado / Referido Manual (B2B)</span>
+              </h3>
+              <button
+                onClick={() => setIsManualReferralModalOpen(false)}
+                className="p-1 rounded-lg text-black/40 hover:bg-black/5 hover:text-[#111]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveManualReferral} className="p-5 space-y-3.5 text-xs">
+              <div className="p-3 rounded-xl bg-[#F5F4F0] border border-black/[0.06] space-y-1">
+                <span className="text-[10px] font-mono text-black/50 uppercase font-bold block">Prospecto Seleccionado</span>
+                <p className="font-semibold text-[#111]">{targetRecordForReferral.prospecto.nombre} ({targetRecordForReferral.prospecto.empresa})</p>
+                <p className="text-[11px] text-black/60 font-mono">{targetRecordForReferral.prospecto.email}</p>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                  Seleccionar Afiliado / Aliado Comercial *
+                </label>
+                {affiliatesList.length > 0 ? (
+                  <select
+                    value={selectedAffiliateId}
+                    onChange={(e) => setSelectedAffiliateId(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-medium outline-none focus:border-black/30 cursor-pointer"
+                  >
+                    {affiliatesList.map((a: any) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nombre} ({a.email}) - {a.enlacePrincipal?.codigoReferido || 'Sin Código'}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                    No hay afiliados registrados en el sistema. Puedes crear uno desde el módulo de referidos.
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                    Valor Contrato (COP)
+                  </label>
+                  <input
+                    type="number"
+                    value={manualContractAmount}
+                    onChange={(e) => setManualContractAmount(Number(e.target.value))}
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono outline-none focus:border-black/30"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                    Comisión Acordada (COP)
+                  </label>
+                  <input
+                    type="number"
+                    value={manualCommissionAmount}
+                    onChange={(e) => setManualCommissionAmount(Number(e.target.value))}
+                    className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs font-mono font-bold text-emerald-700 outline-none focus:border-black/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono font-bold text-black/50 uppercase block mb-1">
+                  Motivo o Justificación de Auditoría *
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={manualReason}
+                  onChange={(e) => setManualReason(e.target.value)}
+                  placeholder="Ej: Aliado presentó al cliente en llamada telefónica previa..."
+                  className="w-full px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/10 text-xs outline-none focus:border-black/30 resize-none font-sans"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-black/[0.08] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsManualReferralModalOpen(false)}
+                  className="px-3.5 py-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-xs font-medium text-black/70"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingReferral || affiliatesList.length === 0}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#111] hover:bg-black/90 text-xs font-medium text-white shadow-xs disabled:opacity-50"
+                >
+                  {isSavingReferral ? "Vinculando..." : "Confirmar Vinculación"}
                 </button>
               </div>
             </form>

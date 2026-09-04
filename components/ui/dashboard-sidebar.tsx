@@ -36,10 +36,12 @@ import {
   ShieldCheck,
   Send,
   Zap,
+  Share2,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
 import { EmailAutomationModule } from "@/components/ui/email-automation-module"
+import { ReferralsAdminModule } from "@/components/ui/referrals-admin-module"
 
 export type NavItemData = {
   id: string
@@ -79,6 +81,7 @@ const mockNavGroups: NavGroupData[] = [
         ],
       },
       { id: "calendar", titleKey: "calendar", icon: Calendar },
+      { id: "referrals", titleKey: "referrals", icon: Share2 },
       {
         id: "team",
         titleKey: "agents",
@@ -645,6 +648,8 @@ export default function SidebarNavPreview() {
               {/* DATA TABLE 4 (EXPANDABLE ROW DETAIL PANELS IN PLACE) */}
               <CalendarDataTable4 />
             </>
+          ) : activeId === "referrals" ? (
+            <ReferralsAdminModule />
           ) : (
             <div className="p-8 rounded-2xl border border-black/[0.08] bg-white text-center font-sans space-y-3">
               <h2 className="text-xl font-light text-[#111]">Módulo {activeTitle}</h2>

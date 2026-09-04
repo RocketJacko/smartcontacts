@@ -52,9 +52,39 @@ export async function GET(request: Request) {
       // Fallback silencioso
     }
 
+    // 2.1 Consultar conversiones de referidos
+    let conversionesMap: Record<string, any> = {}
+    try {
+      const convRes = await fetch(`${url}/rest/v1/conversiones?select=*,afiliados(nombre,email)`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        cache: 'no-store',
+      })
+      if (convRes.ok) {
+        const convList = await convRes.json()
+        convList.forEach((c: any) => {
+          if (c.prospecto_id) {
+            conversionesMap[c.prospecto_id] = {
+              id: c.id,
+              afiliadoId: c.afiliado_id,
+              afiliadoNombre: c.afiliados?.nombre || 'Afiliado Aliado',
+              afiliadoEmail: c.afiliados?.email,
+              tipoAtribucion: c.tipo_atribucion,
+              estadoLiquidacion: c.estado_liquidacion,
+              montoTransaccion: Number(c.monto_transaccion) || 0,
+              valorComisionCalculado: Number(c.valor_comision_calculado) || 0,
+              motivoAtribucionManual: c.motivo_atribucion_manual,
+            }
+          }
+        })
+      }
+    } catch {
+      // Fallback silencioso
+    }
+
     // Mapear eventos con prospectos
     eventosList.forEach((evt: any) => {
       const p = prospectosMap[evt.prospecto_id] || {}
+      const refInfo = conversionesMap[evt.prospecto_id] || null
       records.push({
         id: evt.id,
         titulo: evt.titulo || 'Cita Consultiva 45M',
@@ -81,6 +111,7 @@ export async function GET(request: Request) {
           comentario: p.topic || p.descripcion || 'Consulta sobre soluciones de IA agéntica',
           aceptaTratamientoDatos: p.acepta_tratamiento_datos ?? true,
         },
+        referidoInfo: refInfo,
       })
     })
 
@@ -88,6 +119,7 @@ export async function GET(request: Request) {
     prospectosList.forEach((p: any) => {
       const hasEvento = eventosList.some((e: any) => e.prospecto_id === p.id)
       if (!hasEvento) {
+        const refInfo = conversionesMap[p.id] || null
         records.push({
           id: `p-evt-${p.id}`,
           titulo: `Agendamiento 45M: ${p.topic || 'Consultoría Agéntica'} - ${p.name}`,
@@ -114,6 +146,7 @@ export async function GET(request: Request) {
             comentario: p.topic || 'Consulta sobre soluciones de IA agéntica',
             aceptaTratamientoDatos: p.acepta_tratamiento_datos ?? true,
           },
+          referidoInfo: refInfo,
         })
       }
     })
@@ -316,7 +349,7 @@ export async function PUT(request: Request) {
   try {
     const { url, anonKey } = getSupabaseConfig()
     const body = await request.json()
-    const { id, estado, comentario, nuevaNotaHistorial, autor } = body
+    const { id, estado, resultadoComercial, comentario, nuevaNotaHistorial, autor, montoContrato, valorComision } = body
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'ID es obligatorio' }, { status: 400 })
@@ -324,6 +357,7 @@ export async function PUT(request: Request) {
 
     const patchData: any = {}
     if (estado) patchData.estado = estado
+    if (resultadoComercial) patchData.resultado_comercial = resultadoComercial
     if (comentario !== undefined) patchData.descripcion = comentario
 
     if (nuevaNotaHistorial) {
@@ -355,6 +389,71 @@ export async function PUT(request: Request) {
       },
       body: JSON.stringify(patchData),
     })
+
+    // Si el resultado comercial es de adquisición efectiva, sincronizar con referidos.conversiones
+    if (resultadoComercial === 'adquirido' || resultadoComercial === 'cerrado' || resultadoComercial === 'ganado') {
+      try {
+        // 1. Obtener prospecto_id del evento
+        const evtRes = await fetch(`${url}/rest/v1/eventos?id=eq.${encodeURIComponent(id)}&select=prospecto_id`, {
+          headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+        })
+        if (evtRes.ok) {
+          const [evtRecord] = await evtRes.json()
+          if (evtRecord?.prospecto_id) {
+            // 2. Buscar conversión asociada al prospecto
+            const convRes = await fetch(
+              `${url}/rest/v1/conversiones?prospecto_id=eq.${evtRecord.prospecto_id}&estado_liquidacion=eq.pendiente`,
+              { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } }
+            )
+            if (convRes.ok) {
+              const [convRecord] = await convRes.json()
+              if (convRecord) {
+                const comisionFinal = valorComision || convRecord.valor_comision_calculado || 150000
+                const montoFinal = montoContrato || convRecord.monto_transaccion || 1500000
+
+                // 3. Actualizar conversión a aprobada
+                await fetch(`${url}/rest/v1/conversiones?id=eq.${convRecord.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    apikey: anonKey,
+                    Authorization: `Bearer ${anonKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    estado_liquidacion: 'aprobada',
+                    monto_transaccion: montoFinal,
+                    valor_comision_calculado: comisionFinal,
+                    fecha_adquisicion: new Date().toISOString(),
+                  }),
+                })
+
+                // 4. Sumar saldo pendiente al afiliado
+                await fetch(`${url}/rest/v1/rpc/atribucion_manual_admin`, {
+                  method: 'POST',
+                  headers: {
+                    apikey: anonKey,
+                    Authorization: `Bearer ${anonKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    p_afiliado_id: convRecord.afiliado_id,
+                    p_prospecto_id: evtRecord.prospecto_id,
+                    p_monto: montoFinal,
+                    p_motivo: 'Cierre de servicio confirmado en CRM',
+                    p_tipo_comision: 'monto_fijo',
+                    p_porcentaje: 10,
+                    p_valor_comision: comisionFinal,
+                    p_autor: autor || 'Asesor CRM',
+                  }),
+                })
+              }
+            }
+          }
+        }
+      } catch (refErr) {
+        console.warn('[REFERRAL CONVERSION UPDATE WARN]', refErr)
+      }
+    }
 
     return NextResponse.json({ success: true, message: 'Agendamiento e historial actualizados correctamente' }, { status: 200 })
   } catch (error: any) {
