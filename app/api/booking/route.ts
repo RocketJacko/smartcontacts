@@ -49,21 +49,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 })
     }
 
-    // Async forward to n8n Webhook
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'https://ventusn8n.smartcontacts.cloud/webhook/smartcontacts-booking'
-    fetch(n8nWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        source: 'smartcontacts.cloud',
-        ...result.data,
-      }),
-    }).catch(() => {})
-
     return NextResponse.json({
       success: true,
-      message: 'Solicitud agendada y sincronizada exitosamente.',
+      message: 'Solicitud agendada y sincronizada exitosamente en Google Calendar, Google Sheets y Supabase.',
       data: result.data,
     }, { status: 200 })
 
