@@ -37,10 +37,12 @@ import {
   Send,
   Zap,
   Share2,
+  Layers,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
 import { EmailAutomationModule } from "@/components/ui/email-automation-module"
+import { SimpleEmailSender } from "@/components/ui/simple-email-sender"
 import { ReferralsAdminModule } from "@/components/ui/referrals-admin-module"
 
 export type NavItemData = {
@@ -319,6 +321,7 @@ export default function SidebarNavPreview() {
   const [activeId, setActiveId] = useState("api") // Default directly to "api" (APIs & Google Cloud)
   const [activeWorkspace, setActiveWorkspace] = useState("SmartContacts Cloud")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isEmailAdvancedMode, setIsEmailAdvancedMode] = useState(false)
   const [googleMetrics, setGoogleMetrics] = useState<any>(null)
   const [generalMetrics, setGeneralMetrics] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -623,19 +626,37 @@ export default function SidebarNavPreview() {
               </div>
             </>
           ) : activeId === "projects" || activeId === "email" || activeId.startsWith("email-") ? (
-            <EmailAutomationModule
-              initialTab={
-                activeId === "email-dispatch"
-                  ? "dispatch"
-                  : activeId === "email-templates"
-                  ? "templates"
-                  : activeId === "email-roundrobin"
-                  ? "roundrobin"
-                  : activeId === "email-accounts"
-                  ? "accounts"
-                  : "contacts"
-              }
-            />
+            !isEmailAdvancedMode && (activeId === "email" || activeId === "email-dispatch" || activeId === "projects") ? (
+              <SimpleEmailSender onSwitchToAdvanced={() => setIsEmailAdvancedMode(true)} />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-purple-500/[0.04] border border-purple-500/20">
+                  <div className="flex items-center gap-2 text-xs text-purple-950 font-medium">
+                    <Layers className="w-4 h-4 text-purple-700" />
+                    <span>Estás en el <strong>Modo Avanzado</strong> (Gestión de Base de Datos Masiva +200k contactos).</span>
+                  </div>
+                  <button
+                    onClick={() => setIsEmailAdvancedMode(false)}
+                    className="px-3 py-1 bg-white hover:bg-black/[0.04] border border-black/[0.1] text-xs font-semibold text-[#111] rounded-lg shadow-2xs transition-colors"
+                  >
+                    ⬅ Volver al Modo Simple
+                  </button>
+                </div>
+                <EmailAutomationModule
+                  initialTab={
+                    activeId === "email-dispatch"
+                      ? "dispatch"
+                      : activeId === "email-templates"
+                      ? "templates"
+                      : activeId === "email-roundrobin"
+                      ? "roundrobin"
+                      : activeId === "email-accounts"
+                      ? "accounts"
+                      : "contacts"
+                  }
+                />
+              </div>
+            )
           ) : activeId === "calendar" || activeId === "inbox" ? (
             <>
               {/* Top Title Banner */}
