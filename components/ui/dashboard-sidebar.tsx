@@ -64,20 +64,11 @@ export type NavGroupData = {
 
 const mockNavGroups: NavGroupData[] = [
   {
-    items: [
-      { id: "search", titleKey: "search", icon: Search, shortcut: "⌘K" },
-      { id: "home", titleKey: "unit", icon: LayoutDashboard },
-      { id: "inbox", titleKey: "leads", icon: Inbox, badgeKey: "totalProspectos" },
-      { id: "analytics", titleKey: "metrics", icon: Activity },
-    ],
-  },
-  {
     headingKey: "operation",
     items: [
       { id: "calendar", titleKey: "calendar", icon: Calendar, badgeKey: "totalProspectos" },
       { id: "booking-emails", titleKey: "bookingEmails", icon: Clock },
       { id: "referrals", titleKey: "referrals", icon: Share2 },
-      { id: "team", titleKey: "agents", icon: Bot },
     ],
   },
   {
@@ -92,15 +83,11 @@ const mockNavGroups: NavGroupData[] = [
     items: [
       { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
       { id: "api", titleKey: "api", icon: Terminal },
-      { id: "webhooks", titleKey: "webhooks", icon: Blocks },
     ],
   },
 ]
 
-const mockBottomItems: NavItemData[] = [
-  { id: "settings", titleKey: "settings", icon: Settings, shortcut: "⌘," },
-  { id: "logout", titleKey: "logout", icon: LogOut },
-]
+const mockBottomItems: NavItemData[] = []
 
 function WorkspaceSwitcher({ selected, onSelect }: { selected?: string; onSelect?: (ws: any) => void }) {
   const { t } = useLanguage()
@@ -300,12 +287,6 @@ export function SidebarNav({
           )
         })}
       </div>
-
-      <div className="mt-auto pt-3 border-t border-black/[0.08] flex flex-col gap-0.5">
-        {mockBottomItems.map((item) => (
-          <NavItem key={item.id} item={item} activeId={currentId} onSelect={handleSelect} metrics={metrics} />
-        ))}
-      </div>
     </div>
   )
 }
@@ -316,8 +297,6 @@ export default function SidebarNavPreview() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [activeId, setActiveId] = useState("api") // Default directly to "api" (APIs & Google Cloud)
   const [activeWorkspace, setActiveWorkspace] = useState("SmartContacts Cloud")
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isEmailAdvancedMode, setIsEmailAdvancedMode] = useState(false)
   const [googleMetrics, setGoogleMetrics] = useState<any>(null)
   const [generalMetrics, setGeneralMetrics] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -374,11 +353,6 @@ export default function SidebarNavPreview() {
   }, [])
 
   const handleSelect = (id: string) => {
-    if (id === "search") {
-      setIsSearchOpen(true)
-      setIsMobileOpen(false)
-      return
-    }
     setActiveId(id)
     setIsMobileOpen(false)
   }
@@ -422,16 +396,6 @@ export default function SidebarNavPreview() {
             className="p-2 rounded-xl text-black/60 hover:bg-black/5 hover:text-[#111] transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-emerald-600" : ""}`} strokeWidth={1.5} />
-          </button>
-
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            aria-label="Buscar en el sistema"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/[0.03] border border-black/10 text-xs font-mono text-black/60 hover:bg-black/[0.06] transition-all cursor-pointer"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t.dashboard?.navSearch || "Buscar..."}</span>
-            <kbd className="hidden lg:inline-flex px-1.5 py-0.5 text-[9px] bg-white border border-black/10 rounded font-bold">⌘K</kbd>
           </button>
 
           <div className="w-8 h-8 rounded-full bg-[#111] text-white flex items-center justify-center font-mono font-bold text-xs shadow-2xs">
@@ -629,7 +593,7 @@ export default function SidebarNavPreview() {
             <MarketingAudiencesModule />
           ) : activeId === "email-accounts" ? (
             <GmailAccountsModule />
-          ) : activeId === "calendar" || activeId === "inbox" ? (
+          ) : activeId === "calendar" ? (
             <>
               {/* Top Title Banner */}
               <div className="pb-4 border-b border-black/[0.08]">
@@ -641,55 +605,17 @@ export default function SidebarNavPreview() {
                 </p>
               </div>
 
-              {/* DATA TABLE 4 (EXPANDABLE ROW DETAIL PANELS IN PLACE) */}
+              {/* DATA TABLE 4 */}
               <CalendarDataTable4 />
             </>
           ) : activeId === "referrals" ? (
             <ReferralsAdminModule />
           ) : (
-            <div className="p-8 rounded-2xl border border-black/[0.08] bg-white text-center font-sans space-y-3">
-              <h2 className="text-xl font-light text-[#111]">Módulo {activeTitle}</h2>
-              <p className="text-xs text-black/60">Selecciona el módulo <strong className="text-[#111]">Agendamiento 45M / Calendario</strong> o <strong className="text-[#111]">APIs & Google Cloud</strong> en el menú lateral.</p>
-            </div>
+            <CalendarDataTable4 />
           )}
 
         </main>
       </div>
-
-      {/* SEARCH MODAL */}
-      {isSearchOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/30 backdrop-blur-xs px-4">
-          <div className="absolute inset-0" onClick={() => setIsSearchOpen(false)} />
-          <div className="relative w-full max-w-xl bg-white border border-black/15 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 font-sans">
-            <div className="flex items-center px-4 border-b border-black/10">
-              <Search className="w-4 h-4 text-black/40 mr-3 shrink-0" strokeWidth={1.5} />
-              <input
-                autoFocus
-                className="flex-1 bg-transparent py-4 outline-none text-xs font-sans text-[#111] placeholder:text-black/40"
-                placeholder={t.dashboard?.navSearch || "Buscar en el sistema..."}
-              />
-              <kbd
-                onClick={() => setIsSearchOpen(false)}
-                className="hidden sm:inline-flex items-center justify-center h-5 px-1.5 ml-2 text-[10px] font-mono text-black/50 bg-black/5 border border-black/10 rounded cursor-pointer hover:bg-black/10 transition-colors"
-              >
-                ESC
-              </kbd>
-              <button
-                onClick={() => setIsSearchOpen(false)}
-                aria-label="Cerrar búsqueda"
-                className="ml-3 p-1 rounded-lg text-black/40 hover:bg-black/5 hover:text-[#111] transition-colors"
-              >
-                <X className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-            </div>
-            <div className="p-6 flex flex-col items-center justify-center text-center">
-              <Command className="w-6 h-6 text-black/30 mb-2" strokeWidth={1.5} />
-              <p className="text-xs text-black/60 font-medium font-sans">Busca agendamientos o ejecuciones en Google Cloud...</p>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   )
 }
