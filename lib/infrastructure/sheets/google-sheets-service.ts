@@ -13,6 +13,7 @@ export interface GoogleSheetBookingRow {
   meetLink?: string
   googleEventId?: string
   estado?: string
+  resultadoComercial?: string
   fechaRegistro?: string
 }
 
@@ -26,7 +27,7 @@ export interface AppendSheetResult {
 
 const SHEET_TITLE = 'Citas'
 const SPREADSHEET_NAME = 'Smartcontacts — Registro Oficial de Citas & Leads'
-const HEADERS = [
+export const HEADERS = [
   'ID Cita',
   'Fecha Cita',
   'Hora Cita',
@@ -37,7 +38,8 @@ const HEADERS = [
   'Servicio / Tema',
   'Enlace Google Meet',
   'Google Calendar Event ID',
-  'Estado',
+  'Estado Cita',
+  'Resultado Comercial',
   'Fecha de Registro',
 ]
 
@@ -111,7 +113,7 @@ async function createBookingsSpreadsheet(accessToken: string): Promise<{ id: str
   const spreadsheetUrl = data.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`
 
   // Insertar encabezados en la primera fila
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`${SHEET_TITLE}!A1:L1`)}?valueInputOption=USER_ENTERED`, {
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`${SHEET_TITLE}!A1:M1`)}?valueInputOption=USER_ENTERED`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -186,12 +188,13 @@ export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow)
       booking.servicio || 'Asesoría Estratégica Smartcontacts',
       booking.meetLink || 'N/A',
       booking.googleEventId || 'N/A',
-      booking.estado || 'Confirmada',
+      booking.estado || 'Agendada (Pendiente)',
+      booking.resultadoComercial || 'Pendiente de Diagnóstico',
       booking.fechaRegistro || new Date().toISOString(),
     ]
 
     const appendRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`${SHEET_TITLE}!A:L`)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`${SHEET_TITLE}!A:M`)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         headers: {
@@ -206,10 +209,10 @@ export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow)
 
     if (!appendRes.ok) {
       const errText = await appendRes.text()
-      // Si la pestaña 'Citas' no existe en esa hoja, intentar agregar al rango general A:L
+      // Si la pestaña 'Citas' no existe en esa hoja, intentar agregar al rango general A:M
       if (errText.includes('Unable to parse range')) {
         const fallbackRes = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:L:append?valueInputOption=USER_ENTERED`,
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:M:append?valueInputOption=USER_ENTERED`,
           {
             method: 'POST',
             headers: {
@@ -258,3 +261,30 @@ export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow)
     }
   }
 }
+
+/**
+ * Actualiza la fila 1 de encabezados de una hoja de cálculo existente para asegurar todas las columnas
+ */
+export async function ensureSpreadsheetHeaders(spreadsheetId: string): Promise<boolean> {
+  try {
+    const accessToken = await getGoogleSheetsAccessToken()
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`${SHEET_TITLE}!A1:M1`)}?valueInputOption=USER_ENTERED`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: [HEADERS],
+        }),
+      }
+    )
+    return res.ok
+  } catch (err) {
+    console.error('[ENSURE HEADERS ERROR]', err)
+    return false
+  }
+}
+

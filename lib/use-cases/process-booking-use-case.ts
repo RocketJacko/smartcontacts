@@ -251,7 +251,8 @@ export class ProcessBookingUseCase {
         servicio: data.topic || data.service,
         meetLink: meetLink,
         googleEventId: googleEventId,
-        estado: 'Confirmada',
+        estado: 'Agendada (Pendiente)',
+        resultadoComercial: 'Pendiente de Diagnóstico',
         fechaRegistro: new Date().toISOString(),
       })
     } catch (sheetErr) {
