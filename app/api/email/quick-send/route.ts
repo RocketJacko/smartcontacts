@@ -83,16 +83,64 @@ export async function POST(request: Request) {
         .replace(/\{\{nombre\}\}/gi, contactName || 'Estimado/a')
         .replace(/\{\{empresa\}\}/gi, company || 'su empresa')
 
-      const currentBody = message
-        .replace(/\{\{nombre\}\}/gi, contactName || 'Estimado/a')
-        .replace(/\{\{empresa\}\}/gi, company || 'su empresa')
-        .replace(/\n/g, '<br/>')
+      const isRawHtml = message.trim().startsWith('<table') || message.trim().startsWith('<!DOCTYPE') || message.trim().startsWith('<html')
+
+      const formattedBody = isRawHtml
+        ? message
+            .replace(/\{\{nombre\}\}/gi, contactName || 'Estimado/a')
+            .replace(/\{\{empresa\}\}/gi, company || 'su empresa')
+        : `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${currentSubject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F5F4F0; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+          <tr>
+            <td style="padding: 28px 32px; background-color: #111111; color: #ffffff;">
+              <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 4px;">
+                SMARTCONTACTS // COMUNICACIÓN ESTRATÉGICA
+              </span>
+              <h1 style="margin: 0; font-size: 19px; font-weight: 600; color: #ffffff; letter-spacing: -0.4px;">
+                ${currentSubject}
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px; font-size: 14px; line-height: 1.7; color: #222222;">
+              ${message
+                .replace(/\{\{nombre\}\}/gi, contactName || 'Estimado/a')
+                .replace(/\{\{empresa\}\}/gi, company || 'su empresa')
+                .replace(/\n/g, '<br/>')}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 22px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+              <p style="margin: 0 0 4px 0; font-size: 11px; color: #555555; font-style: italic;">
+                "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+              </p>
+              <span style="font-size: 10px; color: #999999; font-family: monospace;">
+                Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
 
       const sendResult = await sendGmailCustomEmail({
         toEmail: cleanEmail,
         toName: contactName,
         subject: currentSubject,
-        htmlBody: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #111;">${currentBody}</div>`,
+        htmlBody: formattedBody,
         senderEmail: senderEmail || undefined,
         senderMask: senderName ? `${senderName} <${senderEmail}>` : undefined,
       })

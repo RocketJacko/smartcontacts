@@ -43,6 +43,8 @@ export async function GET() {
         const horaStr = cita.hora_cita || '10:00 AM'
         const tituloStr = cita.titulo || 'Cita Consultiva 45M'
 
+        const company = cita.prospectos?.company || 'su empresa'
+
         // 1. REGLA 8:00 AM: Recordatorio Matutino al iniciar el día
         if (currentHour >= 8 && !cita.recordatorio_8am_enviado && email) {
           try {
@@ -52,6 +54,7 @@ export async function GET() {
               title: tituloStr,
               timeStr: horaStr,
               meetLink,
+              company,
             })
             earlyMorningRemindersSent++
             logs.push(`Recordatorio 8:00 AM enviado a ${email}`)
@@ -76,6 +79,7 @@ export async function GET() {
               title: tituloStr,
               timeStr: horaStr,
               meetLink,
+              company,
             })
             thirtyMinRemindersSent++
             logs.push(`Recordatorio 30M enviado a ${email}`)

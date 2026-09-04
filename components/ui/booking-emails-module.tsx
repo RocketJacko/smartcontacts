@@ -2,24 +2,23 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Mail,
   Clock,
   CheckCircle2,
   Calendar,
   AlertTriangle,
-  Play,
   Send,
   Eye,
+  Code2,
   Save,
+  RotateCcw,
   RefreshCw,
-  Video,
-  Sparkles,
-  ExternalLink,
   ShieldCheck,
   Check,
+  ExternalLink,
+  Sparkles,
 } from "lucide-react"
 
-interface TemplateItem {
+export interface TemplateItem {
   tipo: "confirmacion" | "recordatorio_8am" | "recordatorio_30m"
   asunto: string
   cuerpo_html: string
@@ -27,79 +26,238 @@ interface TemplateItem {
   actualizado_en?: string
 }
 
-const DEFAULT_TEMPLATES: Record<string, TemplateItem> = {
+export const OFFICIAL_DESIGN_TEMPLATES: Record<string, TemplateItem> = {
   confirmacion: {
     tipo: "confirmacion",
-    asunto: "¡Asesoría Estratégica Agendada con Éxito! — Smartcontacts",
-    mascara_remitente: "Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>",
-    cuerpo_html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #111;">
-  <h2 style="margin-top:0; color:#111;">¡Hola {{nombre}}!</h2>
-  <p>Tu sesión estratégica consultiva de 45 minutos para la empresa <strong>{{empresa}}</strong> ha sido confirmada con éxito.</p>
-  <div style="background: #fafafa; border: 1px solid #eaeaea; border-radius: 12px; padding: 16px; margin: 20px 0;">
-    <p style="margin: 4px 0;"><strong>📅 Fecha:</strong> {{fecha}}</p>
-    <p style="margin: 4px 0;"><strong>⏰ Hora:</strong> {{hora}} (Hora Colombia)</p>
-    <p style="margin: 4px 0;"><strong>🎯 Tema:</strong> {{titulo}}</p>
-  </div>
-  <p style="margin: 24px 0;">
-    <a href="{{meetLink}}" style="background: #111; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
-      Ingresar a la Sala Google Meet
-    </a>
-  </p>
-  <p style="font-size: 12px; color: #777;">Si requieres reprogramar o tienes dudas previas, responde directamente a este correo.</p>
-</div>`,
+    asunto: "¡Asesoría Estratégica Confirmada! — Smartcontacts",
+    mascara_remitente: "Smartcontacts Agendamiento <jesus.carmona966@pascualbravo.edu.co>",
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 01 CONFIRMACIÓN DE ASESORÍA
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              ¡Sesión Estratégica Confirmada!
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Hola <strong>{{nombre}}</strong>,
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Hemos confirmado con éxito tu asesoría consultiva de 45 minutos para estructurar la nueva capacidad comercial de <strong>{{empresa}}</strong>.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">FECHA Y HORA (COLOMBIA)</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{fecha}} — {{hora}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">EMPRESA / PROYECTO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{empresa}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">MODALIDAD</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">Google Meet (Sesión Consultiva 1 a 1)</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Unirse a la Reunión en Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Si necesitas reprogramar la sesión, responde directamente a este correo.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
   recordatorio_8am: {
     tipo: "recordatorio_8am",
     asunto: "⏰ Recordatorio para Hoy: {{titulo}} a las {{hora}} — Smartcontacts",
     mascara_remitente: "Smartcontacts Recordatorios <jesus.carmona966@pascualbravo.edu.co>",
-    cuerpo_html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #111;">
-  <h2 style="margin-top:0;">Buenos días, {{nombre}}</h2>
-  <p>Te recordamos que el día de hoy tienes agendada tu sesión consultiva de 45 minutos.</p>
-  <div style="background: #fafafa; border: 1px solid #eaeaea; border-radius: 12px; padding: 16px; margin: 20px 0;">
-    <p style="margin: 4px 0;"><strong>⏰ Hora:</strong> {{hora}} (Hora Colombia)</p>
-    <p style="margin: 4px 0;"><strong>🏢 Empresa:</strong> {{empresa}}</p>
-    <p style="margin: 4px 0;"><strong>🎥 Sala Meet:</strong> <a href="{{meetLink}}">{{meetLink}}</a></p>
-  </div>
-  <p>Nos vemos hoy para estructurar tu nueva unidad de crecimiento con Inteligencia Artificial.</p>
-</div>`,
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 02 RECORDATORIO MATUTINO (8:00 AM)
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Hoy es tu Asesoría Estratégica
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Buenos días, <strong>{{nombre}}</strong>.
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Te recordamos que el día de hoy tienes programada tu sesión consultiva de 45 minutos para el proyecto de <strong>{{empresa}}</strong>.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">HORA DE INICIO</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{hora}} (Hora Colombia)</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">ENLACE DE ACCESO DIRECTO</span>
+                  <span style="font-size: 13px; font-family: monospace; color: #111111; margin-top: 4px; display: block;">{{meetLink}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Acceder a la Sala Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Nos vemos en la sesión para analizar tus metas comerciales y los modelos agénticos aplicables.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
   recordatorio_30m: {
     tipo: "recordatorio_30m",
     asunto: "🚨 Tu asesoría inicia en 30 minutos: {{titulo}}",
     mascara_remitente: "Smartcontacts Alertas <jesus.carmona966@pascualbravo.edu.co>",
-    cuerpo_html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; color: #111;">
-  <h2 style="margin-top:0; color:#10b981;">¡Tu sesión inicia en 30 minutos!</h2>
-  <p>Hola <strong>{{nombre}}</strong>, nuestro equipo consultor está listo para la reunión de las <strong>{{hora}}</strong>.</p>
-  <p style="margin: 24px 0;">
-    <a href="{{meetLink}}" style="background: #10b981; color: #fff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; display: inline-block;">
-      🎥 Entrar Ahora a Google Meet
-    </a>
-  </p>
-  <p style="font-size: 12px; color: #888;">Te recomendamos ingresar 2 minutos antes para verificar tu micrófono y cámara.</p>
-</div>`,
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 03 ALERTA EN VIVO: EN 30 MINUTOS
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Tu Asesoría Inicia en Breve
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              ¡Hola <strong>{{nombre}}</strong>!
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Tu sesión consultiva para <strong>{{empresa}}</strong> está programada para dar inicio en 30 minutos (a las <strong>{{hora}}</strong>).
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 16px 20px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">SALA EN VIVO DE GOOGLE MEET</span>
+                  <span style="font-size: 14px; font-family: monospace; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{meetLink}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 16px 28px; border-radius: 12px; display: block; font-weight: 700; text-align: center;">
+                    Ingresar a Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Te recomendamos ingresar 2 minutos antes para comprobar tu cámara y micrófono. ¡Nos vemos en la sala!
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
 }
 
 export function BookingEmailsModule() {
   const [activePhase, setActivePhase] = useState<"confirmacion" | "recordatorio_8am" | "recordatorio_30m">("confirmacion")
-  const [templates, setTemplates] = useState<Record<string, TemplateItem>>(DEFAULT_TEMPLATES)
+  const [templates, setTemplates] = useState<Record<string, TemplateItem>>(OFFICIAL_DESIGN_TEMPLATES)
+  const [viewMode, setViewMode] = useState<"preview" | "code">("preview")
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [restoredNotice, setRestoredNotice] = useState(false)
 
   // Estado de Prueba de Envío
   const [testEmail, setTestEmail] = useState("jesus.carmona966@pascualbravo.edu.co")
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
-  // Cargar plantillas desde API si existen
+  // Cargar plantillas desde API
   useEffect(() => {
     setIsLoading(true)
     fetch("/api/email/templates")
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.templates && data.templates.length > 0) {
-          const map: Record<string, TemplateItem> = { ...DEFAULT_TEMPLATES }
+          const map: Record<string, TemplateItem> = { ...OFFICIAL_DESIGN_TEMPLATES }
           data.templates.forEach((t: TemplateItem) => {
             if (map[t.tipo]) map[t.tipo] = t
           })
@@ -132,7 +290,30 @@ export function BookingEmailsModule() {
     }
   }
 
-  // Disparar prueba de las 3 fases
+  // Restaurar plantilla oficial de DESIGN.md
+  const handleRestoreOfficial = () => {
+    const official = OFFICIAL_DESIGN_TEMPLATES[activePhase]
+    setTemplates({
+      ...templates,
+      [activePhase]: { ...official },
+    })
+    setRestoredNotice(true)
+    setTimeout(() => setRestoredNotice(false), 3000)
+  }
+
+  // Generar HTML con datos simulados para Preview
+  const getRenderedHtml = () => {
+    const current = templates[activePhase] || OFFICIAL_DESIGN_TEMPLATES[activePhase]
+    return current.cuerpo_html
+      .replace(/\{\{nombre\}\}/g, "Carlos Mendoza")
+      .replace(/\{\{empresa\}\}/g, "InnovaTech Colombia")
+      .replace(/\{\{titulo\}\}/g, "Asesoría Comercial 45M")
+      .replace(/\{\{fecha\}\}/g, "Viernes 5 de Septiembre")
+      .replace(/\{\{hora\}\}/g, "10:00 AM")
+      .replace(/\{\{meetLink\}\}/g, "https://meet.google.com/sc-demo-test")
+  }
+
+  // Disparar prueba de envío real
   const handleTriggerTest = async () => {
     if (!testEmail || !testEmail.includes("@")) {
       setTestResult({ success: false, message: "Por favor ingresa un correo válido para la prueba." })
@@ -143,7 +324,6 @@ export function BookingEmailsModule() {
     setTestResult(null)
 
     try {
-      // Usar quick-send para simular el envío de la fase actual a la dirección ingresada
       const current = templates[activePhase]
       const sampleSubject = current.asunto
         .replace(/\{\{nombre\}\}/g, "Carlos Mendoza")
@@ -151,19 +331,13 @@ export function BookingEmailsModule() {
         .replace(/\{\{titulo\}\}/g, "Asesoría Comercial 45M")
         .replace(/\{\{hora\}\}/g, "10:00 AM")
 
-      const sampleBody = current.cuerpo_html
-        .replace(/\{\{nombre\}\}/g, "Carlos Mendoza")
-        .replace(/\{\{empresa\}\}/g, "InnovaTech Colombia")
-        .replace(/\{\{titulo\}\}/g, "Asesoría Comercial 45M")
-        .replace(/\{\{fecha\}\}/g, "Viernes 5 de Septiembre")
-        .replace(/\{\{hora\}\}/g, "10:00 AM")
-        .replace(/\{\{meetLink\}\}/g, "https://meet.google.com/sc-demo-test")
+      const sampleBody = getRenderedHtml()
 
       const res = await fetch("/api/email/quick-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipients: [{ email: testEmail, name: "Carlos Mendoza", company: "InnovaTech" }],
+          recipients: [{ email: testEmail, name: "Carlos Mendoza", company: "InnovaTech Colombia" }],
           subject: sampleSubject,
           message: sampleBody,
           dripSeconds: 0,
@@ -174,7 +348,7 @@ export function BookingEmailsModule() {
       if (data.success && data.summary.sent > 0) {
         setTestResult({
           success: true,
-          message: `✓ Correo de la ${activePhase.replace("_", " ").toUpperCase()} entregado con éxito a ${testEmail}.`,
+          message: `✓ Correo de la ${activePhase.replace("_", " ").toUpperCase()} entregado con diseño Bento a ${testEmail}.`,
         })
       } else {
         setTestResult({
@@ -189,62 +363,63 @@ export function BookingEmailsModule() {
     }
   }
 
-  const currentTemplate = templates[activePhase]
+  const currentTemplate = templates[activePhase] || OFFICIAL_DESIGN_TEMPLATES[activePhase]
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 font-sans">
-      {/* Encabezado */}
-      <div className="pb-4 border-b border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="w-full max-w-6xl mx-auto space-y-6 font-sans">
+      {/* Encabezado Bento Card */}
+      <div className="p-6 rounded-2xl border border-black/[0.07] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-700">
-              <Clock className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <span className="w-8 h-8 rounded-xl bg-black/[0.03] border border-black/[0.08] flex items-center justify-center text-[#111]">
+              <Clock className="w-4 h-4" />
             </span>
-            <h1 className="text-xl sm:text-2xl font-light text-[#111] tracking-tight">
-              Correos del Ciclo de Agendamiento (3 Fases)
-            </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-              Transaccional Automático
-            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-light text-[#111] tracking-tight">
+                  Plantillas del Ciclo de Agendamiento
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider border border-black/10 bg-black/[0.03] text-black/70 uppercase">
+                  Bento Design
+                </span>
+              </div>
+              <p className="text-xs text-black/50 font-light mt-0.5">
+                Diseño unificado según <code className="font-mono text-[11px] text-black/80">DESIGN.md</code>: Lienzo Warm Stone #F5F4F0, tarjetas Bento #FFFFFF y lema de valor de <code className="font-mono text-[11px] text-black/80">CONTEXT.md</code>.
+              </p>
+            </div>
           </div>
-          <p className="text-xs sm:text-sm text-black/60 font-normal mt-1">
-            Envíos automáticos por evento: confirmación inmediata tras la reserva, recordatorio a las 8:00 AM y alerta 30 minutos antes.
-          </p>
         </div>
 
-        {/* Badge Cron */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs text-black/60 self-start sm:self-auto">
+        {/* Indicador de Estado Cron */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/[0.02] border border-black/[0.06] text-[11px] font-mono text-black/60 self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Cron Job Activo (`/api/cron/reminders`)</span>
+          <span>CRON // /api/cron/reminders</span>
         </div>
       </div>
 
-      {/* Selector de las 3 Fases */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Selector de las 3 Fases (Bento Cards Interactivas) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           {
             id: "confirmacion",
-            num: "1",
+            num: "01",
             title: "Fase 1: Confirmación Inmediata",
-            desc: "Se dispara al instante en que el prospecto confirma su asesoría de 45M.",
+            desc: "Disparo instantáneo tras reserva de asesoría de 45M.",
             icon: CheckCircle2,
-            color: "text-purple-700",
           },
           {
             id: "recordatorio_8am",
-            num: "2",
+            num: "02",
             title: "Fase 2: Recordatorio Matutino (8:00 AM)",
-            desc: "Se dispara a primera hora del día fijado para recordar la reunión.",
+            desc: "Disparo diario a primera hora para citas del día.",
             icon: Calendar,
-            color: "text-blue-700",
           },
           {
             id: "recordatorio_30m",
-            num: "3",
-            title: "Fase 3: Alerta de 30 Minutos",
-            desc: "Aviso de última hora con botón destacado para ingresar a Google Meet.",
+            num: "03",
+            title: "Fase 3: Alerta en Vivo (30 Minutos)",
+            desc: "Último aviso con enlace directo para unirse a Google Meet.",
             icon: AlertTriangle,
-            color: "text-emerald-700",
           },
         ].map((phase) => {
           const isSelected = activePhase === phase.id
@@ -252,64 +427,118 @@ export function BookingEmailsModule() {
             <div
               key={phase.id}
               onClick={() => setActivePhase(phase.id as any)}
-              className={`p-4 rounded-2xl cursor-pointer transition-all border select-none ${
+              className={`p-5 rounded-2xl cursor-pointer transition-all border select-none relative overflow-hidden ${
                 isSelected
-                  ? "bg-white border-purple-600/50 shadow-md ring-1 ring-purple-600/20"
-                  : "bg-white/80 hover:bg-white border-black/[0.08] hover:border-black/20 shadow-xs"
+                  ? "bg-white border-black/30 shadow-md ring-1 ring-black/10"
+                  : "bg-white hover:bg-[#FAFAF8] border-black/[0.07] hover:border-black/15 shadow-xs"
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="w-6 h-6 rounded-full bg-black/5 text-[#111] flex items-center justify-center text-xs font-bold font-mono">
-                  {phase.num}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-mono font-medium tracking-widest text-black/40">
+                  FASE // {phase.num}
                 </span>
-                <phase.icon className={`w-4 h-4 ${phase.color}`} />
+                <phase.icon className={`w-4 h-4 ${isSelected ? "text-[#111]" : "text-black/30"}`} />
               </div>
-              <h3 className="text-xs font-semibold text-[#111] mb-1">{phase.title}</h3>
-              <p className="text-[11px] text-black/50 leading-relaxed">{phase.desc}</p>
+              <h3 className="text-sm font-medium text-[#111] mb-1.5 tracking-tight">{phase.title}</h3>
+              <p className="text-[11px] text-black/50 font-light leading-relaxed">{phase.desc}</p>
+
+              {isSelected && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#111]" />
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* Contenedor Principal: Editor de Plantilla + Panel de Prueba */}
+      {/* Contenedor Principal: Editor/Preview Bento + Panel de Prueba */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Editor de la Fase Activa (2 Cols) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
+        {/* Editor & Live Preview (2 Cols) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-black/[0.07] shadow-xs space-y-5">
+          {/* Barra de Control de la Plantilla */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.06]">
             <div>
-              <h3 className="text-sm font-semibold text-[#111]">
-                Plantilla: {activePhase.replace("_", " ").toUpperCase()}
-              </h3>
-              <p className="text-[11px] text-black/50">
-                Variables disponibles: <code className="text-purple-700">&#123;&#123;nombre&#125;&#125;</code>,{" "}
-                <code className="text-purple-700">&#123;&#123;empresa&#125;&#125;</code>,{" "}
-                <code className="text-purple-700">&#123;&#123;fecha&#125;&#125;</code>,{" "}
-                <code className="text-purple-700">&#123;&#123;hora&#125;&#125;</code>,{" "}
-                <code className="text-purple-700">&#123;&#123;meetLink&#125;&#125;</code>.
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-semibold text-[#111] uppercase tracking-wider">
+                  {activePhase.replace("_", " ")}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              </div>
+              <p className="text-[11px] text-black/40 font-mono mt-0.5">
+                Variables: &#123;&#123;nombre&#125;&#125;, &#123;&#123;empresa&#125;&#125;, &#123;&#123;fecha&#125;&#125;, &#123;&#123;hora&#125;&#125;, &#123;&#123;meetLink&#125;&#125;
               </p>
             </div>
 
-            <button
-              onClick={handleSaveTemplate}
-              disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111] hover:bg-black text-white text-xs font-medium rounded-xl transition-all shadow-xs disabled:bg-black/30"
-            >
-              {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              <span>{isSaving ? "Guardando..." : "Guardar Cambios"}</span>
-            </button>
+            {/* Alternador Vista Previa / Código + Acciones */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-[#F5F4F0] p-1 rounded-xl border border-black/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("preview")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                    viewMode === "preview"
+                      ? "bg-white text-[#111] shadow-xs font-medium"
+                      : "text-black/50 hover:text-black"
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Vista Previa</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("code")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                    viewMode === "code"
+                      ? "bg-white text-[#111] shadow-xs font-medium"
+                      : "text-black/50 hover:text-black"
+                  }`}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>Código HTML</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRestoreOfficial}
+                title="Restablecer plantilla oficial de DESIGN.md"
+                className="p-2 rounded-xl border border-black/[0.08] hover:bg-black/[0.04] text-black/60 hover:text-[#111] transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveTemplate}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#111] hover:bg-black text-white text-xs font-mono uppercase tracking-wider rounded-xl transition-all shadow-xs disabled:bg-black/30"
+              >
+                {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span>{isSaving ? "Guardando" : "Guardar"}</span>
+              </button>
+            </div>
           </div>
 
+          {/* Avisos de Confirmación */}
           {saveSuccess && (
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 flex items-center gap-2">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/[0.08] border border-emerald-500/20 text-xs text-emerald-900">
               <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Plantilla actualizada correctamente en la base de datos.</span>
+              <span className="font-light">Plantilla actualizada y sincronizada en la base de datos con éxito.</span>
             </div>
           )}
 
-          {/* Máscara y Asunto */}
-          <div className="space-y-3">
+          {restoredNotice && (
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.04] border border-black/10 text-xs text-[#111]">
+              <Sparkles className="w-4 h-4 text-black/70 shrink-0" />
+              <span className="font-light">Plantilla oficial de DESIGN.md restablecida en el editor local. Haz clic en Guardar para persistir.</span>
+            </div>
+          )}
+
+          {/* Metadatos de la Plantilla (Remitente y Asunto) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-black/70 block mb-1">Máscara del Remitente</label>
+              <label className="text-[11px] font-mono uppercase tracking-wider text-black/50 block mb-1.5">
+                Máscara del Remitente
+              </label>
               <input
                 type="text"
                 value={currentTemplate.mascara_remitente}
@@ -319,12 +548,14 @@ export function BookingEmailsModule() {
                     [activePhase]: { ...currentTemplate, mascara_remitente: e.target.value },
                   })
                 }
-                className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111]"
+                className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] focus:outline-none focus:border-black/30"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-black/70 block mb-1">Asunto del Correo</label>
+              <label className="text-[11px] font-mono uppercase tracking-wider text-black/50 block mb-1.5">
+                Asunto del Correo
+              </label>
               <input
                 type="text"
                 value={currentTemplate.asunto}
@@ -334,14 +565,33 @@ export function BookingEmailsModule() {
                     [activePhase]: { ...currentTemplate, asunto: e.target.value },
                   })
                 }
-                className="w-full px-3.5 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-medium text-[#111]"
+                className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] focus:outline-none focus:border-black/30"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="text-xs font-medium text-black/70 block mb-1">Cuerpo HTML del Correo</label>
+          {/* Área de Visualización: Live Preview vs Editor HTML */}
+          {viewMode === "preview" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-black/40 font-mono">
+                <span>VISTA PREVIA EN VIVO (LIENZO #F5F4F0 + BENTO CARD)</span>
+                <span>DATOS SIMULADOS</span>
+              </div>
+              <div className="w-full rounded-2xl border border-black/[0.08] overflow-hidden bg-[#F5F4F0] p-4 flex justify-center shadow-inner min-h-[480px]">
+                <div
+                  className="w-full max-w-[580px] bg-white rounded-[20px] shadow-sm overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: getRenderedHtml() }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-black/40 font-mono">
+                <span>EDITOR DE CÓDIGO HTML RESPONSIVO</span>
+                <span>SINTAXIS HTML / ENLACES</span>
+              </div>
               <textarea
-                rows={10}
+                rows={16}
                 value={currentTemplate.cuerpo_html}
                 onChange={(e) =>
                   setTemplates({
@@ -349,50 +599,59 @@ export function BookingEmailsModule() {
                     [activePhase]: { ...currentTemplate, cuerpo_html: e.target.value },
                   })
                 }
-                className="w-full p-3 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] leading-relaxed resize-y focus:outline-none focus:border-purple-600"
+                className="w-full p-4 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] leading-relaxed resize-y focus:outline-none focus:border-black/30"
               />
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Panel Lateral: Simulación y Prueba en Vivo (1 Col) */}
-        <div className="space-y-5">
-          {/* Tarjeta de Disparo de Prueba */}
-          <div className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-xs space-y-4">
-            <div className="flex items-center gap-2 text-[#111]">
-              <Send className="w-4 h-4 text-purple-700" />
-              <h3 className="text-sm font-semibold">Probar Envío en Vivo</h3>
+        {/* Panel Lateral: Disparo de Prueba & Normas de Sistema (1 Col) */}
+        <div className="space-y-6">
+          {/* Tarjeta Bento: Disparo de Prueba Real en Gmail */}
+          <div className="bg-white rounded-2xl p-6 border border-black/[0.07] shadow-xs space-y-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-lg bg-black/[0.04] flex items-center justify-center text-[#111]">
+                <Send className="w-3.5 h-3.5" />
+              </span>
+              <div>
+                <h3 className="text-xs font-mono uppercase tracking-wider text-[#111]">
+                  Probar Envío en Vivo
+                </h3>
+                <span className="text-[10px] text-black/40 font-mono">GMAIL REST API V1</span>
+              </div>
             </div>
 
-            <p className="text-xs text-black/60">
-              Envía una simulación real de la fase seleccionada a tu bandeja de correo para verificar el diseño en Gmail.
+            <p className="text-xs text-black/60 font-light leading-relaxed">
+              Despacha de inmediato una simulación real de la fase activa a tu cuenta personal para validar el aspecto visual en tu cliente de correo.
             </p>
 
-            <div className="space-y-2">
-              <label className="text-[11px] font-medium text-black/70 block">Enviar prueba a:</label>
-              <input
-                type="email"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="tu_correo@empresa.com"
-                className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111]"
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-mono text-black/50 block mb-1">DESTINATARIO DE PRUEBA</label>
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="tu_correo@dominio.com"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] focus:outline-none focus:border-black/30"
+                />
+              </div>
 
               <button
                 type="button"
                 disabled={isSendingTest}
                 onClick={handleTriggerTest}
-                className="w-full py-2.5 px-4 bg-[#111] hover:bg-black text-white text-xs font-medium rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs disabled:bg-black/30"
+                className="w-full py-2.5 px-4 bg-[#111] hover:bg-black text-white text-xs font-mono uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all shadow-xs disabled:bg-black/30"
               >
                 {isSendingTest ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Disparando en Gmail API...</span>
+                    <span>Despachando...</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5" />
-                    <span>Disparar Prueba ({activePhase.replace("_", " ")})</span>
+                    <span>Enviar Prueba ({activePhase.replace("_", " ")})</span>
                   </>
                 )}
               </button>
@@ -402,8 +661,8 @@ export function BookingEmailsModule() {
               <div
                 className={`p-3 rounded-xl border text-xs leading-relaxed ${
                   testResult.success
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-900"
-                    : "bg-red-500/10 border-red-500/20 text-red-900"
+                    ? "bg-emerald-500/[0.08] border-emerald-500/20 text-emerald-900"
+                    : "bg-red-500/[0.08] border-red-500/20 text-red-900"
                 }`}
               >
                 {testResult.message}
@@ -411,26 +670,40 @@ export function BookingEmailsModule() {
             )}
           </div>
 
-          {/* Tarjeta de Trazabilidad del Cron */}
-          <div className="p-4 rounded-2xl bg-black/[0.02] border border-black/[0.06] text-xs text-black/60 space-y-2.5">
-            <span className="font-semibold text-[#111] block flex items-center gap-1.5">
+          {/* Tarjeta Bento: Reglas del Sistema y Frecuencias */}
+          <div className="bg-white rounded-2xl p-6 border border-black/[0.07] shadow-xs space-y-3">
+            <div className="flex items-center gap-2 text-[#111]">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Reglas de Ejecución Automática</span>
-            </span>
-            <ul className="space-y-2 text-[11px] text-black/70">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-700 font-bold font-mono">1.</span>
-                <span><strong>Confirmación:</strong> Inmediata en el endpoint <code>/api/booking</code>.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-700 font-bold font-mono">2.</span>
-                <span><strong>Recordatorio 8:00 AM:</strong> Cron diario programado en Dokploy a las 08:00 AM Colombia.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-700 font-bold font-mono">3.</span>
-                <span><strong>Alerta 30M:</strong> Disparo cuando <code>hora_cita - now() &lt;= 30 min</code>.</span>
-              </li>
-            </ul>
+              <span className="text-xs font-mono uppercase tracking-wider font-medium">
+                Reglas de Disparo Automático
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
+                <span className="text-[10px] text-black/25 font-mono min-w-[20px]">01</span>
+                <span className="text-[11px] text-black/60 font-light flex-1">
+                  <strong>Confirmación:</strong> Inmediata al registrar reserva en calendario.
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
+              </div>
+
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
+                <span className="text-[10px] text-black/25 font-mono min-w-[20px]">02</span>
+                <span className="text-[11px] text-black/60 font-light flex-1">
+                  <strong>Recordatorio Matutino:</strong> Cron diario a las 8:00 AM (Colombia).
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
+              </div>
+
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
+                <span className="text-[10px] text-black/25 font-mono min-w-[20px]">03</span>
+                <span className="text-[11px] text-black/60 font-light flex-1">
+                  <strong>Alerta 30 Minutos:</strong> Disparo automático 30 min antes de la cita.
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -12,34 +12,210 @@ export interface EmailTemplateItem {
 const DEFAULT_TEMPLATES: Record<string, EmailTemplateItem> = {
   confirmacion: {
     tipo: 'confirmacion',
-    mascara_remitente: 'Agendamiento Smartcontacts <jesus.carmona966@pascualbravo.edu.co>',
-    asunto: '¡Asesoría Estratégica Agendada con Éxito! — Smartcontacts',
-    cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
-  <h2>¡Hola {{nombre}}!</h2>
-  <p>Tu asesoría consultiva de 45M para la empresa <strong>{{empresa}}</strong> ha sido agendada con éxito.</p>
-  <p><strong>Fecha:</strong> {{fecha}}<br><strong>Hora:</strong> {{hora}}</p>
-  <p><a href="{{meetLink}}" style="background:#111; color:#fff; padding:10px 16px; border-radius:8px; text-decoration:none;">Unirse a Google Meet</a></p>
-</div>`,
+    mascara_remitente: 'Smartcontacts Agendamiento <jesus.carmona966@pascualbravo.edu.co>',
+    asunto: '¡Asesoría Estratégica Confirmada! — Smartcontacts',
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 01 CONFIRMACIÓN DE ASESORÍA
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              ¡Sesión Estratégica Confirmada!
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Hola <strong>{{nombre}}</strong>,
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Hemos confirmado con éxito tu asesoría consultiva de 45 minutos para estructurar la nueva capacidad comercial de <strong>{{empresa}}</strong>.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">FECHA Y HORA (COLOMBIA)</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{fecha}} — {{hora}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">EMPRESA / PROYECTO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{empresa}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">MODALIDAD</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">Google Meet (Sesión Consultiva 1 a 1)</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Unirse a la Reunión en Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Si necesitas reprogramar la sesión, responde directamente a este correo.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
   recordatorio_8am: {
     tipo: 'recordatorio_8am',
     mascara_remitente: 'Smartcontacts Recordatorios <jesus.carmona966@pascualbravo.edu.co>',
-    asunto: '⏰ Recordatorio de Cita para Hoy: {{titulo}} ({{hora}})',
-    cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
-  <h2>Hola {{nombre}},</h2>
-  <p>Te recordamos que el día de hoy tienes agendada tu sesión consultiva de 45M.</p>
-  <p><strong>Hora:</strong> {{hora}}<br><strong>Google Meet:</strong> <a href="{{meetLink}}">{{meetLink}}</a></p>
-</div>`,
+    asunto: '⏰ Recordatorio para Hoy: {{titulo}} a las {{hora}} — Smartcontacts',
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 02 RECORDATORIO MATUTINO (8:00 AM)
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Hoy es tu Asesoría Estratégica
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Buenos días, <strong>{{nombre}}</strong>.
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Te recordamos que el día de hoy tienes programada tu sesión consultiva de 45 minutos para el proyecto de <strong>{{empresa}}</strong>.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">HORA DE INICIO</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{hora}} (Hora Colombia)</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">ENLACE DE ACCESO DIRECTO</span>
+                  <span style="font-size: 13px; font-family: monospace; color: #111111; margin-top: 4px; display: block;">{{meetLink}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Acceder a la Sala Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Nos vemos en la sesión para analizar tus metas comerciales y los modelos agénticos aplicables.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
   recordatorio_30m: {
     tipo: 'recordatorio_30m',
     mascara_remitente: 'Smartcontacts Alertas <jesus.carmona966@pascualbravo.edu.co>',
-    asunto: '🚀 Tu asesoría inicia en 30 minutos: {{titulo}}',
-    cuerpo_html: `<div style="font-family: sans-serif; padding: 20px;">
-  <h2>¡Hola {{nombre}}!</h2>
-  <p>Tu sesión consultiva inicia en 30 minutos.</p>
-  <p><a href="{{meetLink}}" style="background:#10b981; color:#fff; padding:10px 16px; border-radius:8px; text-decoration:none;">Ingresar a la Sala Google Meet</a></p>
-</div>`,
+    asunto: '🚨 Tu asesoría inicia en 30 minutos: {{titulo}}',
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // 03 ALERTA EN VIVO: EN 30 MINUTOS
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Tu Asesoría Inicia en Breve
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              ¡Hola <strong>{{nombre}}</strong>!
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Tu sesión consultiva para <strong>{{empresa}}</strong> está programada para dar inicio en 30 minutos (a las <strong>{{hora}}</strong>).
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 16px 20px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">SALA EN VIVO DE GOOGLE MEET</span>
+                  <span style="font-size: 14px; font-family: monospace; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{meetLink}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="{{meetLink}}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 16px 28px; border-radius: 12px; display: block; font-weight: 700; text-align: center;">
+                    Ingresar a Google Meet &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Te recomendamos ingresar 2 minutos antes para comprobar tu cámara y micrófono. ¡Nos vemos en la sala!
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
   },
 }
 
