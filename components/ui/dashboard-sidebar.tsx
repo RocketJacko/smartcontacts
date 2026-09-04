@@ -38,11 +38,14 @@ import {
   Zap,
   Share2,
   Layers,
+  Clock,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 import { CalendarDataTable4 } from "@/components/ui/calendar-data-table-4"
-import { EmailAutomationModule } from "@/components/ui/email-automation-module"
-import { SimpleEmailSender } from "@/components/ui/simple-email-sender"
+import { BookingEmailsModule } from "@/components/ui/booking-emails-module"
+import { MarketingCampaignsModule } from "@/components/ui/marketing-campaigns-module"
+import { MarketingAudiencesModule } from "@/components/ui/marketing-audiences-module"
+import { GmailAccountsModule } from "@/components/ui/gmail-accounts-module"
 import { ReferralsAdminModule } from "@/components/ui/referrals-admin-module"
 
 export type NavItemData = {
@@ -71,30 +74,23 @@ const mockNavGroups: NavGroupData[] = [
   {
     headingKey: "operation",
     items: [
-      {
-        id: "email",
-        titleKey: "campaigns",
-        icon: Mail,
-        children: [
-          { id: "email-contacts", titleKey: "emailContacts", icon: Users },
-          { id: "email-dispatch", titleKey: "emailDispatch", icon: Play },
-          { id: "email-roundrobin", titleKey: "emailRoundRobin", icon: RefreshCw },
-          { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
-          { id: "email-templates", titleKey: "emailTemplates", icon: FileText },
-        ],
-      },
-      { id: "calendar", titleKey: "calendar", icon: Calendar },
+      { id: "calendar", titleKey: "calendar", icon: Calendar, badgeKey: "totalProspectos" },
+      { id: "booking-emails", titleKey: "bookingEmails", icon: Clock },
       { id: "referrals", titleKey: "referrals", icon: Share2 },
-      {
-        id: "team",
-        titleKey: "agents",
-        icon: Bot,
-      },
+      { id: "team", titleKey: "agents", icon: Bot },
     ],
   },
   {
-    headingKey: "integrations",
+    headingKey: "marketing",
     items: [
+      { id: "marketing-campaigns", titleKey: "marketingCampaigns", icon: Send },
+      { id: "marketing-audiences", titleKey: "marketingAudiences", icon: Users },
+    ],
+  },
+  {
+    headingKey: "infrastructure",
+    items: [
+      { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
       { id: "api", titleKey: "api", icon: Terminal },
       { id: "webhooks", titleKey: "webhooks", icon: Blocks },
     ],
@@ -625,38 +621,14 @@ export default function SidebarNavPreview() {
                 </div>
               </div>
             </>
-          ) : activeId === "projects" || activeId === "email" || activeId.startsWith("email-") ? (
-            !isEmailAdvancedMode && (activeId === "email" || activeId === "email-dispatch" || activeId === "projects") ? (
-              <SimpleEmailSender onSwitchToAdvanced={() => setIsEmailAdvancedMode(true)} />
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-purple-500/[0.04] border border-purple-500/20">
-                  <div className="flex items-center gap-2 text-xs text-purple-950 font-medium">
-                    <Layers className="w-4 h-4 text-purple-700" />
-                    <span>Estás en el <strong>Modo Avanzado</strong> (Gestión de Base de Datos Masiva +200k contactos).</span>
-                  </div>
-                  <button
-                    onClick={() => setIsEmailAdvancedMode(false)}
-                    className="px-3 py-1 bg-white hover:bg-black/[0.04] border border-black/[0.1] text-xs font-semibold text-[#111] rounded-lg shadow-2xs transition-colors"
-                  >
-                    ⬅ Volver al Modo Simple
-                  </button>
-                </div>
-                <EmailAutomationModule
-                  initialTab={
-                    activeId === "email-dispatch"
-                      ? "dispatch"
-                      : activeId === "email-templates"
-                      ? "templates"
-                      : activeId === "email-roundrobin"
-                      ? "roundrobin"
-                      : activeId === "email-accounts"
-                      ? "accounts"
-                      : "contacts"
-                  }
-                />
-              </div>
-            )
+          ) : activeId === "booking-emails" ? (
+            <BookingEmailsModule />
+          ) : activeId === "marketing-campaigns" || activeId === "email" || activeId === "projects" ? (
+            <MarketingCampaignsModule />
+          ) : activeId === "marketing-audiences" ? (
+            <MarketingAudiencesModule />
+          ) : activeId === "email-accounts" ? (
+            <GmailAccountsModule />
           ) : activeId === "calendar" || activeId === "inbox" ? (
             <>
               {/* Top Title Banner */}
