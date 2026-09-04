@@ -201,8 +201,8 @@ export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow)
       booking.servicio || 'Asesoría Estratégica Smartcontacts',
       booking.meetLink || 'N/A',
       booking.googleEventId || 'N/A',
-      booking.estado || 'Agendada (Pendiente)',
-      booking.resultadoComercial || 'Pendiente de Diagnóstico',
+      (booking.estado || 'agendado').toLowerCase().trim(),
+      (booking.resultadoComercial || 'pendiente').toLowerCase().trim(),
       booking.fechaRegistro || new Date().toISOString(),
     ]
 
