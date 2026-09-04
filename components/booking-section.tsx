@@ -340,42 +340,6 @@ export function BookingSection() {
                 )}
               </div>
 
-              {/* Grid Cards for Fast Selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
-                {t.booking.topics.map((item: any, index: number) => {
-                  const isSelected = selectedTopic === item.id
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setSelectedTopic(item.id)}
-                      className={`p-4 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                        isSelected
-                          ? "bg-black/[0.03] border-black text-[#111] shadow-2xs ring-1 ring-black"
-                          : "bg-black/[0.01] border-black/[0.06] text-black/70 hover:border-black/20 hover:bg-black/[0.02]"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between w-full">
-                        <span className="text-[10px] font-mono font-medium text-black/40">
-                          0{index + 1}
-                        </span>
-                        {isSelected && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-[#111] mb-1">
-                          {item.title}
-                        </h4>
-                        <p className="text-[11px] text-black/60 leading-relaxed line-clamp-2">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
               <div className="pt-4 flex justify-end border-t border-black/[0.06]">
                 <button
                   type="button"
