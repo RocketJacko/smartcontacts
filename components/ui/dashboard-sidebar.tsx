@@ -66,23 +66,23 @@ const mockNavGroups: NavGroupData[] = [
   {
     headingKey: "operation",
     items: [
-      { id: "calendar", titleKey: "calendar", icon: Calendar, badgeKey: "totalProspectos" },
-      { id: "booking-emails", titleKey: "bookingEmails", icon: Clock },
-      { id: "referrals", titleKey: "referrals", icon: Share2 },
+      { id: "calendar", titleKey: "Agenda & Citas", icon: Calendar, badgeKey: "totalProspectos" },
+      { id: "booking-emails", titleKey: "Correos & Solicitudes", icon: Clock },
+      { id: "referrals", titleKey: "Red de Referidos", icon: Share2 },
     ],
   },
   {
     headingKey: "marketing",
     items: [
-      { id: "marketing-campaigns", titleKey: "marketingCampaigns", icon: Send },
-      { id: "marketing-audiences", titleKey: "marketingAudiences", icon: Users },
+      { id: "marketing-campaigns", titleKey: "Campañas Masivas", icon: Send },
+      { id: "marketing-audiences", titleKey: "Directorios & Audiencias", icon: Users },
     ],
   },
   {
     headingKey: "infrastructure",
     items: [
-      { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
-      { id: "api", titleKey: "api", icon: Terminal },
+      { id: "email-accounts", titleKey: "Cuentas Gmail / Remitentes", icon: Key },
+      { id: "api", titleKey: "Estado de APIs & Cron", icon: Terminal },
     ],
   },
 ]
@@ -272,11 +272,16 @@ export function SidebarNav({
 
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col gap-4 mt-1">
         {mockNavGroups.map((group, idx) => {
-          const headingText = group.headingKey ? (t.dashboard?.groups as any)?.[group.headingKey] : null
+          const defaultTitles: Record<string, string> = {
+            operation: "Operación Comercial & Citas",
+            marketing: "Email Marketing & Campañas",
+            infrastructure: "Infraestructura & Conectores",
+          }
+          const headingText = group.headingKey ? ((t.dashboard?.groups as any)?.[group.headingKey] || defaultTitles[group.headingKey] || group.headingKey) : null
           return (
             <div key={idx} className="flex flex-col gap-0.5">
               {headingText && (
-                <span className="px-3 mb-1.5 text-[11px] font-semibold text-black/50 tracking-tight font-sans">
+                <span className="px-3 mb-1.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-black/40">
                   {headingText}
                 </span>
               )}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseConfig } from '@/lib/infrastructure/supabase/supabase-client'
 
 export interface EmailTemplateItem {
-  tipo: 'confirmacion' | 'recordatorio_8am' | 'recordatorio_30m'
+  tipo: 'solicitud_informacion' | 'confirmacion' | 'recordatorio_8am' | 'recordatorio_30m'
   mascara_remitente: string
   asunto: string
   cuerpo_html: string
@@ -10,6 +10,90 @@ export interface EmailTemplateItem {
 }
 
 const DEFAULT_TEMPLATES: Record<string, EmailTemplateItem> = {
+  solicitud_informacion: {
+    tipo: 'solicitud_informacion',
+    mascara_remitente: 'Smartcontacts Comercial <jesus.carmona966@pascualbravo.edu.co>',
+    asunto: 'Hemos recibido tu solicitud de información — Smartcontacts',
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // SOLICITUD DE INFORMACIÓN RECIBIDA
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Hemos Recibido tu Solicitud
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Hola <strong>{{nombre}}</strong>,
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Confirmamos que tus datos han sido registrados en nuestro sistema. Nuestro equipo comercial revisará los requerimientos de <strong>{{empresa}}</strong> y se comunicará contigo vía WhatsApp al <strong>{{telefono}}</strong> o respondiendo a este correo.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONTACTO REGISTRADO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{nombre}} &bull; {{telefono}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CORREO ELECTRÓNICO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{email}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONSULTA / REQUERIMIENTO</span>
+                  <span style="font-size: 12px; color: #444444; margin-top: 4px; display: block; line-height: 1.5;">{{mensaje}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 16px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="https://wa.me/573127529629?text=Hola%20Smartcontacts,%20acabo%20de%20solicitar%20informaci%C3%B3n%20y%20deseo%20atenci%C3%B3n%20inmediata" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Chatear Ahora por WhatsApp con un Asesor &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center">
+                  <a href="https://smartcontacts.cloud/propuesta" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; color: #111111; text-decoration: underline; font-weight: 600;">
+                    Explorar Nuestra Propuesta Comercial y Modalidades &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Si deseas agregar detalles o documentos a tu solicitud, responde directamente a este mensaje.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+  },
   confirmacion: {
     tipo: 'confirmacion',
     mascara_remitente: 'Smartcontacts Agendamiento <jesus.carmona966@pascualbravo.edu.co>',

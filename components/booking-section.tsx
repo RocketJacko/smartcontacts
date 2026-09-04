@@ -71,7 +71,7 @@ export function BookingSection() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: "booking",
+          type: "lead",
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),

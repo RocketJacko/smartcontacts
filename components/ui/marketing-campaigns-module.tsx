@@ -62,7 +62,7 @@ export function MarketingCampaignsModule() {
   ])
   const [newSubjectInput, setNewSubjectInput] = useState("")
   const [campaignMessage, setCampaignMessage] = useState(
-    "Hola {{nombre}},\n\nAnalizamos la estructura de {{empresa}} y diseñamos una solución agéntica para generar citas comerciales sin aumentar tu equipo operativo.\n\nPuedes conocer más y agendar tu sesión de 45 minutos aquí: https://smartcontacts.cloud/agendar\n\nSaludos,\nEquipo Smartcontacts"
+    "Hola {{nombre}},\n\nAnalizamos la estructura de {{empresa}} y diseñamos una solución agéntica para generar citas comerciales sin aumentar tu equipo operativo.\n\nPuedes conocer nuestra propuesta completa y casos de éxito aquí: https://smartcontacts.cloud/propuesta o chatear directamente con nosotros por WhatsApp: https://wa.me/573127529629\n\nSaludos,\nEquipo Smartcontacts"
   )
 
   // 3. Controles de Despacho & Goteo

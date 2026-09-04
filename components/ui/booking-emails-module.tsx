@@ -14,12 +14,12 @@ import {
   RefreshCw,
   ShieldCheck,
   Check,
-  ExternalLink,
+  MessageSquare,
   Sparkles,
 } from "lucide-react"
 
 export interface TemplateItem {
-  tipo: "confirmacion" | "recordatorio_8am" | "recordatorio_30m"
+  tipo: "solicitud_informacion" | "confirmacion" | "recordatorio_8am" | "recordatorio_30m"
   asunto: string
   cuerpo_html: string
   mascara_remitente: string
@@ -27,6 +27,90 @@ export interface TemplateItem {
 }
 
 export const OFFICIAL_DESIGN_TEMPLATES: Record<string, TemplateItem> = {
+  solicitud_informacion: {
+    tipo: "solicitud_informacion",
+    asunto: "Hemos recibido tu solicitud de información — Smartcontacts",
+    mascara_remitente: "Smartcontacts Comercial <jesus.carmona966@pascualbravo.edu.co>",
+    cuerpo_html: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+        <tr>
+          <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+            <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+              SMARTCONTACTS // SOLICITUD DE INFORMACIÓN RECIBIDA
+            </span>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+              Hemos Recibido tu Solicitud
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+              Hola <strong>{{nombre}}</strong>,
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+              Confirmamos que tus datos han sido registrados correctamente. Nuestro equipo comercial analizará la estructura de <strong>{{empresa}}</strong> y te contactará en breve vía WhatsApp al <strong>{{telefono}}</strong> o respondiendo a este correo.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONTACTO REGISTRADO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{nombre}} &bull; {{telefono}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CORREO ELECTRÓNICO</span>
+                  <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">{{email}}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 14px 18px;">
+                  <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONSULTA / REQUERIMIENTO</span>
+                  <span style="font-size: 12px; color: #444444; margin-top: 4px; display: block; line-height: 1.5;">{{mensaje}}</span>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 16px; width: 100%;">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color: #111111;">
+                  <a href="https://wa.me/573127529629?text=Hola%20Smartcontacts,%20acabo%20de%20solicitar%20informaci%C3%B3n%20y%20deseo%20atenci%C3%B3n%20inmediata" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                    Chatear Ahora por WhatsApp con un Asesor &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+              <tr>
+                <td align="center">
+                  <a href="https://smartcontacts.cloud/propuesta" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; color: #111111; text-decoration: underline; font-weight: 600;">
+                    Explorar Nuestra Propuesta Comercial y Modalidades &rarr;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+              Si deseas agregar detalles o documentos a tu solicitud, responde directamente a este mensaje.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+              "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+            </p>
+            <span style="font-size: 10px; color: #999999; font-family: monospace;">
+              Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+  },
   confirmacion: {
     tipo: "confirmacion",
     asunto: "¡Asesoría Estratégica Confirmada! — Smartcontacts",
@@ -237,7 +321,7 @@ export const OFFICIAL_DESIGN_TEMPLATES: Record<string, TemplateItem> = {
 }
 
 export function BookingEmailsModule() {
-  const [activePhase, setActivePhase] = useState<"confirmacion" | "recordatorio_8am" | "recordatorio_30m">("confirmacion")
+  const [activePhase, setActivePhase] = useState<"solicitud_informacion" | "confirmacion" | "recordatorio_8am" | "recordatorio_30m">("solicitud_informacion")
   const [templates, setTemplates] = useState<Record<string, TemplateItem>>(OFFICIAL_DESIGN_TEMPLATES)
   const [viewMode, setViewMode] = useState<"preview" | "code">("preview")
   const [isLoading, setIsLoading] = useState(false)
@@ -284,7 +368,7 @@ export function BookingEmailsModule() {
         setTimeout(() => setSaveSuccess(false), 3000)
       }
     } catch {
-      // Ignorar error de red y mantener local
+      // Mantener local
     } finally {
       setIsSaving(false)
     }
@@ -306,7 +390,10 @@ export function BookingEmailsModule() {
     const current = templates[activePhase] || OFFICIAL_DESIGN_TEMPLATES[activePhase]
     return current.cuerpo_html
       .replace(/\{\{nombre\}\}/g, "Carlos Mendoza")
-      .replace(/\{\{empresa\}\}/g, "InnovaTech Colombia")
+      .replace(/\{\{empresa\}\}/g, "InnovaTech Colombia S.A.S.")
+      .replace(/\{\{telefono\}\}/g, "+57 312 752 9629")
+      .replace(/\{\{email\}\}/g, testEmail)
+      .replace(/\{\{mensaje\}\}/g, "Deseamos implementar un canal agéntico de prospección con IA y consultar la base de datos de 200k contactos.")
       .replace(/\{\{titulo\}\}/g, "Asesoría Comercial 45M")
       .replace(/\{\{fecha\}\}/g, "Viernes 5 de Septiembre")
       .replace(/\{\{hora\}\}/g, "10:00 AM")
@@ -327,7 +414,7 @@ export function BookingEmailsModule() {
       const current = templates[activePhase]
       const sampleSubject = current.asunto
         .replace(/\{\{nombre\}\}/g, "Carlos Mendoza")
-        .replace(/\{\{empresa\}\}/g, "InnovaTech")
+        .replace(/\{\{empresa\}\}/g, "InnovaTech Colombia")
         .replace(/\{\{titulo\}\}/g, "Asesoría Comercial 45M")
         .replace(/\{\{hora\}\}/g, "10:00 AM")
 
@@ -348,7 +435,7 @@ export function BookingEmailsModule() {
       if (data.success && data.summary.sent > 0) {
         setTestResult({
           success: true,
-          message: `✓ Correo de la ${activePhase.replace("_", " ").toUpperCase()} entregado con diseño Bento a ${testEmail}.`,
+          message: `✓ Correo de "${activePhase.replace("_", " ").toUpperCase()}" entregado con éxito a ${testEmail}.`,
         })
       } else {
         setTestResult({
@@ -377,14 +464,14 @@ export function BookingEmailsModule() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-light text-[#111] tracking-tight">
-                  Plantillas del Ciclo de Agendamiento
+                  Gestión de Plantillas: Solicitudes & Ciclo de Citas
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider border border-black/10 bg-black/[0.03] text-black/70 uppercase">
                   Bento Design
                 </span>
               </div>
               <p className="text-xs text-black/50 font-light mt-0.5">
-                Diseño unificado según <code className="font-mono text-[11px] text-black/80">DESIGN.md</code>: Lienzo Warm Stone #F5F4F0, tarjetas Bento #FFFFFF y lema de valor de <code className="font-mono text-[11px] text-black/80">CONTEXT.md</code>.
+                Plantillas para personas que <strong>solicitan información</strong> (con acceso directo a WhatsApp y propuesta) y ciclo de <strong>citas agendadas</strong> (Google Meet y recordatorios).
               </p>
             </div>
           </div>
@@ -397,28 +484,35 @@ export function BookingEmailsModule() {
         </div>
       </div>
 
-      {/* Selector de las 3 Fases (Bento Cards Interactivas) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Selector de las 4 Plantillas (Bento Cards Interactivas) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
+            id: "solicitud_informacion",
+            tag: "WEB LEAD",
+            title: "Solicitud de Información",
+            desc: "Acuse de recibo para quienes solicitan datos en la web. Botón directo a WhatsApp.",
+            icon: MessageSquare,
+          },
+          {
             id: "confirmacion",
-            num: "01",
-            title: "Fase 1: Confirmación Inmediata",
-            desc: "Disparo instantáneo tras reserva de asesoría de 45M.",
+            tag: "CITA MEET",
+            title: "Confirmación de Cita",
+            desc: "Disparo al fijar fecha/hora de la reunión de 45M con Google Meet.",
             icon: CheckCircle2,
           },
           {
             id: "recordatorio_8am",
-            num: "02",
-            title: "Fase 2: Recordatorio Matutino (8:00 AM)",
-            desc: "Disparo diario a primera hora para citas del día.",
+            tag: "8:00 AM",
+            title: "Recordatorio Matutino",
+            desc: "Disparo diario a primera hora para las citas programadas hoy.",
             icon: Calendar,
           },
           {
             id: "recordatorio_30m",
-            num: "03",
-            title: "Fase 3: Alerta en Vivo (30 Minutos)",
-            desc: "Último aviso con enlace directo para unirse a Google Meet.",
+            tag: "EN 30 MIN",
+            title: "Alerta de 30 Minutos",
+            desc: "Aviso previo a la sesión con botón destacado para ingresar a Meet.",
             icon: AlertTriangle,
           },
         ].map((phase) => {
@@ -427,19 +521,19 @@ export function BookingEmailsModule() {
             <div
               key={phase.id}
               onClick={() => setActivePhase(phase.id as any)}
-              className={`p-5 rounded-2xl cursor-pointer transition-all border select-none relative overflow-hidden ${
+              className={`p-4 rounded-2xl cursor-pointer transition-all border select-none relative overflow-hidden ${
                 isSelected
                   ? "bg-white border-black/30 shadow-md ring-1 ring-black/10"
                   : "bg-white hover:bg-[#FAFAF8] border-black/[0.07] hover:border-black/15 shadow-xs"
               }`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-mono font-medium tracking-widest text-black/40">
-                  FASE // {phase.num}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono font-medium tracking-widest text-black/40 uppercase">
+                  {phase.tag}
                 </span>
                 <phase.icon className={`w-4 h-4 ${isSelected ? "text-[#111]" : "text-black/30"}`} />
               </div>
-              <h3 className="text-sm font-medium text-[#111] mb-1.5 tracking-tight">{phase.title}</h3>
+              <h3 className="text-xs font-medium text-[#111] mb-1 tracking-tight">{phase.title}</h3>
               <p className="text-[11px] text-black/50 font-light leading-relaxed">{phase.desc}</p>
 
               {isSelected && (
@@ -464,7 +558,7 @@ export function BookingEmailsModule() {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
               <p className="text-[11px] text-black/40 font-mono mt-0.5">
-                Variables: &#123;&#123;nombre&#125;&#125;, &#123;&#123;empresa&#125;&#125;, &#123;&#123;fecha&#125;&#125;, &#123;&#123;hora&#125;&#125;, &#123;&#123;meetLink&#125;&#125;
+                Variables: &#123;&#123;nombre&#125;&#125;, &#123;&#123;empresa&#125;&#125;, &#123;&#123;telefono&#125;&#125;, &#123;&#123;email&#125;&#125;, &#123;&#123;mensaje&#125;&#125;, &#123;&#123;meetLink&#125;&#125;
               </p>
             </div>
 
@@ -622,7 +716,7 @@ export function BookingEmailsModule() {
             </div>
 
             <p className="text-xs text-black/60 font-light leading-relaxed">
-              Despacha de inmediato una simulación real de la fase activa a tu cuenta personal para validar el aspecto visual en tu cliente de correo.
+              Despacha de inmediato una simulación real de la plantilla activa a tu cuenta para verificar su diseño en Gmail.
             </p>
 
             <div className="space-y-3">
@@ -670,12 +764,12 @@ export function BookingEmailsModule() {
             )}
           </div>
 
-          {/* Tarjeta Bento: Reglas del Sistema y Frecuencias */}
+          {/* Tarjeta Bento: Reglas de Disparo Automático */}
           <div className="bg-white rounded-2xl p-6 border border-black/[0.07] shadow-xs space-y-3">
             <div className="flex items-center gap-2 text-[#111]">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span className="text-xs font-mono uppercase tracking-wider font-medium">
-                Reglas de Disparo Automático
+                Reglas del Sistema
               </span>
             </div>
 
@@ -683,7 +777,7 @@ export function BookingEmailsModule() {
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
                 <span className="text-[10px] text-black/25 font-mono min-w-[20px]">01</span>
                 <span className="text-[11px] text-black/60 font-light flex-1">
-                  <strong>Confirmación:</strong> Inmediata al registrar reserva en calendario.
+                  <strong>Solicitud Web:</strong> Disparo inmediato. Conecta directo a WhatsApp y Propuesta.
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
               </div>
@@ -691,7 +785,7 @@ export function BookingEmailsModule() {
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
                 <span className="text-[10px] text-black/25 font-mono min-w-[20px]">02</span>
                 <span className="text-[11px] text-black/60 font-light flex-1">
-                  <strong>Recordatorio Matutino:</strong> Cron diario a las 8:00 AM (Colombia).
+                  <strong>Confirmación Cita:</strong> Al pactar fecha/hora con sala Google Meet.
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
               </div>
@@ -699,7 +793,15 @@ export function BookingEmailsModule() {
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
                 <span className="text-[10px] text-black/25 font-mono min-w-[20px]">03</span>
                 <span className="text-[11px] text-black/60 font-light flex-1">
-                  <strong>Alerta 30 Minutos:</strong> Disparo automático 30 min antes de la cita.
+                  <strong>Recordatorio 8:00 AM:</strong> Cron diario matutino para citas del día.
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
+              </div>
+
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group">
+                <span className="text-[10px] text-black/25 font-mono min-w-[20px]">04</span>
+                <span className="text-[11px] text-black/60 font-light flex-1">
+                  <strong>Alerta 30 Minutos:</strong> 30 min antes de la hora de la sesión.
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
               </div>

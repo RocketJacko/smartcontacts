@@ -584,3 +584,160 @@ export async function sendGmailCustomEmail(params: {
     return { success: false, error: error?.message || 'Error en envío de correo' }
   }
 }
+
+/**
+ * Envía el correo de acuse de recibo a las personas que SOLICITAN INFORMACIÓN en la web.
+ * (NUNCA redirige al formulario de captura; ofrece atención directa en WhatsApp y acceso a la Propuesta Comercial).
+ */
+export async function sendInformationRequestReceiptEmail(params: {
+  toEmail: string
+  toName: string
+  phone?: string
+  company?: string
+  message?: string
+  topic?: string
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const { senderEmail, senderName } = getGmailCredentials()
+  const accessToken = await getAccessToken()
+
+  if (!accessToken) {
+    return { success: false, error: 'Credenciales de Gmail no configuradas' }
+  }
+
+  try {
+    const subject = `Hemos recibido tu solicitud de información — Smartcontacts`
+    const companyStr = params.company || 'su empresa'
+    const phoneStr = params.phone || 'No especificado'
+    const messageStr = params.message || 'Consulta sobre soluciones de IA agéntica y crecimiento comercial.'
+    const whatsappUrl = `https://wa.me/573127529629?text=${encodeURIComponent(`Hola Smartcontacts, acabo de solicitar información para ${companyStr} a nombre de ${params.toName}. Deseo coordinar con un asesor comercial.`)}`
+    const proposalUrl = 'https://smartcontacts.cloud/propuesta'
+
+    const htmlBody = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Información Recibida — Smartcontacts</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F5F4F0; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+          <!-- Header Bento Institucional -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+              <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+                SMARTCONTACTS // SOLICITUD DE INFORMACIÓN RECIBIDA
+              </span>
+              <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+                Hemos Recibido tu Solicitud
+              </h1>
+            </td>
+          </tr>
+          <!-- Content Bento -->
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+                Hola <strong>${params.toName}</strong>,
+              </p>
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+                Confirmamos que tus datos han sido registrados en nuestro sistema. Nuestro equipo comercial revisará los requerimientos de <strong>${companyStr}</strong> y se comunicará contigo vía WhatsApp al <strong>${phoneStr}</strong> o respondiendo a este correo.
+              </p>
+
+              <!-- Resumen de Datos Recibidos -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAFAF8; border-radius: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 28px;">
+                <tr>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONTACTO REGISTRADO</span>
+                    <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">${params.toName} &bull; ${phoneStr}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CORREO ELECTRÓNICO</span>
+                    <span style="font-size: 13px; font-weight: 600; color: #111111; margin-top: 4px; display: block;">${params.toEmail}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 14px 18px;">
+                    <span style="font-size: 10px; font-family: monospace; color: #888888; text-transform: uppercase; letter-spacing: 1px; display: block; font-weight: 600;">CONSULTA / REQUERIMIENTO</span>
+                    <span style="font-size: 12px; color: #444444; margin-top: 4px; display: block; line-height: 1.5;">${messageStr}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Botones de Acción Directa (WhatsApp y Propuesta) -->
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 16px; width: 100%;">
+                <tr>
+                  <td align="center" style="border-radius: 12px; background-color: #111111;">
+                    <a href="${whatsappUrl}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; text-decoration: none; padding: 15px 28px; border-radius: 12px; display: block; font-weight: 600; text-align: center;">
+                      Chatear Ahora por WhatsApp con un Asesor &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; width: 100%;">
+                <tr>
+                  <td align="center">
+                    <a href="${proposalUrl}" target="_blank" style="font-size: 12px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; color: #111111; text-decoration: underline; font-weight: 600;">
+                      Explorar Nuestra Propuesta Comercial y Modalidades &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+                Si deseas agregar detalles o documentos a tu solicitud, responde directamente a este mensaje.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer Institucional CONTEXT.md -->
+          <tr>
+            <td style="padding: 24px 32px; background-color: #FAFAF8; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+              <p style="margin: 0 0 6px 0; font-size: 11px; color: #555555; font-style: italic;">
+                "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+              </p>
+              <span style="font-size: 10px; color: #999999; font-family: monospace;">
+                Smartcontacts Cloud &copy; 2026 — Inteligencia de Datos & Agentes de IA.
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+    const rawMessage = createRawMimeMessage(
+      senderName,
+      senderEmail,
+      params.toEmail,
+      subject,
+      htmlBody
+    )
+
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw: rawMessage }),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) {
+      const errText = await res.text()
+      return { success: false, error: errText }
+    }
+
+    const data = await res.json()
+    return { success: true, messageId: data.id }
+
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Error enviando confirmación de solicitud de información' }
+  }
+}

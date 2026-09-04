@@ -74,7 +74,83 @@ export class ProcessBookingUseCase {
       }
     }
 
-    const timeString = data.time || data.timeSlot || '02:00 PM'
+    const isLead = data.type === 'lead' || (!data.date && !data.timeSlot && !data.time)
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // FLUJO A: PERSONA QUE SOLICITA INFORMACIÓN EN LA WEB (LEAD COMERCIAL)
+    // ──────────────────────────────────────────────────────────────────────────
+    if (isLead) {
+      let prospectoId: string | undefined = undefined
+
+      try {
+        const { url, anonKey } = getSupabaseConfig()
+        if (url && anonKey) {
+          const prospectoRes = await fetch(`${url}/rest/v1/prospectos`, {
+            method: 'POST',
+            headers: {
+              'apikey': anonKey,
+              'Authorization': `Bearer ${anonKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation',
+            },
+            body: JSON.stringify({
+              name: data.name || 'Cliente Potencial',
+              phone: data.phone || 'Sin Teléfono',
+              email: data.email,
+              company: data.company || 'Empresa Privada',
+              topic: data.topic || data.service || data.description || 'Solicitud de información comercial',
+              acepta_tratamiento_datos: data.acepta_tratamiento_datos ?? true,
+            }),
+          })
+
+          if (prospectoRes.ok) {
+            const created = await prospectoRes.json()
+            if (Array.isArray(created) && created.length > 0) {
+              prospectoId = created[0].id
+            }
+          }
+
+          if (prospectoId && data.referralToken) {
+            const { SupabaseReferralRepository } = await import('@/lib/infrastructure/repositories/supabase-referral-repository')
+            const referralRepo = new SupabaseReferralRepository()
+            await referralRepo.vincularProspectoAgendado(
+              data.referralToken,
+              prospectoId,
+              data.email,
+              data.phone || ''
+            )
+          }
+        }
+      } catch (leadDbErr) {
+        console.warn('[SUPABASE LEAD STORAGE WARN]', leadDbErr)
+      }
+
+      // Enviar acuse de recibo de solicitud de información (Botón directo a WhatsApp y Propuesta)
+      this.emailService.sendInformationRequestReceipt({
+        toEmail: data.email,
+        toName: data.name || 'Cliente',
+        phone: data.phone,
+        company: data.company,
+        message: data.description,
+        topic: data.topic || data.service,
+      }).catch((err) => {
+        console.warn('[INFO RECEIPT EMAIL WARN]', err)
+      })
+
+      return {
+        success: true,
+        message: 'Solicitud de información recibida y registrada con éxito. Te contactaremos en breve.',
+        data: {
+          ...data,
+          prospectoId,
+        },
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // FLUJO B: AGENDAMIENTO REAL DE CITA CON FECHA Y HORA (GOOGLE MEET)
+    // ──────────────────────────────────────────────────────────────────────────
+    const timeString = data.time || data.timeSlot || '10:00 AM'
     const { cleanDate, startISO, endISO } = parseColombiaStartAndEndISO(data.date, timeString)
 
     // 1. Create Google Calendar Event & Google Meet Room
@@ -163,7 +239,7 @@ export class ProcessBookingUseCase {
 
     return {
       success: true,
-      message: 'Solicitud procesada y sincronizada con éxito en Supabase y Google Calendar',
+      message: 'Cita agendada y sincronizada con éxito en Supabase y Google Calendar',
       data: {
         ...data,
         date: cleanDate,
