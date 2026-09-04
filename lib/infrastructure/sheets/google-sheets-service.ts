@@ -170,6 +170,19 @@ export async function getOrInitSpreadsheetId(accessToken: string): Promise<{ id:
 }
 
 /**
+ * Sanitiza valores para evitar que Google Sheets los interprete como fórmulas matemáticas
+ * (por ejemplo teléfonos que empiezan por '+' como '+57 315 889 2200' o textos con '=', '-', '@')
+ */
+export function sanitizeSheetCellValue(value?: string): string {
+  if (!value) return ''
+  const str = String(value).trim()
+  if (str.startsWith('+') || str.startsWith('=') || str.startsWith('-') || str.startsWith('@')) {
+    return `'${str}`
+  }
+  return str
+}
+
+/**
  * Agrega un registro de cita o lead al Google Sheet oficial
  */
 export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow): Promise<AppendSheetResult> {
@@ -183,7 +196,7 @@ export async function appendBookingToGoogleSheet(booking: GoogleSheetBookingRow)
       booking.hora,
       booking.nombre,
       booking.email,
-      booking.telefono || 'Sin registrar',
+      sanitizeSheetCellValue(booking.telefono) || 'Sin registrar',
       booking.empresa || 'Empresa privada',
       booking.servicio || 'Asesoría Estratégica Smartcontacts',
       booking.meetLink || 'N/A',
