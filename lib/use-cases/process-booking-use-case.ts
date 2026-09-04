@@ -237,9 +237,30 @@ export class ProcessBookingUseCase {
       console.warn('[EMAIL USECASE WARN]', err)
     })
 
+    // 4. Registrar la cita en Google Sheets (Google Workspace)
+    let sheetResult = undefined
+    try {
+      const { appendBookingToGoogleSheet } = await import('@/lib/infrastructure/sheets/google-sheets-service')
+      sheetResult = await appendBookingToGoogleSheet({
+        fecha: cleanDate,
+        hora: timeString,
+        nombre: data.name || 'Cliente',
+        email: data.email,
+        telefono: data.phone,
+        empresa: data.company,
+        servicio: data.topic || data.service,
+        meetLink: meetLink,
+        googleEventId: googleEventId,
+        estado: 'Confirmada',
+        fechaRegistro: new Date().toISOString(),
+      })
+    } catch (sheetErr) {
+      console.warn('[GOOGLE SHEETS STORAGE WARN]', sheetErr)
+    }
+
     return {
       success: true,
-      message: 'Cita agendada y sincronizada con éxito en Supabase y Google Calendar',
+      message: 'Cita agendada y sincronizada con éxito en Google Sheets, Calendar y Gmail',
       data: {
         ...data,
         date: cleanDate,
@@ -248,6 +269,7 @@ export class ProcessBookingUseCase {
         endISO,
         meetLink,
         googleEventId,
+        googleSheet: sheetResult,
       },
     }
   }
