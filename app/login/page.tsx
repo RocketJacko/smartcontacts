@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, BrainCircuit, ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { CaptchaChallenge } from "@/components/ui/captcha-challenge"
 
 export default function LoginPage() {
   const { t, language } = useLanguage()
@@ -15,19 +16,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaAnswer, setCaptchaAnswer] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
+
+    if (!captchaAnswer.trim()) {
+      setErrorMsg(language === "es" ? "Por favor completa la verificación de seguridad (captcha)." : "Please complete the security captcha.")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken, captchaAnswer }),
       })
 
       const data = await res.json()
@@ -123,6 +132,15 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Desafío CAPTCHA Autónomo de Seguridad */}
+            <CaptchaChallenge
+              onTokenChange={(tok, ans) => {
+                setCaptchaToken(tok)
+                setCaptchaAnswer(ans)
+              }}
+              language={language as "es" | "en"}
+            />
 
             {/* Alerta de Error */}
             {errorMsg && (

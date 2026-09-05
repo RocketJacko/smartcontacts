@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerSupabaseClient } from '@/lib/infrastructure/supabase/server-client'
 import { checkRateLimit, recordFailedAttempt, recordSuccessfulAttempt } from '@/lib/auth/rate-limiter'
+import { verifyCaptcha } from '@/lib/auth/captcha'
 
 const loginSchema = z.object({
   email: z.string().email('Formato de correo electrónico inválido').toLowerCase().trim(),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  captchaToken: z.string().optional(),
+  captchaAnswer: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -38,7 +41,23 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    const { email, password } = parsed.data
+    const { email, password, captchaToken, captchaAnswer } = parsed.data
+
+    // 2.1 Verificación de Captcha Anti-Bot Obligatoria
+    if (!captchaToken || !captchaAnswer) {
+      return NextResponse.json({
+        success: false,
+        error: 'Por favor resuelve la verificación de seguridad (CAPTCHA).',
+      }, { status: 400 })
+    }
+
+    const captchaCheck = verifyCaptcha(captchaToken, captchaAnswer)
+    if (!captchaCheck.valid) {
+      return NextResponse.json({
+        success: false,
+        error: captchaCheck.reason || 'Verificación de captcha inválida o expirada.',
+      }, { status: 400 })
+    }
 
     // 3. Autenticación con Supabase Auth
     const supabase = await createServerSupabaseClient()

@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react"
+import { CaptchaChallenge } from "@/components/ui/captcha-challenge"
 
 export function BookingSection() {
   const { t, language } = useLanguage()
@@ -109,6 +110,8 @@ export function BookingSection() {
   const [emailError, setEmailError] = useState("")
   const [isValidatingEmail, setIsValidatingEmail] = useState(false)
   const [hasAcceptedHabeasData, setHasAcceptedHabeasData] = useState(true)
+  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaAnswer, setCaptchaAnswer] = useState("")
 
   const validateEmailDomain = async (inputEmail: string) => {
     if (!inputEmail || !inputEmail.includes("@")) {
@@ -174,6 +177,11 @@ export function BookingSection() {
       return
     }
 
+    if (!captchaAnswer.trim()) {
+      setErrorMsg(language === "es" ? "Por favor completa la verificación de seguridad (CAPTCHA)." : "Please complete the security verification (CAPTCHA).")
+      return
+    }
+
     // Validar dominio antes de enviar
     const isValidDomain = await validateEmailDomain(email)
     if (!isValidDomain) {
@@ -201,6 +209,8 @@ export function BookingSection() {
           time: selectedSlot,
           timeSlot: selectedSlot,
           acepta_tratamiento_datos: hasAcceptedHabeasData,
+          captchaToken,
+          captchaAnswer,
         }),
       })
 
@@ -669,6 +679,17 @@ export function BookingSection() {
                     className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans resize-none"
                   />
                 </div>
+              </div>
+
+              {/* Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo) */}
+              <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10">
+                <CaptchaChallenge
+                  onTokenChange={(tok, ans) => {
+                    setCaptchaToken(tok)
+                    setCaptchaAnswer(ans)
+                  }}
+                  language={language as "es" | "en"}
+                />
               </div>
 
               {/* Habeas Data Legal Consent Checkbox (Ley 1581 de 2012) */}
