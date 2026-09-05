@@ -50,6 +50,17 @@ export async function POST(request: Request) {
     if (authError || !authData.user) {
       const failed = recordFailedAttempt(ip)
       const attemptsLeft = failed.remainingAttempts
+
+      // Registrar auditoría persistente en PostgreSQL (seguridad.intentos_login)
+      try {
+        await supabase.rpc('registrar_intento_login', {
+          p_ip: ip,
+          p_email: email,
+          p_exitoso: false,
+          p_user_agent: request.headers.get('user-agent') || 'desconocido',
+        })
+      } catch {}
+
       const errorMsg = attemptsLeft > 0
         ? `Credenciales incorrectas. Te quedan ${attemptsLeft} intento(s) antes del bloqueo temporal.`
         : 'Has superado el límite de intentos. Acceso bloqueado por 15 minutos.'
@@ -61,8 +72,16 @@ export async function POST(request: Request) {
       }, { status: 401 })
     }
 
-    // 4. Éxito: Limpiar historial de intentos
+    // 4. Éxito: Limpiar historial de intentos en memoria y en PostgreSQL
     recordSuccessfulAttempt(ip)
+    try {
+      await supabase.rpc('registrar_intento_login', {
+        p_ip: ip,
+        p_email: email,
+        p_exitoso: true,
+        p_user_agent: request.headers.get('user-agent') || 'desconocido',
+      })
+    } catch {}
 
     // 5. Obtener Perfil y Rol desde seguridad.perfiles vía RPC segura
     const { data: perfilData } = await supabase.rpc('obtener_mi_perfil')

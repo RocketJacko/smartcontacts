@@ -225,3 +225,64 @@ GRANT EXECUTE ON FUNCTION public.registrar_login_exitoso(UUID) TO authenticated,
 GRANT EXECUTE ON FUNCTION public.obtener_todos_los_perfiles() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.actualizar_rol_usuario(UUID, TEXT) TO authenticated;
 
+-- ==============================================================================
+-- 6. RATE LIMITING PERSISTENTE EN POSTGRESQL (CERO COSTO / SUPABASE GRATIS)
+-- ==============================================================================
+
+CREATE OR REPLACE FUNCTION public.verificar_rate_limit(
+    p_ip TEXT,
+    p_max_intentos INT DEFAULT 5,
+    p_ventana_minutos INT DEFAULT 15
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_intentos_recientes INT;
+    v_ultimo_intento TIMESTAMPTZ;
+    v_segundos_espera INT;
+BEGIN
+    SELECT COUNT(*), MAX(created_at)
+    INTO v_intentos_recientes, v_ultimo_intento
+    FROM seguridad.intentos_login
+    WHERE ip = p_ip
+      AND exitoso = FALSE
+      AND created_at >= (NOW() - (p_ventana_minutos || ' minutes')::INTERVAL);
+
+    IF v_intentos_recientes >= p_max_intentos THEN
+        v_segundos_espera := GREATEST(0, EXTRACT(EPOCH FROM ((v_ultimo_intento + (p_ventana_minutos || ' minutes')::INTERVAL) - NOW()))::INT);
+        RETURN jsonb_build_object(
+            'allowed', FALSE,
+            'remainingAttempts', 0,
+            'retryAfterSeconds', v_segundos_espera
+        );
+    END IF;
+
+    RETURN jsonb_build_object(
+        'allowed', TRUE,
+        'remainingAttempts', GREATEST(0, p_max_intentos - v_intentos_recientes),
+        'retryAfterSeconds', 0
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.registrar_intento_login(
+    p_ip TEXT,
+    p_email TEXT,
+    p_exitoso BOOLEAN,
+    p_user_agent TEXT DEFAULT NULL
+)
+RETURNS VOID AS $$
+BEGIN
+    INSERT INTO seguridad.intentos_login (ip, email, exitoso, user_agent, created_at)
+    VALUES (p_ip, LOWER(p_email), p_exitoso, p_user_agent, NOW());
+
+    IF p_exitoso THEN
+        DELETE FROM seguridad.intentos_login
+        WHERE ip = p_ip AND exitoso = FALSE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.verificar_rate_limit(TEXT, INT, INT) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.registrar_intento_login(TEXT, TEXT, BOOLEAN, TEXT) TO authenticated, service_role, anon;
+
+

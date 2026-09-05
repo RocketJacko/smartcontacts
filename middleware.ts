@@ -116,11 +116,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl)
   }
 
-  // 6. Inyección de Cabeceras HTTP de Seguridad Estrictas (Security Headers)
+  // 6. Inyección de Cabeceras HTTP de Seguridad Estrictas (Enterprise Grade / OWASP Top 10)
   supabaseResponse.headers.set('X-Frame-Options', 'DENY')
   supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
   supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   supabaseResponse.headers.set('X-XSS-Protection', '1; mode=block')
+  supabaseResponse.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+  supabaseResponse.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(self), payment=()'
+  )
+  supabaseResponse.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://dns.google https://*.googleapis.com; frame-ancestors 'none';"
+  )
 
   return supabaseResponse
 }
