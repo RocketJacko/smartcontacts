@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { SupabaseReferralRepository } from '@/lib/infrastructure/repositories/supabase-referral-repository'
+import { verificarDominioCorreoValido } from '@/lib/email-validator'
 
 const repo = new SupabaseReferralRepository()
 
@@ -30,6 +31,15 @@ export async function POST(request: Request) {
 
     if (!nombre || !email) {
       return NextResponse.json({ success: false, error: 'Nombre y correo electrónico son requeridos' }, { status: 400 })
+    }
+
+    // Validación estricta de dominios bloqueados y estructura
+    const domainCheck = await verificarDominioCorreoValido(email)
+    if (!domainCheck.valid) {
+      return NextResponse.json({
+        success: false,
+        error: domainCheck.reason || 'El dominio de correo electrónico no está permitido.',
+      }, { status: 400 })
     }
 
     const result = await repo.crearAfiliado(nombre, email, telefono, codigoDeseado, datosPago)
