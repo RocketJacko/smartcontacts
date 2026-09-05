@@ -285,4 +285,74 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION public.verificar_rate_limit(TEXT, INT, INT) TO authenticated, service_role, anon;
 GRANT EXECUTE ON FUNCTION public.registrar_intento_login(TEXT, TEXT, BOOLEAN, TEXT) TO authenticated, service_role, anon;
 
+-- ==============================================================================
+-- 7. SISTEMA DE BANEOS PERSISTENTES POR IP Y POR DISPOSITIVO (DEVICE FINGERPRINT)
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS seguridad.baneos (
+    id BIGSERIAL PRIMARY KEY,
+    tipo TEXT NOT NULL CHECK (tipo IN ('ip', 'device_id', 'email')),
+    valor TEXT NOT NULL,
+    motivo TEXT DEFAULT 'Actividad maliciosa o múltiples bloqueos de fuerza bruta',
+    baneado_hasta TIMESTAMPTZ,
+    creado_por TEXT DEFAULT 'sistema',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_seguridad_baneos_tipo_valor ON seguridad.baneos(tipo, valor);
+
+CREATE OR REPLACE FUNCTION public.verificar_baneo(p_ip TEXT, p_device_id TEXT)
+RETURNS JSONB AS $$
+DECLARE
+    v_baneo RECORD;
+BEGIN
+    SELECT tipo, valor, motivo, baneado_hasta
+    INTO v_baneo
+    FROM seguridad.baneos
+    WHERE (
+        (tipo = 'ip' AND valor = p_ip)
+        OR (tipo = 'device_id' AND p_device_id IS NOT NULL AND valor = p_device_id)
+    )
+    AND (baneado_hasta IS NULL OR baneado_hasta > NOW())
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    IF FOUND THEN
+        RETURN jsonb_build_object(
+            'baneado', TRUE,
+            'tipo', v_baneo.tipo,
+            'motivo', v_baneo.motivo,
+            'baneado_hasta', v_baneo.baneado_hasta
+        );
+    END IF;
+
+    RETURN jsonb_build_object('baneado', FALSE);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.aplicar_baneo(
+    p_tipo TEXT,
+    p_valor TEXT,
+    p_motivo TEXT,
+    p_horas_duracion INT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_hasta TIMESTAMPTZ := NULL;
+BEGIN
+    IF p_horas_duracion IS NOT NULL AND p_horas_duracion > 0 THEN
+        v_hasta := NOW() + (p_horas_duracion || ' hours')::INTERVAL;
+    END IF;
+
+    INSERT INTO seguridad.baneos (tipo, valor, motivo, baneado_hasta, creado_por, created_at)
+    VALUES (p_tipo, p_valor, p_motivo, v_hasta, 'sistema', NOW());
+
+    RETURN jsonb_build_object('success', true);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.verificar_baneo(TEXT, TEXT) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.aplicar_baneo(TEXT, TEXT, TEXT, INT) TO authenticated, service_role;
+
+
 

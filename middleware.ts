@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { updateSession } from '@/lib/infrastructure/supabase/middleware-client'
+import { isIpOrDeviceBanned } from '@/lib/auth/banned-cache'
 
 /**
  * Rutas que requieren autenticación estricta (Páginas y APIs internas)
@@ -22,8 +23,37 @@ const AUTH_ROUTES = ['/login', '/register']
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+             request.headers.get('x-real-ip') ||
+             '127.0.0.1'
 
-  // 1. Manejo de enlaces limpios /r/:codigo (Ej: /r/ALEXIS24)
+  // 1. Identificador Persistente de Dispositivo (Supercookie sc_device_id)
+  let deviceId = request.cookies.get('sc_device_id')?.value
+  const hasExistingDeviceId = Boolean(deviceId)
+  if (!deviceId) {
+    deviceId = crypto.randomUUID()
+  }
+
+  // 2. Control Inmediato de Baneo por IP y por Dispositivo (Cero Excepción)
+  const banStatus = await isIpOrDeviceBanned(ip, deviceId)
+  if (banStatus.baneado) {
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Acceso bloqueado permanentemente por motivos de seguridad a esta red o dispositivo (Código 403-BANNED).',
+        motivo: banStatus.motivo,
+        incidente: crypto.randomUUID(),
+      }),
+      {
+        status: 403,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Security-Incident': 'BANNED_IP_OR_DEVICE',
+        },
+      }
+    )
+  }
+
+  // 3. Manejo de enlaces limpios de referidos /r/:codigo (Ej: /r/ALEXIS24)
   if (pathname.startsWith('/r/')) {
     const segments = pathname.split('/').filter(Boolean)
     const referralCode = segments[1]
@@ -52,11 +82,21 @@ export async function middleware(request: NextRequest) {
         maxAge,
       })
 
+      if (!hasExistingDeviceId) {
+        response.cookies.set('sc_device_id', deviceId, {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'strict',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 10 * 365 * 24 * 60 * 60, // 10 años
+        })
+      }
+
       return response
     }
   }
 
-  // 2. Manejo de enlaces con query param ?ref=CODIGO
+  // 4. Manejo de enlaces con query param ?ref=CODIGO
   const refParam = searchParams.get('ref')
   if (refParam) {
     const cleanCode = refParam.trim().toUpperCase()
@@ -82,13 +122,24 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  // 3. Sincronización y verificación de sesión con Supabase Auth
+  // 5. Sincronización y verificación de sesión con Supabase Auth
   const { user, supabaseResponse } = await updateSession(request)
+
+  // Asegurar persistencia de la supercookie de dispositivo en la respuesta
+  if (!hasExistingDeviceId) {
+    supabaseResponse.cookies.set('sc_device_id', deviceId, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 10 * 365 * 24 * 60 * 60, // 10 años
+    })
+  }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route)
 
-  // 4. Bloqueo de rutas protegidas para usuarios no autenticados
+  // 6. Bloqueo de rutas protegidas para usuarios no autenticados
   if (isProtected && !user) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
@@ -110,13 +161,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // 5. Si el usuario ya está autenticado e intenta ir a /login o /register -> redirigir al /dashboard
+  // 7. Si el usuario ya está autenticado e intenta ir a /login o /register -> redirigir al /dashboard
   if (isAuthRoute && user) {
     const dashboardUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(dashboardUrl)
   }
 
-  // 6. Inyección de Cabeceras HTTP de Seguridad Estrictas (Enterprise Grade / OWASP Top 10)
+  // 8. Inyección de Cabeceras HTTP de Seguridad Estrictas (Enterprise Grade / OWASP Top 10)
   supabaseResponse.headers.set('X-Frame-Options', 'DENY')
   supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
   supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
