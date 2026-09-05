@@ -1,14 +1,8 @@
 -- ==============================================================================
--- VOLCADO COMPLETO DE 119.900 DOMINIOS BLOQUEADOS (DISPOSABLE / SPAM)
+-- VOLCADO DE DATOS: 119.900 DOMINIOS BLOQUEADOS (DISPOSABLE / SPAM)
 -- Extraído directamente de Supabase fxhemyrjetpwtmjxmftk
+-- Requiere haber ejecutado previamente `supabase/schema_blocked_domains.sql`
 -- ==============================================================================
-
-CREATE TABLE IF NOT EXISTS public.blocked_domains (
-    domain TEXT PRIMARY KEY,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_blocked_domains_domain ON public.blocked_domains(domain);
 
 INSERT INTO public.blocked_domains (domain)
 VALUES
