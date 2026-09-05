@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/infrastructure/supabase/middleware-client'
 
-export function middleware(request: NextRequest) {
+/**
+ * Rutas que requieren autenticación estricta (Páginas y APIs internas)
+ */
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/referidos',
+  '/api/dashboard',
+  '/api/email',
+  '/api/google',
+  '/api/calendar',
+  '/api/settings',
+]
+
+/**
+ * Rutas de autenticación pública (login, register)
+ */
+const AUTH_ROUTES = ['/login', '/register']
+
+export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // 1. Manejo de enlaces limpios /r/:codigo (Ej: /r/ALEXIS24)
@@ -14,7 +33,6 @@ export function middleware(request: NextRequest) {
       destination.searchParams.set('ref', referralCode)
 
       const response = NextResponse.redirect(destination)
-
       const sessionToken = request.cookies.get('sc_ref_token')?.value || crypto.randomUUID()
       const maxAge = 45 * 24 * 60 * 60 // 45 días
 
@@ -42,12 +60,11 @@ export function middleware(request: NextRequest) {
   const refParam = searchParams.get('ref')
   if (refParam) {
     const cleanCode = refParam.trim().toUpperCase()
-    const response = NextResponse.next()
-
     const existingToken = request.cookies.get('sc_ref_token')?.value
     const sessionToken = existingToken || crypto.randomUUID()
     const maxAge = 45 * 24 * 60 * 60 // 45 días
 
+    const response = NextResponse.next()
     response.cookies.set('sc_ref_token', sessionToken, {
       path: '/',
       httpOnly: true,
@@ -63,11 +80,49 @@ export function middleware(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       maxAge,
     })
-
-    return response
   }
 
-  return NextResponse.next()
+  // 3. Sincronización y verificación de sesión con Supabase Auth
+  const { user, supabaseResponse } = await updateSession(request)
+
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route)
+
+  // 4. Bloqueo de rutas protegidas para usuarios no autenticados
+  if (isProtected && !user) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No autorizado. Se requiere iniciar sesión.',
+        },
+        {
+          status: 401,
+          headers: {
+            'WWW-Authenticate': 'Bearer error="invalid_token"',
+          },
+        }
+      )
+    }
+
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // 5. Si el usuario ya está autenticado e intenta ir a /login o /register -> redirigir al /dashboard
+  if (isAuthRoute && user) {
+    const dashboardUrl = new URL('/dashboard', request.url)
+    return NextResponse.redirect(dashboardUrl)
+  }
+
+  // 6. Inyección de Cabeceras HTTP de Seguridad Estrictas (Security Headers)
+  supabaseResponse.headers.set('X-Frame-Options', 'DENY')
+  supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
+  supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  supabaseResponse.headers.set('X-XSS-Protection', '1; mode=block')
+
+  return supabaseResponse
 }
 
 export const config = {

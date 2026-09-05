@@ -403,6 +403,22 @@ export default function SidebarNavPreview() {
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-emerald-600" : ""}`} strokeWidth={1.5} />
           </button>
 
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' })
+              } finally {
+                window.location.href = '/login'
+              }
+            }}
+            title={t.auth?.logoutButton || "Cerrar Sesión"}
+            aria-label="Cerrar Sesión"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/10 hover:bg-black/5 text-black/70 hover:text-red-700 transition-colors cursor-pointer text-xs font-mono"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t.auth?.logoutButton || "Cerrar Sesión"}</span>
+          </button>
+
           <div className="w-8 h-8 rounded-full bg-[#111] text-white flex items-center justify-center font-mono font-bold text-xs shadow-2xs">
             SC
           </div>
