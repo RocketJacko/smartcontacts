@@ -196,7 +196,6 @@ export async function confirmBookingAction(data: {
   time?: string
   timeSlot?: string
   acepta_tratamiento_datos?: boolean
-  referralToken?: string
   otpToken: string
   otpCode: string
 }): Promise<ConfirmBookingResult> {
@@ -233,7 +232,6 @@ export async function confirmBookingAction(data: {
       time: data.time || data.timeSlot,
       timeSlot: data.timeSlot || data.time,
       acepta_tratamiento_datos: data.acepta_tratamiento_datos ?? true,
-      referralToken: data.referralToken,
       description: `${data.description || ''} | IP: ${ip}`,
     })
 

@@ -19,8 +19,6 @@ export interface BookingRequest {
   topic?: string
   description?: string
   acepta_tratamiento_datos?: boolean
-  referralToken?: string
-  referralCode?: string
 }
 
 export interface BookingResult {

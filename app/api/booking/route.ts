@@ -25,8 +25,6 @@ const bookingSchema = z.object({
   topic: z.string().optional(),
   description: z.string().optional(),
   acepta_tratamiento_datos: z.boolean().optional(),
-  referralToken: z.string().optional(),
-  referralCode: z.string().optional(),
   captchaToken: z.string().optional(),
   captchaAnswer: z.string().optional(),
   otpToken: z.string().optional(),
@@ -76,15 +74,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Extraer token de atribución de cookie si no vino explícito en el body
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookieMatch = cookieHeader.match(/sc_ref_token=([^;]+)/)
-    const cookieToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : undefined
-    const referralToken = validatedData.referralToken || cookieToken
-
     const result = await processBookingUseCase.execute({
       ...validatedData,
-      referralToken,
       description: `${validatedData.description || ''} | IP Consent: ${ip} | Browser: ${userAgent.substring(0, 80)}`,
     })
     if (!result.success) {

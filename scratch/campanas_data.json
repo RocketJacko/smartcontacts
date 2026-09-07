@@ -1,0 +1,26 @@
+[
+  {
+    "id": "26c66eb3-7e12-438c-97c4-7748b7614d08",
+    "nombre": "Directorio - Universidades & Educación",
+    "descripcion": "Categoría auto-registrada desde carga masiva",
+    "estado": "activa",
+    "creado_en": "2026-08-13T14:06:51.239336+00:00",
+    "directorio_id": null
+  },
+  {
+    "id": "1e1ee9c6-64ba-44b4-887a-6a3407a5374e",
+    "nombre": "Policia",
+    "descripcion": "Campaña creada desde el panel de automatizaciones",
+    "estado": "activa",
+    "creado_en": "2026-08-15T13:16:47.201986+00:00",
+    "directorio_id": null
+  },
+  {
+    "id": "1dda124d-d401-426f-b2a0-642aac8873cb",
+    "nombre": "Universidad Pascual Bravo",
+    "descripcion": "Directorio auto-registrado",
+    "estado": "activa",
+    "creado_en": "2026-08-15T14:12:28.959258+00:00",
+    "directorio_id": null
+  }
+]

@@ -22,7 +22,6 @@ export function MobileNav() {
     { label: t.nav.coverage,   href: "/cobertura" },
     { label: t.nav.modalities, href: "/modalidades" },
     { label: t.nav.benefits || "Beneficios", href: "/beneficios" },
-    { label: t.nav.partners || "Trabaja con Nosotros", href: "/referidos" },
     { label: t.nav.about,      href: "/sobre-mi" },
     { label: t.nav.schedule,   href: "/agendar" },
   ]

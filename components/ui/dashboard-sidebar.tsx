@@ -46,7 +46,6 @@ import { BookingEmailsModule } from "@/components/ui/booking-emails-module"
 import { MarketingCampaignsModule } from "@/components/ui/marketing-campaigns-module"
 import { MarketingAudiencesModule } from "@/components/ui/marketing-audiences-module"
 import { GmailAccountsModule } from "@/components/ui/gmail-accounts-module"
-import { ReferralsAdminModule } from "@/components/ui/referrals-admin-module"
 
 export type NavItemData = {
   id: string
@@ -68,7 +67,6 @@ const mockNavGroups: NavGroupData[] = [
     items: [
       { id: "calendar", titleKey: "Agenda & Citas", icon: Calendar, badgeKey: "totalProspectos" },
       { id: "booking-emails", titleKey: "Correos & Solicitudes", icon: Clock },
-      { id: "referrals", titleKey: "Red de Referidos", icon: Share2 },
     ],
   },
   {
@@ -629,8 +627,6 @@ export default function SidebarNavPreview() {
               {/* DATA TABLE 4 */}
               <CalendarDataTable4 />
             </>
-          ) : activeId === "referrals" ? (
-            <ReferralsAdminModule />
           ) : (
             <CalendarDataTable4 />
           )}
