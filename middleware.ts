@@ -12,7 +12,7 @@ const PROTECTED_PREFIXES = [
   '/api/dashboard',
   '/api/email',
   '/api/google',
-  '/api/calendar',
+  '/api/calendar/crud',
   '/api/settings',
 ]
 

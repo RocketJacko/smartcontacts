@@ -741,3 +741,155 @@ export async function sendInformationRequestReceiptEmail(params: {
     return { success: false, error: error?.message || 'Error enviando confirmación de solicitud de información' }
   }
 }
+
+export interface BookingVerificationCodeParams {
+  toEmail: string
+  toName: string
+  code: string
+  date?: string
+  time?: string
+  topicTitle?: string
+}
+
+/**
+ * Envía el código de verificación numérico OTP de 6 dígitos para confirmar el agendamiento.
+ * Diseño Bento estricto de DESIGN.md con caja destacada en monospace.
+ */
+export async function sendBookingVerificationCodeEmail(
+  params: BookingVerificationCodeParams
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const { senderEmail, senderName } = getGmailCredentials()
+  const accessToken = await getAccessToken()
+
+  if (!accessToken) {
+    console.warn('[GMAIL SEND SKIPPED] No se obtuvo access_token para OTP.')
+    return { success: false, error: 'Servicio de correos no disponible temporalmente' }
+  }
+
+  try {
+    const subject = `${params.code} es tu código de confirmación para tu cita en SmartContacts`
+    const dateStr = params.date || 'Fecha seleccionada'
+    const timeStr = params.time || 'Horario reservado'
+    const topicStr = params.topicTitle || 'Asesoría Estratégica & Comercial'
+
+    const htmlBody = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Código de Verificación — SmartContacts</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F5F4F0; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F5F4F0; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #FFFFFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.04); text-align: left;">
+          
+          <!-- Header Bento Institucional -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px; background-color: #111111; color: #ffffff;">
+              <span style="font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.6); display: block; margin-bottom: 6px;">
+                SMARTCONTACTS // 00 VERIFICACIÓN DE SEGURIDAD
+              </span>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #ffffff; letter-spacing: -0.5px;">
+                Confirma tu Asesoría Comercial
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Content Bento -->
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111111;">
+                Hola <strong>${params.toName}</strong>,
+              </p>
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #555555;">
+                Para garantizar que eres tú y confirmar tu espacio en la agenda con Alexis Carmona, por favor ingresa el siguiente código de 6 dígitos en la página de reservas:
+              </p>
+
+              <!-- Caja Destacada del Código OTP -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 24px 0;">
+                <tr>
+                  <td align="center" style="background-color: #F5F4F0; border: 1.5px dashed rgba(0,0,0,0.15); border-radius: 14px; padding: 24px 16px;">
+                    <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(0,0,0,0.5); display: block; margin-bottom: 8px;">
+                      CÓDIGO DE CONFIRMACIÓN (VÁLIDO POR 10 MINUTOS)
+                    </span>
+                    <span style="font-size: 34px; font-weight: 700; letter-spacing: 8px; font-family: monospace; color: #111111; display: inline-block;">
+                      ${params.code}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Detalle de la Cita Solicitada -->
+              <div style="background-color: #FAFAFA; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+                <span style="font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; color: rgba(0,0,0,0.4); display: block; margin-bottom: 8px;">
+                  DETALLES DE LA CITA SOLICITADA
+                </span>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #333333;">
+                  <strong>Tema:</strong> ${topicStr}
+                </p>
+                <p style="margin: 0 0 6px 0; font-size: 13px; color: #333333;">
+                  <strong>Fecha:</strong> ${dateStr}
+                </p>
+                <p style="margin: 0; font-size: 13px; color: #333333;">
+                  <strong>Hora:</strong> ${timeStr} (Hora Colombia)
+                </p>
+              </div>
+
+              <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #888888;">
+                Si tú no solicitaste este agendamiento, puedes ignorar este mensaje de forma segura. Nadie podrá reservar sin este código.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer Institucional CONTEXT.md -->
+          <tr>
+            <td style="padding: 24px 32px; background-color: #FAFAFA; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+              <p style="margin: 0 0 8px 0; font-size: 11px; color: #666666; font-style: italic;">
+                "No reemplazamos tu departamento comercial. Creamos una nueva unidad de crecimiento para tu empresa."
+              </p>
+              <span style="font-size: 10px; color: #999999; font-family: monospace;">
+                Smartcontacts Cloud &copy; 2026 — Alexis Carmona // Consultoría Agéntica B2B.
+              </span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+    const rawMessage = createRawMimeMessage(
+      senderName,
+      senderEmail,
+      params.toEmail,
+      subject,
+      htmlBody
+    )
+
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw: rawMessage }),
+      cache: 'no-store',
+    })
+
+    if (!res.ok) {
+      const errText = await res.text()
+      return { success: false, error: errText }
+    }
+
+    const data = await res.json()
+    return { success: true, messageId: data.id }
+
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Error enviando código de verificación' }
+  }
+}
+

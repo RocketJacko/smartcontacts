@@ -5,6 +5,7 @@ import { GmailEmailService } from '@/lib/infrastructure/email/gmail-email-servic
 import { ProcessBookingUseCase } from '@/lib/use-cases/process-booking-use-case'
 import { verifyCaptcha } from '@/lib/auth/captcha'
 import { checkRateLimit } from '@/lib/auth/rate-limiter'
+import { verifyBookingOtp } from '@/lib/auth/booking-otp'
 
 const domainValidator = new SupabaseDomainValidator()
 const emailService = new GmailEmailService()
@@ -28,6 +29,8 @@ const bookingSchema = z.object({
   referralCode: z.string().optional(),
   captchaToken: z.string().optional(),
   captchaAnswer: z.string().optional(),
+  otpToken: z.string().optional(),
+  otpCode: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -50,13 +53,25 @@ export async function POST(request: Request) {
       }, { status: 429 })
     }
 
-    // 2. Verificación Anti-Bot con CAPTCHA Autónomo Criptográfico
+    // 2. Verificación de Código OTP de Confirmación por Correo (Cero acceso no autenticado a agenda)
     if (validatedData.type === 'booking') {
-      const captchaCheck = verifyCaptcha(validatedData.captchaToken || '', validatedData.captchaAnswer || '')
-      if (!captchaCheck.valid) {
+      if (!validatedData.otpToken || !validatedData.otpCode) {
         return NextResponse.json({
           success: false,
-          error: captchaCheck.reason || 'Verificación de seguridad (CAPTCHA) obligatoria o expirada.',
+          error: 'Código de confirmación de 6 dígitos obligatorio. Solicita el código a tu correo.',
+        }, { status: 400 })
+      }
+
+      const otpResult = verifyBookingOtp(
+        validatedData.email,
+        validatedData.otpCode,
+        validatedData.otpToken
+      )
+
+      if (!otpResult.valid) {
+        return NextResponse.json({
+          success: false,
+          error: otpResult.reason || 'Código de confirmación incorrecto o expirado.',
         }, { status: 400 })
       }
     }

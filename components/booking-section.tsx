@@ -104,14 +104,28 @@ export function BookingSection() {
       })
   }, [selectedDay, currentMonth, currentYear])
 
-  // Submission & Email Validation State
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  // Submission, OTP & Email Validation State
   const [errorMsg, setErrorMsg] = useState("")
   const [emailError, setEmailError] = useState("")
   const [isValidatingEmail, setIsValidatingEmail] = useState(false)
   const [hasAcceptedHabeasData, setHasAcceptedHabeasData] = useState(true)
   const [captchaToken, setCaptchaToken] = useState("")
   const [captchaAnswer, setCaptchaAnswer] = useState("")
+
+  // OTP Verification State (Flujo de confirmación por correo)
+  const [isOtpStep, setIsOtpStep] = useState(false)
+  const [otpToken, setOtpToken] = useState("")
+  const [otpCode, setOtpCode] = useState("")
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [otpSuccessMsg, setOtpSuccessMsg] = useState("")
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => setResendCooldown((prev) => prev - 1), 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const validateEmailDomain = async (inputEmail: string) => {
     if (!inputEmail || !inputEmail.includes("@")) {
@@ -157,8 +171,9 @@ export function BookingSection() {
     return `${dayName}, ${selectedDay} de ${monthName} ${currentYear}`
   }, [selectedDay, currentMonth, currentYear, t])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Paso 1 de confirmación: Enviar código OTP de 6 dígitos al correo del prospecto
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!name.trim() || !phone.trim() || !email.trim()) {
       setErrorMsg(language === "es" ? "Por favor completa todos los campos obligatorios." : "Please fill in all required fields.")
       return
@@ -171,25 +186,72 @@ export function BookingSection() {
       setErrorMsg(language === "es" ? "Selecciona un horario disponible para la cita." : "Select an available time slot.")
       return
     }
-
     if (!hasAcceptedHabeasData) {
       setErrorMsg(language === "es" ? "Debes autorizar el tratamiento de datos personales para continuar." : "You must authorize personal data treatment to proceed.")
       return
     }
-
     if (!captchaAnswer.trim()) {
       setErrorMsg(language === "es" ? "Por favor completa la verificación de seguridad (CAPTCHA)." : "Please complete the security verification (CAPTCHA).")
       return
     }
 
-    // Validar dominio antes de enviar
     const isValidDomain = await validateEmailDomain(email)
     if (!isValidDomain) {
       return
     }
 
     setErrorMsg("")
-    setIsSubmitting(true)
+    setIsSendingOtp(true)
+
+    try {
+      const res = await fetch("/api/booking/send-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          date: formattedDate,
+          time: selectedSlot,
+          topic: selectedTopicData.title,
+          captchaToken,
+          captchaAnswer,
+        }),
+      })
+
+      const data = await res.json()
+      setIsSendingOtp(false)
+
+      if (res.ok && data.success) {
+        setOtpToken(data.otpToken)
+        setIsOtpStep(true)
+        setResendCooldown(30)
+        setOtpSuccessMsg(t.booking.codeSentAlert)
+        setTimeout(() => setOtpSuccessMsg(""), 5000)
+      } else {
+        setErrorMsg(data.error || (language === "es" ? "Error al enviar el código de verificación." : "Error sending verification code."))
+      }
+    } catch (err: any) {
+      setIsSendingOtp(false)
+      setErrorMsg(
+        err?.message ||
+        (language === "es"
+          ? "No se pudo enviar el código. Por favor verifica tu conexión o inténtalo nuevamente."
+          : "Could not send verification code. Please check your connection or try again.")
+      )
+    }
+  }
+
+  // Paso 2 de confirmación: Validar código OTP y crear cita en Google Calendar y Supabase
+  const handleVerifyAndBook = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setErrorMsg(language === "es" ? "Por favor ingresa el código de 6 dígitos enviado a tu correo." : "Please enter the 6-digit code sent to your email.")
+      return
+    }
+
+    setErrorMsg("")
+    setIsVerifyingOtp(true)
 
     try {
       const res = await fetch("/api/booking", {
@@ -211,24 +273,26 @@ export function BookingSection() {
           acepta_tratamiento_datos: hasAcceptedHabeasData,
           captchaToken,
           captchaAnswer,
+          otpToken,
+          otpCode: otpCode.trim(),
         }),
       })
 
       const data = await res.json()
-      setIsSubmitting(false)
+      setIsVerifyingOtp(false)
 
       if (res.ok && data.success) {
         setStep(4)
       } else {
-        setErrorMsg(data.error || (language === "es" ? "Ocurrió un error al agendar la cita. Inténtalo de nuevo." : "Error booking slot."))
+        setErrorMsg(data.error || t.booking.invalidCodeError)
       }
     } catch (err: any) {
-      setIsSubmitting(false)
+      setIsVerifyingOtp(false)
       setErrorMsg(
         err?.message ||
         (language === "es"
-          ? "No se pudo completar el agendamiento. Por favor verifica tu conexión o inténtalo nuevamente."
-          : "Could not complete booking. Please check your connection or try again.")
+          ? "No se pudo completar la verificación. Inténtalo nuevamente."
+          : "Could not complete verification. Please try again.")
       )
     }
   }
@@ -543,219 +607,339 @@ export function BookingSection() {
 
           {/* ──────────────── STEP 3: CONTACT DETAILS & VALIDATIONS ───────────── */}
           {step === 3 && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-medium text-[#111]">
-                  {language === "es" ? "Datos de Contacto y Confirmación" : "Contact Details & Confirmation"}
-                </h3>
-                <p className="text-xs sm:text-sm text-black/75 font-normal">
-                  {language === "es"
-                    ? "Generaremos tu sala oficial en Google Meet y te enviaremos la confirmación por correo."
-                    : "We will generate your official Google Meet room and send you the email confirmation."}
-                </p>
-              </div>
-
-              {/* Selected Slot & Topic Pill Summary */}
-              <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs font-mono">
-                <span className="text-black/40 uppercase">CITA:</span>
-                <span className="font-semibold text-[#111]">{selectedTopicData.title}</span>
-                <span className="text-black/30">&bull;</span>
-                <span className="text-black/70">{formattedDate} a las {selectedSlot}</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Full Name */}
-                <div>
-                  <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
-                    {t.booking.nameLabel} *
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={t.booking.namePlaceholder}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans"
-                    />
-                  </div>
-                </div>
-
-                {/* Phone / WhatsApp with PhoneInput component */}
-                <div>
-                  <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
-                    {t.booking.phoneLabel} *
-                  </label>
-                  <PhoneInput
-                    value={phone}
-                    onChange={(val) => setPhone(val)}
-                    placeholder={t.booking.phonePlaceholder}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Corporate Email with Check-Domain Real-time Validation */}
-                <div>
-                  <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
-                    {t.booking.emailLabel} *
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onBlur={() => validateEmailDomain(email)}
-                      onChange={(e) => {
-                        setEmail(e.target.value)
-                        if (emailError) setEmailError("")
-                      }}
-                      placeholder={t.booking.emailPlaceholder}
-                      className={`w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans ${
-                        emailError ? "border-red-500 focus:border-red-600 bg-red-50/20" : "border-black/10 focus:border-black"
-                      }`}
-                    />
-                    {isValidatingEmail && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-black/40 absolute right-3 top-1/2 -translate-y-1/2" />
-                    )}
-                  </div>
-                  {emailError && (
-                    <p className="text-[11px] text-red-600 font-mono mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>{emailError}</span>
+            <div className="space-y-6">
+              {!isOtpStep ? (
+                /* Sub-paso 3A: Formulario de Datos y Captcha */
+                <form onSubmit={handleSendOtp} className="space-y-6">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-medium text-[#111]">
+                      {language === "es" ? "Datos de Contacto y Confirmación" : "Contact Details & Confirmation"}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-black/75 font-normal">
+                      {language === "es"
+                        ? "Te enviaremos un código de seguridad a tu correo para confirmar tu cita y generar tu sala oficial de Google Meet."
+                        : "We will send a security code to your email to confirm your appointment and generate your official Google Meet room."}
                     </p>
-                  )}
-                </div>
+                  </div>
 
-                {/* Company Name */}
-                <div>
-                  <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
-                    {t.booking.companyLabel}
-                  </label>
-                  <div className="relative">
-                    <Building className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  {/* Selected Slot & Topic Pill Summary */}
+                  <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs font-mono">
+                    <span className="text-black/40 uppercase">CITA:</span>
+                    <span className="font-semibold text-[#111]">{selectedTopicData.title}</span>
+                    <span className="text-black/30">&bull;</span>
+                    <span className="text-black/70">{formattedDate} a las {selectedSlot}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Full Name */}
+                    <div>
+                      <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
+                        {t.booking.nameLabel} *
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder={t.booking.namePlaceholder}
+                          className="w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone / WhatsApp with PhoneInput component */}
+                    <div>
+                      <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
+                        {t.booking.phoneLabel} *
+                      </label>
+                      <PhoneInput
+                        value={phone}
+                        onChange={(val) => setPhone(val)}
+                        placeholder={t.booking.phonePlaceholder}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Corporate Email with Check-Domain Real-time Validation */}
+                    <div>
+                      <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
+                        {t.booking.emailLabel} *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onBlur={() => validateEmailDomain(email)}
+                          onChange={(e) => {
+                            setEmail(e.target.value)
+                            if (emailError) setEmailError("")
+                          }}
+                          placeholder={t.booking.emailPlaceholder}
+                          className={`w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans ${
+                            emailError ? "border-red-500 focus:border-red-600 bg-red-50/20" : "border-black/10 focus:border-black"
+                          }`}
+                        />
+                        {isValidatingEmail && (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-black/40 absolute right-3 top-1/2 -translate-y-1/2" />
+                        )}
+                      </div>
+                      {emailError && (
+                        <p className="text-[11px] text-red-600 font-mono mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>{emailError}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Company Name */}
+                    <div>
+                      <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
+                        {t.booking.companyLabel}
+                      </label>
+                      <div className="relative">
+                        <Building className="w-4 h-4 text-black/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          disabled={!isCompany}
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          placeholder={isCompany ? t.booking.companyPlaceholder : "Persona Natural"}
+                          className="w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Is Company Toggle */}
+                  <div className="flex items-center gap-3 pt-1">
                     <input
-                      type="text"
-                      disabled={!isCompany}
-                      value={company}
-                      onChange={(e) => setCompany(e.target.value)}
-                      placeholder={isCompany ? t.booking.companyPlaceholder : "Persona Natural"}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans disabled:opacity-50"
+                      type="checkbox"
+                      id="isCompanyToggle"
+                      aria-label={t.booking.isCompanyLabel}
+                      checked={isCompany}
+                      onChange={(e) => setIsCompany(e.target.checked)}
+                      className="w-4 h-4 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="isCompanyToggle" className="text-xs text-black/70 font-sans cursor-pointer">
+                      {t.booking.isCompanyLabel}
+                    </label>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
+                      {t.booking.descLabel}
+                    </label>
+                    <div className="relative">
+                      <FileText className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
+                      <textarea
+                        rows={3}
+                        aria-label={t.booking.descLabel}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder={t.booking.descPlaceholder}
+                        className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo) */}
+                  <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10">
+                    <CaptchaChallenge
+                      onTokenChange={(tok, ans) => {
+                        setCaptchaToken(tok)
+                        setCaptchaAnswer(ans)
+                      }}
+                      language={language as "es" | "en"}
                     />
                   </div>
-                </div>
-              </div>
 
-              {/* Is Company Toggle */}
-              <div className="flex items-center gap-3 pt-1">
-                <input
-                  type="checkbox"
-                  id="isCompanyToggle"
-                  aria-label={t.booking.isCompanyLabel}
-                  checked={isCompany}
-                  onChange={(e) => setIsCompany(e.target.checked)}
-                  className="w-4 h-4 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
-                />
-                <label htmlFor="isCompanyToggle" className="text-xs text-black/70 font-sans cursor-pointer">
-                  {t.booking.isCompanyLabel}
-                </label>
-              </div>
+                  {/* Habeas Data Legal Consent Checkbox (Ley 1581 de 2012) */}
+                  <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="habeasDataConsent"
+                      aria-label="Autorización de Tratamiento de Datos Personales"
+                      checked={hasAcceptedHabeasData}
+                      onChange={(e) => setHasAcceptedHabeasData(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="habeasDataConsent" className="text-[11px] text-black/75 leading-relaxed font-sans cursor-pointer select-none">
+                      {language === "es" ? (
+                        <>
+                          Autorizo a <strong>Smartcontacts</strong> para el tratamiento de mis datos personales y el envío de confirmaciones y comunicaciones relativas a esta reserva según la <strong>Ley 1581 de 2012 (Habeas Data)</strong> y la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a>.
+                        </>
+                      ) : (
+                        <>
+                          I authorize <strong>Smartcontacts</strong> to process my personal data and send confirmations and communications regarding this reservation pursuant to <strong>Law 1581 of 2012 (Habeas Data)</strong> and the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a>.
+                        </>
+                      )}
+                    </label>
+                  </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-mono text-black/60 uppercase tracking-wider mb-1.5 font-medium">
-                  {t.booking.descLabel}
-                </label>
-                <div className="relative">
-                  <FileText className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
-                  <textarea
-                    rows={3}
-                    aria-label={t.booking.descLabel}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder={t.booking.descPlaceholder}
-                    className="w-full pl-10 pr-4 py-3 text-xs bg-black/[0.02] border border-black/10 focus:border-black rounded-xl text-[#111] placeholder:text-black/30 outline-none transition-all font-sans resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo) */}
-              <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10">
-                <CaptchaChallenge
-                  onTokenChange={(tok, ans) => {
-                    setCaptchaToken(tok)
-                    setCaptchaAnswer(ans)
-                  }}
-                  language={language as "es" | "en"}
-                />
-              </div>
-
-              {/* Habeas Data Legal Consent Checkbox (Ley 1581 de 2012) */}
-              <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/10 flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="habeasDataConsent"
-                  aria-label="Autorización de Tratamiento de Datos Personales"
-                  checked={hasAcceptedHabeasData}
-                  onChange={(e) => setHasAcceptedHabeasData(e.target.checked)}
-                  className="w-4 h-4 mt-0.5 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer"
-                />
-                <label htmlFor="habeasDataConsent" className="text-[11px] text-black/75 leading-relaxed font-sans cursor-pointer select-none">
-                  {language === "es" ? (
-                    <>
-                      Autorizo a <strong>Smartcontacts</strong> para el tratamiento de mis datos personales y el envío de confirmaciones y comunicaciones relativas a esta reserva según la <strong>Ley 1581 de 2012 (Habeas Data)</strong> y la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a>.
-                    </>
-                  ) : (
-                    <>
-                      I authorize <strong>Smartcontacts</strong> to process my personal data and send confirmations and communications regarding this reservation pursuant to <strong>Law 1581 of 2012 (Habeas Data)</strong> and the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a>.
-                    </>
+                  {errorMsg && (
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                      {errorMsg}
+                    </div>
                   )}
-                </label>
-              </div>
 
-              {errorMsg && (
-                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-                  {errorMsg}
+                  {/* Action buttons */}
+                  <div className="pt-4 flex justify-between items-center border-t border-black/[0.06]">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/10 text-xs font-mono text-black/70 hover:text-black transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>{language === "es" ? "ANTERIOR" : "BACK"}</span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSendingOtp}
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-widest hover:bg-black/90 transition-all font-medium disabled:opacity-60 cursor-pointer shadow-xs"
+                    >
+                      {isSendingOtp ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <span>{t.booking.sendingCodeBtn}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{t.booking.sendCodeBtn}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 pt-1 text-[10px] text-black/40 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 text-black/30" />
+                    <span>Tratamiento confidencial y profesional de tus datos</span>
+                  </div>
+                </form>
+              ) : (
+                /* Sub-paso 3B: Verificación de Código OTP Recibido por Correo */
+                <div className="space-y-6">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-medium text-[#111]">
+                      {t.booking.verificationTitle}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-black/75 font-normal">
+                      {t.booking.verificationSubtitle}{" "}
+                      <strong className="text-[#111] font-mono">{email}</strong>
+                    </p>
+                  </div>
+
+                  {/* Selected Slot & Topic Pill Summary */}
+                  <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs font-mono">
+                    <span className="text-black/40 uppercase">CITA:</span>
+                    <span className="font-semibold text-[#111]">{selectedTopicData.title}</span>
+                    <span className="text-black/30">&bull;</span>
+                    <span className="text-black/70">{formattedDate} a las {selectedSlot}</span>
+                  </div>
+
+                  {otpSuccessMsg && (
+                    <div className="p-3.5 rounded-xl bg-green-50 border border-green-200 text-green-800 text-xs font-mono flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                      <span>{otpSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {/* Input de Código OTP de 6 Dígitos */}
+                  <div className="space-y-3 max-w-sm mx-auto text-center py-4">
+                    <label className="block text-xs font-mono text-black/60 uppercase tracking-wider font-medium">
+                      {t.booking.codeLabel}
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      autoFocus
+                      value={otpCode}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 6)
+                        setOtpCode(val)
+                      }}
+                      placeholder={t.booking.codePlaceholder}
+                      className="w-full text-center tracking-[12px] text-3xl font-mono font-bold py-3.5 bg-black/[0.02] border-2 border-black/20 focus:border-black rounded-2xl text-[#111] outline-none transition-all placeholder:text-black/20"
+                    />
+                    <p className="text-[11px] text-black/50 font-sans">
+                      {language === "es"
+                        ? "Revisa tu bandeja de entrada o carpeta de spam. El código es válido por 10 minutos."
+                        : "Check your inbox or spam folder. The code is valid for 10 minutes."}
+                    </p>
+                  </div>
+
+                  {errorMsg && (
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                      {errorMsg}
+                    </div>
+                  )}
+
+                  {/* Action buttons de OTP */}
+                  <div className="pt-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-black/[0.06]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOtpStep(false)
+                        setOtpCode("")
+                        setErrorMsg("")
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/10 text-xs font-mono text-black/70 hover:text-black transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>{t.booking.editDetailsBtn}</span>
+                    </button>
+
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        disabled={resendCooldown > 0 || isSendingOtp}
+                        onClick={() => handleSendOtp()}
+                        className="text-xs font-mono text-black/60 hover:text-black transition-colors disabled:opacity-40 cursor-pointer"
+                      >
+                        {resendCooldown > 0
+                          ? `${t.booking.resendBtn} (${resendCooldown}s)`
+                          : isSendingOtp
+                          ? t.booking.resendingBtn
+                          : t.booking.resendBtn}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleVerifyAndBook}
+                        disabled={isVerifyingOtp || otpCode.trim().length !== 6}
+                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-widest hover:bg-black/90 transition-all font-medium disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        {isVerifyingOtp ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                            <span>{t.booking.verifyingBtn}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>{t.booking.verifyAndBookBtn}</span>
+                            <CheckCircle2 className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 pt-1 text-[10px] text-black/40 font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 text-black/30" />
+                    <span>Confirmación instantánea sin crear contraseña ni registrarse</span>
+                  </div>
                 </div>
               )}
-
-              {/* Action buttons */}
-              <div className="pt-4 flex justify-between items-center border-t border-black/[0.06]">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/10 text-xs font-mono text-black/70 hover:text-black transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>{language === "es" ? "ANTERIOR" : "BACK"}</span>
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono uppercase tracking-widest hover:bg-black/90 transition-all font-medium disabled:opacity-60 cursor-pointer shadow-xs"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span>{t.booking.submittingBtn}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{t.booking.submitBtn}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 pt-1 text-[10px] text-black/40 font-mono">
-                <ShieldCheck className="w-3.5 h-3.5 text-black/30" />
-                <span>Tratamiento confidencial y profesional de tus datos</span>
-              </div>
-            </form>
+            </div>
           )}
 
           {/* ──────────────── STEP 4: SUCCESS EMAIL CONFIRMATION CARD ────────── */}
