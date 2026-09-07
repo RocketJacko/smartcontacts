@@ -111,7 +111,6 @@ export async function POST(request: Request) {
       platziAccountEmail: String(platziAccountEmail).trim().toLowerCase(),
       discountCode: rawCode ? rawCode.toUpperCase() : "",
       Proveedor: rawCode ? rawCode.toUpperCase() : "",
-      proveedor: rawCode ? rawCode.toUpperCase() : "",
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
       timestamp: new Date().toISOString(),
