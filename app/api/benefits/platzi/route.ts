@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
+import { verifyCaptcha } from "@/lib/auth/captcha"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -137,7 +138,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, phone, email, platziAccountEmail, discountCode, countryCode, countryName, currency } = body
+    const { name, phone, email, platziAccountEmail, discountCode, countryCode, countryName, currency, captchaToken, captchaAnswer } = body
+
+    // 2. Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo)
+    const captchaCheck = verifyCaptcha(captchaToken, captchaAnswer)
+    if (!captchaCheck.valid) {
+      return NextResponse.json(
+        { error: captchaCheck.reason || "Verificación de seguridad (CAPTCHA) requerida o expirada." },
+        { status: 400 }
+      )
+    }
 
     if (!name || !phone || !email || !platziAccountEmail) {
       return NextResponse.json(

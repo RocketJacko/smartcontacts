@@ -6,6 +6,7 @@ import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
+import { CaptchaChallenge } from "@/components/ui/captcha-challenge"
 
 interface PlatziActivationModalProps {
   isOpen: boolean
@@ -57,6 +58,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [email, setEmail] = useState("")
   const [platziAccountEmail, setPlatziAccountEmail] = useState("")
   const [discountCode, setDiscountCode] = useState("")
+  const [captchaToken, setCaptchaToken] = useState("")
+  const [captchaAnswer, setCaptchaAnswer] = useState("")
 
   // Dynamic Display States
   const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
@@ -87,6 +90,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setErrorMsg("")
     setSuccessMessage("")
     setDiscountCode("")
+    setCaptchaAnswer("")
     setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
     setDisplayDuration("1 año")
     setDisplayPlanName("Plan Basic")
@@ -101,6 +105,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
     if (!name.trim() || !phone.trim() || !email.trim() || !platziAccountEmail.trim() || !discountCode.trim()) {
       setErrorMsg(language === "es" ? "Por favor ingresa tu código de descuento para continuar o solicítalo a través de WhatsApp." : "Please enter your discount code to continue or request one via WhatsApp.")
+      return
+    }
+
+    if (!captchaAnswer.trim()) {
+      setErrorMsg(language === "es" ? "Por favor completa la verificación de seguridad (CAPTCHA)." : "Please complete the security verification (CAPTCHA).")
       return
     }
 
@@ -132,6 +141,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           email: email.trim(),
           platziAccountEmail: platziAccountEmail.trim(),
           discountCode: discountCode.trim(),
+          captchaToken,
+          captchaAnswer,
           countryCode,
           countryName,
           currency: userCurrency,
@@ -504,6 +515,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                     <span>{language === "es" ? "Adquiere tu código en WhatsApp" : "Get code on WhatsApp"}</span>
                   </a>
                 </div>
+              </div>
+
+              {/* Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo) */}
+              <div className="pt-1">
+                <CaptchaChallenge
+                  onTokenChange={(tok, ans) => {
+                    setCaptchaToken(tok)
+                    setCaptchaAnswer(ans)
+                  }}
+                  language={language as "es" | "en"}
+                />
               </div>
 
             </div>
