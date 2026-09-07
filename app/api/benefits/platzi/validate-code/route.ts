@@ -103,11 +103,10 @@ export async function POST(request: Request) {
       client.release()
     }
   } catch (error: any) {
-    console.error("Error al validar código de descuento:", error)
     return NextResponse.json(
       {
         valid: false,
-        error: "Ocurrió un error inesperado al validar el código.",
+        error: error?.message || "Ocurrió un error inesperado al validar el código.",
       },
       { status: 500 }
     )
