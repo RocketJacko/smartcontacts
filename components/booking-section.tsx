@@ -23,6 +23,13 @@ import {
   Loader2,
 } from "lucide-react"
 import { CaptchaChallenge } from "@/components/ui/captcha-challenge"
+import {
+  getAvailabilityAction,
+  sendBookingCodeAction,
+  confirmBookingAction,
+  validateDomainAction,
+  PublicSlot,
+} from "@/app/actions/booking-actions"
 
 export function BookingSection() {
   const { t, language } = useLanguage()
@@ -67,13 +74,12 @@ export function BookingSection() {
     return today.getDate()
   })
 
-  // Real Availability State from Supabase PL/pgSQL function
-  const [fetchedSlots, setFetchedSlots] = useState<Array<{ slot: string; status: string; label: string; bookingToken?: string }>>([])
+  // Real Availability State from Server Action (Cero exposición de API REST ni tokens)
+  const [fetchedSlots, setFetchedSlots] = useState<PublicSlot[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<string>("")
-  const [bookingToken, setBookingToken] = useState<string>("")
 
-  // Fetch real availability from Supabase when selectedDay changes
+  // Fetch real availability via Server Action when selectedDay changes
   useEffect(() => {
     if (!selectedDay) return
     const year = currentYear
@@ -82,24 +88,20 @@ export function BookingSection() {
     const formattedDateStr = `${year}-${month}-${day}`
 
     setIsLoadingSlots(true)
-    fetch(`/api/calendar/availability?date=${formattedDateStr}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && Array.isArray(data.slots)) {
-          setFetchedSlots(data.slots)
-          const firstOpen = data.slots.find((s: any) => s.status === "disponible")
+    getAvailabilityAction(formattedDateStr)
+      .then((res) => {
+        if (res && res.success && Array.isArray(res.slots)) {
+          setFetchedSlots(res.slots)
+          const firstOpen = res.slots.find((s) => s.status === "disponible")
           if (firstOpen) {
             setSelectedSlot(firstOpen.slot)
-            if (firstOpen.bookingToken) setBookingToken(firstOpen.bookingToken)
           } else {
             setSelectedSlot("")
-            setBookingToken("")
           }
         }
         setIsLoadingSlots(false)
       })
-      .catch((err) => {
-        console.warn("Error fetching availability:", err)
+      .catch(() => {
         setIsLoadingSlots(false)
       })
   }, [selectedDay, currentMonth, currentYear])
@@ -135,13 +137,8 @@ export function BookingSection() {
 
     setIsValidatingEmail(true)
     try {
-      const res = await fetch("/api/check-domain", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inputEmail }),
-      })
-      const data = await res.json()
-      if (data && data.valid === false) {
+      const res = await validateDomainAction(inputEmail)
+      if (res && res.valid === false) {
         setEmailError(language === "es" ? "Email no aceptado (dominio bloqueado o genérico)" : "Email not allowed")
         setIsValidatingEmail(false)
         return false
@@ -150,8 +147,7 @@ export function BookingSection() {
         setIsValidatingEmail(false)
         return true
       }
-    } catch (err) {
-      console.warn("Edge function domain validation error:", err)
+    } catch {
       setEmailError("")
       setIsValidatingEmail(false)
       return true
@@ -204,25 +200,20 @@ export function BookingSection() {
     setIsSendingOtp(true)
 
     try {
-      const res = await fetch("/api/booking/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          date: formattedDate,
-          time: selectedSlot,
-          topic: selectedTopicData.title,
-          captchaToken,
-          captchaAnswer,
-        }),
+      const data = await sendBookingCodeAction({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        date: formattedDate,
+        time: selectedSlot,
+        topic: selectedTopicData.title,
+        captchaToken,
+        captchaAnswer,
       })
 
-      const data = await res.json()
       setIsSendingOtp(false)
 
-      if (res.ok && data.success) {
+      if (data.success && data.otpToken) {
         setOtpToken(data.otpToken)
         setIsOtpStep(true)
         setResendCooldown(30)
@@ -242,7 +233,7 @@ export function BookingSection() {
     }
   }
 
-  // Paso 2 de confirmación: Validar código OTP y crear cita en Google Calendar y Supabase
+  // Paso 2 de confirmación: Validar código OTP y crear cita en Google Calendar y Supabase (Server Action)
   const handleVerifyAndBook = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!otpCode.trim() || otpCode.trim().length !== 6) {
@@ -254,34 +245,26 @@ export function BookingSection() {
     setIsVerifyingOtp(true)
 
     try {
-      const res = await fetch("/api/booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "booking",
-          name: name.trim(),
-          phone: phone.trim(),
-          email: email.trim(),
-          company: isCompany ? company.trim() || "Empresa Privada" : "Persona Natural",
-          isCompany,
-          topic: selectedTopicData.title,
-          service: selectedTopicData.title,
-          description: description.trim() || undefined,
-          date: formattedDate,
-          time: selectedSlot,
-          timeSlot: selectedSlot,
-          acepta_tratamiento_datos: hasAcceptedHabeasData,
-          captchaToken,
-          captchaAnswer,
-          otpToken,
-          otpCode: otpCode.trim(),
-        }),
+      const data = await confirmBookingAction({
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        company: isCompany ? company.trim() || "Empresa Privada" : "Persona Natural",
+        isCompany,
+        topic: selectedTopicData.title,
+        service: selectedTopicData.title,
+        description: description.trim() || undefined,
+        date: formattedDate,
+        time: selectedSlot,
+        timeSlot: selectedSlot,
+        acepta_tratamiento_datos: hasAcceptedHabeasData,
+        otpToken,
+        otpCode: otpCode.trim(),
       })
 
-      const data = await res.json()
       setIsVerifyingOtp(false)
 
-      if (res.ok && data.success) {
+      if (data.success) {
         setStep(4)
       } else {
         setErrorMsg(data.error || t.booking.invalidCodeError)
@@ -554,7 +537,6 @@ export function BookingSection() {
                             disabled={!isDispo}
                             onClick={() => {
                               setSelectedSlot(item.slot)
-                              if (item.bookingToken) setBookingToken(item.bookingToken)
                             }}
                             className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono transition-all flex items-center justify-between cursor-pointer ${
                               isSelected
