@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, Tag, ArrowLeft, ArrowRight, ShieldCheck, Check } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -67,11 +67,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
   const [displayDiscountLabel, setDisplayDiscountLabel] = useState<string>("")
 
-  // Step States: 1 (Form) | 2 (Verification PIN) | 3 (Success)
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  // Step States: 1 (Validar Código) | 2 (Datos del Usuario + Captcha) | 3 (PIN de Seguridad) | 4 (Éxito)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [inputCode, setInputCode] = useState("")
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isValidatingCode, setIsValidatingCode] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
@@ -98,13 +99,65 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     onClose()
   }
 
-  // Submit Main Form (Step 1) -> Validates code and sends activation email via n8n backend
-  const handleStep1Submit = async (e: React.FormEvent) => {
+  // PASO 1: Validación previa y aislada del Código de Descuento
+  const handleValidateCodeStep = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMsg("")
+
+    const cleanCode = discountCode.trim().toUpperCase()
+    if (!cleanCode) {
+      setErrorMsg(
+        language === "es"
+          ? "Por favor ingresa tu código de descuento para continuar o solicítalo a través de WhatsApp."
+          : "Please enter your discount code to continue or request one via WhatsApp."
+      )
+      return
+    }
+
+    setIsValidatingCode(true)
+
+    try {
+      const res = await fetch("/api/benefits/platzi/validate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: cleanCode,
+          currency: userCurrency || "COP",
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.valid) {
+        setDiscountCode(cleanCode)
+        if (data.planName) setDisplayPlanName(data.planName)
+        if (data.formattedPrice) setDisplayPrice(data.formattedPrice)
+        if (data.duration) setDisplayDuration(data.duration)
+        setDisplayDiscountLabel(cleanCode)
+        setErrorMsg("")
+        setStep(2) // Código verificado con éxito: pasamos al formulario de datos
+      } else {
+        const rawErr = data?.error || data?.message || (language === "es" ? "El código de descuento no es válido o no está vigente." : "Invalid or expired discount code.")
+        setErrorMsg(cleanErrorForUI(rawErr))
+      }
+    } catch {
+      setErrorMsg(
+        language === "es"
+          ? "Error de conexión al verificar el código de descuento."
+          : "Connection error while verifying discount code."
+      )
+    } finally {
+      setIsValidatingCode(false)
+    }
+  }
+
+  // PASO 2: Envío de datos personales y solicitud de código PIN a través de n8n
+  const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
 
     if (!name.trim() || !phone.trim() || !email.trim() || !platziAccountEmail.trim() || !discountCode.trim()) {
-      setErrorMsg(language === "es" ? "Por favor ingresa tu código de descuento para continuar o solicítalo a través de WhatsApp." : "Please enter your discount code to continue or request one via WhatsApp.")
+      setErrorMsg(language === "es" ? "Por favor completa todos los campos del formulario." : "Please complete all required form fields.")
       return
     }
 
@@ -174,7 +227,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           setDisplayDuration(data.planInfo.duration)
         }
         setErrorMsg("")
-        setStep(2)
+        setStep(3) // Código enviado al correo: pasamos a verificación de PIN
       } else {
         const rawErr = data?.error || data?.mensaje || data?.message || (language === "es" ? "Codigo Incompleto o no valido" : "Invalid code")
         setErrorMsg(cleanErrorForUI(rawErr))
@@ -186,8 +239,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }
 
-  // Step 2 Submit: Verify PIN entered by user
-  const handleStep2Verify = async (e: React.FormEvent) => {
+  // PASO 3: Verificación del código PIN ingresado por el usuario
+  const handleStep3Verify = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
 
@@ -252,7 +305,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
       setSuccessMessage(data.resultado || data.message || "Cuenta activada exitosamente")
       setErrorMsg("")
-      setStep(3)
+      setStep(4) // Activación completada con éxito
     } catch {
       setErrorMsg(language === "es" ? "Error de conexión al verificar el código." : "Connection error.")
     } finally {
@@ -273,8 +326,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           <X className="w-5 h-5" />
         </button>
 
-        {step === 3 ? (
-          /* STEP 3: ACTIVATION SUCCESS CELEBRATION WITH N8N CONFIRMATION DETAILS */
+        {step === 4 ? (
+          /* STEP 4: ACTIVATION SUCCESS CELEBRATION */
           <div className="text-center py-4 space-y-5">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
@@ -318,9 +371,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {language === "es" ? "FINALIZAR" : "FINISH"}
             </button>
           </div>
-        ) : step === 2 ? (
-          /* STEP 2: SECURITY CODE VERIFICATION PIN INPUT */
-          <form onSubmit={handleStep2Verify} className="space-y-5">
+        ) : step === 3 ? (
+          /* STEP 3: SECURITY PIN VERIFICATION */
+          <form onSubmit={handleStep3Verify} className="space-y-5">
             <div className="space-y-2">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
                 {language === "es" ? "Código de Seguridad" : "Security Code"}
@@ -373,36 +426,59 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors cursor-pointer"
               >
                 &larr; {language === "es" ? "Volver a editar datos" : "Edit request details"}
               </button>
             </div>
           </form>
-        ) : (
-          /* STEP 1: CLEAN UNIFIED FORM WITH OPTIONAL DISCOUNT CODE */
-          <form onSubmit={handleStep1Submit} className="space-y-5">
+        ) : step === 2 ? (
+          /* STEP 2: USER CONTACT DETAILS FORM (DISCOUNT CODE ALREADY VALIDATED) */
+          <form onSubmit={handleStep2Submit} className="space-y-5">
             
-            {/* Header Title & Dynamic Price Banner */}
+            {/* Header Title */}
             <div className="space-y-1">
               <h3 className="text-2xl font-medium text-[#111] tracking-tight">
-                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+                {language === "es" ? "Datos de Activación" : "Activation Details"}
               </h3>
-              
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                <span className="text-sm font-mono font-bold text-[#111]">
-                  {displayPrice}
-                </span>
-                <span className="text-xs text-black/60 font-mono">
-                  — {displayDuration} (Para 1 estudiante)
-                </span>
-                {displayDiscountLabel && (
-                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-                    {displayDiscountLabel}
+              <p className="text-xs text-black/60">
+                {language === "es"
+                  ? "Ingresa los datos para registrar la persona y cuenta sobre la cual se aplicará el beneficio."
+                  : "Enter the details to register the person and account where the benefit will be applied."}
+              </p>
+            </div>
+
+            {/* Código Validado Banner */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <Check className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase tracking-wider">
+                      {language === "es" ? "Código Aplicado:" : "Applied Code:"}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-emerald-900 uppercase">
+                      {discountCode}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-emerald-800/80 font-mono">
+                    {displayPlanName} — <strong className="text-emerald-950">{displayPrice}</strong>
                   </span>
-                )}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("")
+                  setStep(1)
+                }}
+                className="text-[11px] font-mono text-emerald-800 hover:text-emerald-950 underline cursor-pointer shrink-0 ml-2"
+              >
+                {language === "es" ? "Cambiar" : "Change"}
+              </button>
             </div>
 
             {/* Input Fields Container */}
@@ -453,71 +529,32 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="carlos@empresa.com"
+                    placeholder="contacto@tuempresa.com"
                     className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors"
                   />
                 </div>
               </div>
 
-              {/* Field 4: Cuenta de Correo que tomará el servicio Platzi */}
+              {/* Field 4: Cuenta de Platzi a Activar */}
               <div className="space-y-1">
-                <label className="block text-xs font-mono text-emerald-900 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Cuenta de correo que tomará el servicio Platzi " : "Platzi Service Account Email "}
+                <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
+                  {language === "es" ? "Cuenta de Platzi a Activar " : "Platzi Account to Activate "}
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
+                  <Mail className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
                   <input
                     type="email"
                     required
                     value={platziAccountEmail}
                     onChange={(e) => setPlatziAccountEmail(e.target.value)}
-                    placeholder="mi-cuenta-platzi@correo.com"
-                    className="w-full px-4 py-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-emerald-600 focus:bg-white transition-colors"
+                    placeholder="usuario@platzi.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors"
                   />
-                </div>
-                <p className="text-[10px] font-mono text-black/50">
-                  Activamos primero el beneficio sobre esta cuenta de correo.
-                </p>
-              </div>
-
-              {/* Field 5: Código de Descuento (Requerido) */}
-              <div className="space-y-1 pt-1">
-                <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                  {language === "es" ? "Código de Descuento " : "Discount Code "}
-                  <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value)}
-                    placeholder={language === "es" ? "Ingresa tu código de descuento" : "Enter discount code"}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold"
-                  />
-                </div>
-
-                {/* Banner de adquisición por WhatsApp */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 rounded-xl bg-[#25D366]/10 border border-[#25D366]/25 mt-2">
-                  <span className="text-[11px] font-mono text-black/70 font-medium text-center sm:text-left">
-                    {language === "es" ? "¿No tienes un código de descuento?" : "Don't have a discount code?"}
-                  </span>
-                  <a
-                    href="https://wa.me/573127529629?text=Hola,%20quiero%20adquirir%20un%20c%C3%B3digo%20de%20descuento%20para%20mi%20cuenta%20de%20Platzi"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white font-mono text-[11px] font-bold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer shrink-0"
-                  >
-                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-                    </svg>
-                    <span>{language === "es" ? "Adquiere tu código en WhatsApp" : "Get code on WhatsApp"}</span>
-                  </a>
                 </div>
               </div>
 
-              {/* Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo) */}
+              {/* Verificación de Seguridad Anti-Bot (CAPTCHA) */}
               <div className="pt-1">
                 <CaptchaChallenge
                   onTokenChange={(tok, ans) => {
@@ -536,7 +573,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </p>
             )}
 
-            {/* Submit Button */}
+            {/* Submit & Back Buttons */}
             <div className="space-y-2 pt-1">
               <button
                 type="submit"
@@ -550,6 +587,115 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   </>
                 ) : (
                   <span>{language === "es" ? "SOLICITAR CÓDIGO DE ACTIVACIÓN" : "REQUEST ACTIVATION CODE"}</span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("")
+                  setStep(1)
+                }}
+                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors cursor-pointer flex items-center justify-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>{language === "es" ? "Volver a validar código" : "Back to validate code"}</span>
+              </button>
+            </div>
+
+          </form>
+        ) : (
+          /* STEP 1: DISCOUNT CODE VALIDATION FIRST (SEPARACIÓN DE RESPONSABILIDAD) */
+          <form onSubmit={handleValidateCodeStep} className="space-y-5">
+            
+            {/* Header Title & Base Price Banner */}
+            <div className="space-y-1">
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+              </h3>
+              
+              <p className="text-xs text-black/70 leading-relaxed">
+                {language === "es"
+                  ? "Ingresa tu código de descuento o convenio institucional para verificar tu beneficio y continuar con la activación."
+                  : "Enter your discount or institutional code to verify your benefit and proceed with activation."}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <span className="text-sm font-mono font-bold text-[#111]">
+                  {displayPrice}
+                </span>
+                <span className="text-xs text-black/60 font-mono">
+                  — {displayDuration} (Para 1 estudiante)
+                </span>
+              </div>
+            </div>
+
+            {/* Input Field: Código de Descuento */}
+            <div className="space-y-3 pt-2">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
+                  {language === "es" ? "Código de Descuento / Activación " : "Discount / Activation Code "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Tag className="w-4 h-4 text-black/40 absolute left-3.5 top-3.5" />
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={discountCode}
+                    onChange={(e) => {
+                      setDiscountCode(e.target.value.toUpperCase())
+                      if (errorMsg) setErrorMsg("")
+                    }}
+                    placeholder={language === "es" ? "INGRESA TU CÓDIGO (EJ. PROMO2026)" : "ENTER CODE (E.G. PROMO2026)"}
+                    className="w-full pl-10 pr-4 py-3 bg-[#FAF9F5] border border-black/15 rounded-xl text-xs sm:text-sm font-mono text-[#111] placeholder:text-black/40 focus:outline-none focus:border-black focus:bg-white transition-colors uppercase font-bold tracking-wider"
+                  />
+                </div>
+              </div>
+
+              {/* Banner de adquisición por WhatsApp */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/25 mt-2">
+                <span className="text-[11px] font-mono text-black/70 font-medium text-center sm:text-left">
+                  {language === "es" ? "¿No tienes un código de descuento?" : "Don't have a discount code?"}
+                </span>
+                <a
+                  href="https://wa.me/573127529629?text=Hola,%20quiero%20adquirir%20un%20c%C3%B3digo%20de%20descuento%20para%20mi%20cuenta%20de%20Platzi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white font-mono text-[11px] font-bold uppercase tracking-wider transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer shrink-0"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                  </svg>
+                  <span>{language === "es" ? "Adquiere tu código en WhatsApp" : "Get code on WhatsApp"}</span>
+                </a>
+              </div>
+            </div>
+
+            {errorMsg && (
+              <p className="text-xs font-mono font-medium text-red-600 text-center py-1">
+                {errorMsg}
+              </p>
+            )}
+
+            {/* Submit Button */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="submit"
+                disabled={isValidatingCode}
+                className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isValidatingCode ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{language === "es" ? "VERIFICANDO CÓDIGO..." : "VERIFYING CODE..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{language === "es" ? "VALIDAR Y CONTINUAR" : "VALIDATE & CONTINUE"}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
                 )}
               </button>
             </div>

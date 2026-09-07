@@ -1,69 +1,113 @@
 import { NextResponse } from "next/server"
+import { Pool } from "pg"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 export const revalidate = 0
+
+let pool: Pool | null = null
+
+function getPool(): Pool {
+  if (!pool) {
+    const connectionString = process.env.N8N_POSTGRES_URL || process.env.PLATZI_POSTGRES_URL
+
+    if (!connectionString) {
+      throw new Error("N8N_POSTGRES_URL environment variable is not defined")
+    }
+
+    pool = new Pool({
+      connectionString,
+      connectionTimeoutMillis: 4000,
+      idleTimeoutMillis: 10000,
+      max: 5,
+    })
+  }
+  return pool
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const code = String(body?.code || "").trim()
-    const currency = String(body?.currency || "COP")
+    const rawCode = String(body?.code || body?.discountCode || "").trim().toUpperCase()
+    const currency = String(body?.currency || "COP").trim().toUpperCase()
 
-    // URL de n8n configurada en las variables de entorno de Dokploy
-    const webhookUrl =
-      process.env.PLATZI_WEBHOOK_URL ||
-      process.env.N8N_WEBHOOK_URL ||
-      "https://ventusn8n.smartcontacts.cloud/webhook/Paltzi"
-
-    const rawKey =
-      process.env["x-api-key"] ||
-      process.env.X_API_KEY ||
-      process.env.x_api_key ||
-      process.env.PLATZI_WEBHOOK_KEY ||
-      ""
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-    if (rawKey) {
-      headers["x-api-key"] = String(rawKey).trim()
+    if (!rawCode) {
+      return NextResponse.json(
+        { valid: false, error: "Por favor ingresa un código de descuento." },
+        { status: 400 }
+      )
     }
 
-    // Se envía el código directamente a n8n sin alterar el formato
-    const payload = {
-      code,
-      currency,
-      validarCupon: true,
-      VALIDARCUPON: true,
+    let client
+    try {
+      client = await getPool().connect()
+    } catch (poolErr: any) {
+      console.error("Error conectando al pool de postgres de n8n:", poolErr?.message)
+      return NextResponse.json(
+        {
+          valid: false,
+          error: "No se pudo verificar el código en este momento. Por favor intenta nuevamente.",
+        },
+        { status: 503 }
+      )
     }
-
-    const n8nRes = await fetch(webhookUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    })
-
-    const responseText = await n8nRes.text()
-    let data: any = null
 
     try {
-      data = JSON.parse(responseText)
-    } catch {
-      data = { rawResponse: responseText }
-    }
+      const res = await client.query(
+        `SELECT "id", "Codigo", "Vigente", "Valor", "Caracteriscica"
+         FROM "data_table_user_8xq1TWQ0hSO0TobU"
+         WHERE UPPER(TRIM("Codigo")) = $1
+         LIMIT 1`,
+        [rawCode]
+      )
 
-    // Si n8n responde en un arreglo, extraemos el primer elemento
-    if (Array.isArray(data) && data.length > 0) {
-      data = data[0]
-    }
+      if (res.rows.length === 0) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: "El código de descuento ingresado no existe en nuestro sistema.",
+          },
+          { status: 400 }
+        )
+      }
 
-    // Retornamos directamente la respuesta devuelta por n8n al frontend
-    return NextResponse.json(data, { status: n8nRes.status || 200 })
+      const row = res.rows[0]
+
+      if (!row.Vigente) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: "El código de descuento ingresado no se encuentra vigente.",
+          },
+          { status: 400 }
+        )
+      }
+
+      const numValor = Number(row.Valor) || 0
+      const formattedPrice =
+        "$" + numValor.toLocaleString("es-CO") + " " + currency
+
+      return NextResponse.json(
+        {
+          valid: true,
+          success: true,
+          code: row.Codigo,
+          planName: row.Caracteriscica || "Plan Basic",
+          duration: row.Caracteriscica || "1 año",
+          price: numValor,
+          formattedPrice,
+          message: "Código de descuento verificado exitosamente.",
+        },
+        { status: 200 }
+      )
+    } finally {
+      client.release()
+    }
   } catch (error: any) {
+    console.error("Error al validar código de descuento:", error)
     return NextResponse.json(
       {
         valid: false,
-        error: error?.message || "Error al conectar con el webhook de n8n.",
+        error: "Ocurrió un error inesperado al validar el código.",
       },
       { status: 500 }
     )
