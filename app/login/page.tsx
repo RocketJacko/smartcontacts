@@ -7,7 +7,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, BrainCircuit, ArrowLeft 
 import { useLanguage } from "@/lib/language-context"
 import { CaptchaChallenge } from "@/components/ui/captcha-challenge"
 
-export default function LoginPage() {
+function LoginFormContent() {
   const { t, language } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -185,5 +185,19 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F5F4F0] flex items-center justify-center font-mono text-xs text-black/50">
+          Cargando consola de seguridad...
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </React.Suspense>
   )
 }
