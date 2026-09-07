@@ -144,6 +144,29 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         return
       }
 
+      // 3. Validar resultado estricto del CAPTCHA de seguridad
+      const captchaRes = await fetch("/api/auth/captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: captchaToken,
+          answer: captchaAnswer.trim(),
+        }),
+      })
+
+      const captchaData = await captchaRes.json()
+
+      if (!captchaRes.ok || !captchaData.valid) {
+        setErrorMsg(
+          captchaData?.error ||
+            (language === "es"
+              ? "El resultado del captcha de seguridad es incorrecto."
+              : "Security verification (CAPTCHA) answer is incorrect.")
+        )
+        setIsSubmitting(false)
+        return
+      }
+
       // Avanzamos al paso 2 para solicitar el código de proveedor
       setErrorMsg("")
       setStep(2)
