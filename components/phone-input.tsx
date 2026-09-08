@@ -10,6 +10,7 @@ interface PhoneInputProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  countryCode?: string
 }
 
 export function PhoneInput({
@@ -18,6 +19,7 @@ export function PhoneInput({
   placeholder,
   disabled = false,
   className = '',
+  countryCode,
 }: PhoneInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(DEFAULT_COUNTRY)
   const [phoneNumber, setPhoneNumber] = useState<string>('')
@@ -25,20 +27,48 @@ export function PhoneInput({
   const [searchQuery, setSearchQuery] = useState<string>('')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Auto-detect GeoIP on mount
+  // Sincronizar país si se pasa explícitamente desde useGeoLocation
   useEffect(() => {
-    fetch('/api/geo')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.countryCode) {
-          const detected = getCountryByCode(data.countryCode)
-          setSelectedCountry(detected)
+    if (countryCode) {
+      setSelectedCountry(getCountryByCode(countryCode))
+    }
+  }, [countryCode])
+
+  // Detección automática en cascada si no viene provisto
+  useEffect(() => {
+    if (countryCode) return
+    let active = true
+
+    async function detectCountry() {
+      try {
+        const res = await fetch('/api/geo')
+        if (res.ok) {
+          const data = await res.json()
+          if (active && data && data.isCertain && data.countryCode) {
+            setSelectedCountry(getCountryByCode(data.countryCode))
+            return
+          }
         }
-      })
-      .catch(() => {
-        // Fallback al país por defecto
-      })
-  }, [])
+      } catch {}
+
+      try {
+        const direct = await fetch('https://api.country.is/', { signal: AbortSignal.timeout(2000) })
+        if (direct.ok) {
+          const directData = await direct.json()
+          if (active && directData?.country) {
+            setSelectedCountry(getCountryByCode(directData.country))
+            return
+          }
+        }
+      } catch {}
+    }
+
+    detectCountry()
+
+    return () => {
+      active = false
+    }
+  }, [countryCode])
 
   // Sync internal state when value prop changes or country changes
   useEffect(() => {

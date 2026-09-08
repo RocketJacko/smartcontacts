@@ -161,12 +161,162 @@ export const COUNTRIES: Country[] = [
     flagUrl: 'https://flagcdn.com/w40/gb.png',
     placeholder: '7123 456789',
   },
+  {
+    code: 'DE',
+    name: 'Alemania',
+    dialCode: '+49',
+    flagUrl: 'https://flagcdn.com/w40/de.png',
+    placeholder: '151 23456789',
+  },
+  {
+    code: 'FR',
+    name: 'Francia',
+    dialCode: '+33',
+    flagUrl: 'https://flagcdn.com/w40/fr.png',
+    placeholder: '6 12 34 56 78',
+  },
+  {
+    code: 'IT',
+    name: 'Italia',
+    dialCode: '+39',
+    flagUrl: 'https://flagcdn.com/w40/it.png',
+    placeholder: '312 345 6789',
+  },
+  {
+    code: 'PT',
+    name: 'Portugal',
+    dialCode: '+351',
+    flagUrl: 'https://flagcdn.com/w40/pt.png',
+    placeholder: '912 345 678',
+  },
+  {
+    code: 'NL',
+    name: 'Países Bajos',
+    dialCode: '+31',
+    flagUrl: 'https://flagcdn.com/w40/nl.png',
+    placeholder: '6 12345678',
+  },
+  {
+    code: 'CH',
+    name: 'Suiza',
+    dialCode: '+41',
+    flagUrl: 'https://flagcdn.com/w40/ch.png',
+    placeholder: '78 123 45 67',
+  },
+  {
+    code: 'AU',
+    name: 'Australia',
+    dialCode: '+61',
+    flagUrl: 'https://flagcdn.com/w40/au.png',
+    placeholder: '412 345 678',
+  },
+  {
+    code: 'NZ',
+    name: 'Nueva Zelanda',
+    dialCode: '+64',
+    flagUrl: 'https://flagcdn.com/w40/nz.png',
+    placeholder: '21 123 4567',
+  },
+  {
+    code: 'JP',
+    name: 'Japón',
+    dialCode: '+81',
+    flagUrl: 'https://flagcdn.com/w40/jp.png',
+    placeholder: '90 1234 5678',
+  },
+  {
+    code: 'KR',
+    name: 'Corea del Sur',
+    dialCode: '+82',
+    flagUrl: 'https://flagcdn.com/w40/kr.png',
+    placeholder: '10 1234 5678',
+  },
+  {
+    code: 'IN',
+    name: 'India',
+    dialCode: '+91',
+    flagUrl: 'https://flagcdn.com/w40/in.png',
+    placeholder: '98123 45678',
+  },
+  {
+    code: 'CN',
+    name: 'China',
+    dialCode: '+86',
+    flagUrl: 'https://flagcdn.com/w40/cn.png',
+    placeholder: '138 0013 8000',
+  },
+  {
+    code: 'SE',
+    name: 'Suecia',
+    dialCode: '+46',
+    flagUrl: 'https://flagcdn.com/w40/se.png',
+    placeholder: '70 123 45 67',
+  },
+  {
+    code: 'NO',
+    name: 'Noruega',
+    dialCode: '+47',
+    flagUrl: 'https://flagcdn.com/w40/no.png',
+    placeholder: '412 34 567',
+  },
+  {
+    code: 'PL',
+    name: 'Polonia',
+    dialCode: '+48',
+    flagUrl: 'https://flagcdn.com/w40/pl.png',
+    placeholder: '512 345 678',
+  },
+  {
+    code: 'IE',
+    name: 'Irlanda',
+    dialCode: '+353',
+    flagUrl: 'https://flagcdn.com/w40/ie.png',
+    placeholder: '85 123 4567',
+  },
+  {
+    code: 'IL',
+    name: 'Israel',
+    dialCode: '+972',
+    flagUrl: 'https://flagcdn.com/w40/il.png',
+    placeholder: '50 123 4567',
+  },
+  {
+    code: 'AE',
+    name: 'Emiratos Árabes',
+    dialCode: '+971',
+    flagUrl: 'https://flagcdn.com/w40/ae.png',
+    placeholder: '50 123 4567',
+  },
 ]
 
 export const DEFAULT_COUNTRY = COUNTRIES[0] // Colombia (+57)
 
 export function getCountryByCode(code?: string): Country {
   if (!code) return DEFAULT_COUNTRY
-  const upper = code.toUpperCase()
-  return COUNTRIES.find((c) => c.code === upper) || DEFAULT_COUNTRY
+  const upper = code.toUpperCase().trim()
+  const found = COUNTRIES.find((c) => c.code === upper)
+  if (found) return found
+
+  // Si es un código ISO-3166 alfa-2 válido no listado directamente, resolver dinámicamente
+  if (/^[A-Z]{2}$/.test(upper)) {
+    let localizedName = upper
+    try {
+      if (typeof Intl !== 'undefined' && typeof Intl.DisplayNames !== 'undefined') {
+        const displayNames = new Intl.DisplayNames(['es'], { type: 'region' })
+        localizedName = displayNames.of(upper) || upper
+      }
+    } catch {
+      localizedName = upper
+    }
+
+    return {
+      code: upper,
+      name: localizedName,
+      dialCode: '+1',
+      flagUrl: `https://flagcdn.com/w40/${upper.toLowerCase()}.png`,
+      placeholder: '123 456 789',
+    }
+  }
+
+  return DEFAULT_COUNTRY
 }

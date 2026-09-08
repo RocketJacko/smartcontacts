@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, ArrowLeft, ArrowRight } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -94,7 +94,14 @@ function cleanErrorForUI(raw: string): string {
 
 export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModalProps) {
   const { language } = useLanguage()
-  const { countryCode, countryName, userCurrency } = useGeoLocation()
+  const {
+    countryCode,
+    countryName,
+    userCurrency,
+    flagUrl,
+    toggleCurrency,
+    formatPlanPriceDynamic,
+  } = useGeoLocation()
 
   // Estados del Formulario
   const [name, setName] = useState("")
@@ -112,10 +119,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
 
   // Estados dinámicos de producto / plan
   const [displayPrice, setDisplayPrice] = useState<string>(
-    formatPlanPrice(DEFAULT_PLANS[0].precio, DEFAULT_PLANS[0].moneda)
+    formatPlanPriceDynamic(DEFAULT_PLANS[0].precio, DEFAULT_PLANS[0].moneda)
   )
   const [displayDuration, setDisplayDuration] = useState<string>("6 meses")
   const [displayPlanName, setDisplayPlanName] = useState<string>(DEFAULT_PLANS[0].nombre_plan)
+
+  // Sincronizar precio dinámico si cambia la moneda detectada (COP <-> USD) o el plan
+  useEffect(() => {
+    if (selectedPlan) {
+      setDisplayPrice(formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda))
+    }
+  }, [selectedPlan, formatPlanPriceDynamic, userCurrency])
 
   // Pasos: 1 (Ingreso de datos) | 2 (Código PIN recibido al correo) | 3 (Confirmación exitosa)
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -141,7 +155,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             const found = prev ? data.planes.find((p: PlatziPlan) => p.id === prev.id) : null
             const chosen = found || data.planes[0]
             setDisplayPlanName(chosen.nombre_plan)
-            setDisplayPrice(formatPlanPrice(chosen.precio, chosen.moneda))
+            setDisplayPrice(formatPlanPriceDynamic(chosen.precio, chosen.moneda))
             setDisplayDuration(
               chosen.meses_cubrimiento === 12
                 ? language === "es" ? "1 año" : "1 year"
@@ -195,7 +209,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const handleSelectPlan = (planItem: PlatziPlan) => {
     setSelectedPlan(planItem)
     setDisplayPlanName(planItem.nombre_plan)
-    setDisplayPrice(formatPlanPrice(planItem.precio, planItem.moneda))
+    setDisplayPrice(formatPlanPriceDynamic(planItem.precio, planItem.moneda))
     setDisplayDuration(
       planItem.meses_cubrimiento === 12
         ? language === "es" ? "1 año" : "1 year"
@@ -213,7 +227,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setCaptchaAnswer("")
     const basePlan = plans[0] || DEFAULT_PLANS[0]
     setSelectedPlan(basePlan)
-    setDisplayPrice(formatPlanPrice(basePlan.precio, basePlan.moneda))
+    setDisplayPrice(formatPlanPriceDynamic(basePlan.precio, basePlan.moneda))
     setDisplayDuration(
       basePlan.meses_cubrimiento === 12
         ? language === "es" ? "1 año" : "1 year"
@@ -591,10 +605,27 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           <form onSubmit={handleStep1Submit} className="space-y-5">
             
             {/* Header Title & Dynamic Price Banner */}
-            <div className="space-y-1">
-              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
-                {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
-              </h3>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                  {language === "es" ? "Activar Beneficio Platzi" : "Activate Platzi Benefit"}
+                </h3>
+                
+                {/* Country Flag & Currency Toggle Badge */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#FAF9F6] border border-black/[0.08] text-xs font-mono text-black/70 shrink-0">
+                  <img src={flagUrl} alt={countryName} className="w-4 h-3 object-cover rounded-xs" />
+                  <span className="font-semibold text-black/80">{countryCode}</span>
+                  <button
+                    type="button"
+                    onClick={toggleCurrency}
+                    className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/[0.06] hover:bg-black/10 border border-black/10 text-[10px] font-bold text-black cursor-pointer transition-colors"
+                    title={language === "es" ? "Cambiar moneda (COP / USD)" : "Toggle currency (COP / USD)"}
+                  >
+                    <RefreshCw className="w-2.5 h-2.5 text-black/50" />
+                    <span>{userCurrency}</span>
+                  </button>
+                </div>
+              </div>
               
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
                 <span className="text-sm font-mono font-bold text-[#111]">
@@ -656,7 +687,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                         </div>
                         <div className="text-right font-mono shrink-0">
                           <span className="text-xs font-bold text-[#111] block">
-                            {formatPlanPrice(p.precio, p.moneda)}
+                            {formatPlanPriceDynamic(p.precio, p.moneda)}
                           </span>
                           <span className="text-[10px] text-black/50 block">
                             {p.meses_cubrimiento === 12
@@ -702,7 +733,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <PhoneInput
                   value={phone}
                   onChange={(fullNum) => setPhone(fullNum)}
-                  placeholder="+57 300 123 4567"
+                  countryCode={countryCode}
+                  placeholder={countryCode === "CO" ? "+57 300 123 4567" : undefined}
                 />
               </div>
 
