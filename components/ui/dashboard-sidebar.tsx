@@ -47,6 +47,7 @@ import { MarketingCampaignsModule } from "@/components/ui/marketing-campaigns-mo
 import { MarketingAudiencesModule } from "@/components/ui/marketing-audiences-module"
 import { GmailAccountsModule } from "@/components/ui/gmail-accounts-module"
 import { ResellersModule } from "@/components/ui/resellers-module"
+import { PlatziModule } from "@/components/ui/platzi-module"
 
 export type NavItemData = {
   id: string
@@ -68,6 +69,7 @@ const mockNavGroups: NavGroupData[] = [
     items: [
       { id: "calendar", titleKey: "Agenda & Citas", icon: Calendar, badgeKey: "totalProspectos" },
       { id: "booking-emails", titleKey: "Correos & Solicitudes", icon: Clock },
+      { id: "platzi", titleKey: "Gestión Platzi", icon: Layers },
     ],
   },
   {
@@ -608,6 +610,8 @@ export default function SidebarNavPreview() {
             </>
           ) : activeId === "booking-emails" ? (
             <BookingEmailsModule />
+          ) : activeId === "platzi" ? (
+            <PlatziModule />
           ) : activeId === "referrals" ? (
             <ResellersModule />
           ) : activeId === "marketing-campaigns" || activeId === "email" || activeId === "projects" ? (

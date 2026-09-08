@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { verificarDominioCorreoValido } from "@/lib/email-validator"
 import { verifyCaptcha } from "@/lib/auth/captcha"
+import { createServerSupabaseClient } from "@/lib/infrastructure/supabase/server-client"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -296,6 +298,28 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+      // Registrar venta en platzi.ventas y sincronizar métricas del revendedor
+      try {
+        const cookieStore = await cookies()
+        const cookieRef = cookieStore.get('sc_ref_code')?.value || null
+        const effectiveRef = rawCode || cookieRef || null
+
+        const supabase = await createServerSupabaseClient()
+        await supabase.rpc('registrar_venta_platzi', {
+          p_name: String(name).trim(),
+          p_phone: String(phone).trim(),
+          p_email: String(email).trim().toLowerCase(),
+          p_platzi_account_email: String(platziAccountEmail).trim().toLowerCase(),
+          p_country_name: countryName || 'Colombia',
+          p_cod_revendedor: effectiveRef,
+          p_discount_code: rawCode || null,
+          p_cod_generado: dataObj?.codigo || dataObj?.CodGenerado || null,
+          p_precio_venta: Number(dataObj?.price || dataObj?.Valor || 0),
+        })
+      } catch (syncErr) {
+        console.error('Error registrando venta en platzi.ventas:', syncErr)
+      }
 
       const finalMsg = rawMsgStr || `Hemos enviado un código de seguridad a tu correo electrónico ${email}.`
 
