@@ -220,24 +220,21 @@ BEGIN
             -- Registrar conversión de venta en referidos.conversiones
             INSERT INTO referidos.conversiones (
                 afiliado_id,
-                enlace_id,
+                enlace_primer_toque_id,
+                enlace_ultimo_toque_id,
                 tipo_atribucion,
                 monto_transaccion,
+                valor_comision_calculado,
                 estado_liquidacion,
-                metadata,
                 fecha_adquisicion
             ) VALUES (
                 v_afiliado.id,
                 v_afiliado.enlace_id,
+                v_afiliado.enlace_id,
                 'codigo_promocional',
                 p_precio_venta,
+                0.00,
                 'aprobada',
-                jsonb_build_object(
-                    'platzi_venta_id', v_venta_id,
-                    'cliente_email', p_email,
-                    'platzi_email', p_platzi_account_email,
-                    'codigo_generado', p_cod_generado
-                ),
                 NOW()
             );
         END IF;
