@@ -46,6 +46,7 @@ import { BookingEmailsModule } from "@/components/ui/booking-emails-module"
 import { MarketingCampaignsModule } from "@/components/ui/marketing-campaigns-module"
 import { MarketingAudiencesModule } from "@/components/ui/marketing-audiences-module"
 import { GmailAccountsModule } from "@/components/ui/gmail-accounts-module"
+import { ResellersModule } from "@/components/ui/resellers-module"
 
 export type NavItemData = {
   id: string
@@ -74,6 +75,7 @@ const mockNavGroups: NavGroupData[] = [
     items: [
       { id: "marketing-campaigns", titleKey: "Campañas Masivas", icon: Send },
       { id: "marketing-audiences", titleKey: "Directorios & Audiencias", icon: Users },
+      { id: "referrals", titleKey: "Revendedores & Afiliados", icon: Share2 },
     ],
   },
   {
@@ -606,6 +608,8 @@ export default function SidebarNavPreview() {
             </>
           ) : activeId === "booking-emails" ? (
             <BookingEmailsModule />
+          ) : activeId === "referrals" ? (
+            <ResellersModule />
           ) : activeId === "marketing-campaigns" || activeId === "email" || activeId === "projects" ? (
             <MarketingCampaignsModule />
           ) : activeId === "marketing-audiences" ? (

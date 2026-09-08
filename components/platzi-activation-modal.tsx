@@ -81,6 +81,25 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }, [formattedPlatziPrice])
 
+  // Precargar automáticamente el código de referido atribuido (desde enlace ?ref=...)
+  useEffect(() => {
+    if (isOpen && !discountCode) {
+      try {
+        const storedCode = localStorage.getItem("sc_ref_code")
+        if (storedCode && storedCode.trim()) {
+          setDiscountCode(storedCode.trim().toUpperCase())
+          return
+        }
+        const match = typeof document !== "undefined" ? document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/) : null
+        if (match && match[1]) {
+          setDiscountCode(decodeURIComponent(match[1]).trim().toUpperCase())
+        }
+      } catch {
+        // Ignorar si el almacenamiento local está restringido
+      }
+    }
+  }, [isOpen, discountCode])
+
   if (!isOpen) return null
 
   const handleResetModal = () => {

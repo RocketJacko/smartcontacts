@@ -194,7 +194,9 @@ const jsonLd = {
   ],
 }
 
+import { Suspense } from 'react'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
+import { ReferralTracker } from '@/components/referral-tracker'
 
 export default function RootLayout({
   children,
@@ -214,6 +216,9 @@ export default function RootLayout({
       </head>
       <body className={`font-sans antialiased w-full max-w-full overflow-x-hidden`}>
         <LanguageProvider>
+          <Suspense fallback={null}>
+            <ReferralTracker />
+          </Suspense>
           <main id="main-content" className="w-full max-w-full overflow-x-hidden">
             {children}
           </main>
