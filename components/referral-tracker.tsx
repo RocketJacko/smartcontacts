@@ -22,6 +22,12 @@ export function ReferralTracker() {
 
       try {
         localStorage.setItem("sc_ref_code", cleanCode)
+        // Guardar cookie en cliente inmediatamente para sincronización con SSR y navegación
+        document.cookie = `sc_ref_code=${encodeURIComponent(cleanCode)}; path=/; max-age=${45 * 24 * 60 * 60}; SameSite=Lax`
+        // Notificar a componentes en la misma pestaña (MobileNav, Footer, Beneficios)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("sc_referral_updated", { detail: { code: cleanCode } }))
+        }
       } catch {}
 
       fetch("/api/referrals/click", {

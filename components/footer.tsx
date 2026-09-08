@@ -1,11 +1,39 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
 export function Footer() {
   const { t } = useLanguage()
+  const [hasReferral, setHasReferral] = useState(false)
+
+  useEffect(() => {
+    const checkRef = () => {
+      try {
+        const fromLocal = localStorage.getItem("sc_ref_code")
+        if (fromLocal && fromLocal.trim()) {
+          setHasReferral(true)
+          return
+        }
+        const match = document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/)
+        if (match && match[1]) {
+          setHasReferral(true)
+          return
+        }
+        const search = window.location.search
+        if (search.includes("ref=") || search.includes("referido=")) {
+          setHasReferral(true)
+          return
+        }
+      } catch {}
+      setHasReferral(false)
+    }
+
+    checkRef()
+    window.addEventListener("sc_referral_updated", checkRef)
+    return () => window.removeEventListener("sc_referral_updated", checkRef)
+  }, [])
 
   return (
     <footer className="relative py-10 sm:py-12 lg:py-16 px-4 sm:px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden bg-[#F5F4F0]">
@@ -70,7 +98,9 @@ export function Footer() {
             <Link href="/propuesta" className="text-black/70 hover:text-black transition-colors">{t.nav.platform}</Link>
             <Link href="/cobertura" className="text-black/70 hover:text-black transition-colors">{t.nav.coverage}</Link>
             <Link href="/modalidades" className="text-black/70 hover:text-black transition-colors">{t.nav.modalities}</Link>
-            <Link href="/beneficios" className="text-black/70 hover:text-black transition-colors">{t.nav.benefits || "Beneficios"}</Link>
+            {hasReferral && (
+              <Link href="/beneficios" className="text-black/70 hover:text-black transition-colors">{t.nav.benefits || "Beneficios"}</Link>
+            )}
             <Link href="/sobre-mi" className="text-black/70 hover:text-black transition-colors">{t.nav.about}</Link>
             <Link href="/agendar" className="text-black/70 hover:text-black transition-colors">{t.nav.schedule}</Link>
           </div>
