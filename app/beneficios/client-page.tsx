@@ -121,18 +121,9 @@ export default function BeneficiosClientPage() {
 
       {/* Header Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 mb-8 sm:mb-12">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
-            {language === "es" ? "CATÁLOGO DE BENEFICIOS EXCLUSIVOS" : "EXCLUSIVE BENEFITS CATALOG"}
-          </span>
-
-          {activeCode && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono text-emerald-800 bg-emerald-500/10 border border-emerald-500/20 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{language === "es" ? `Aliado: ${activeCode}` : `Partner: ${activeCode}`}</span>
-            </span>
-          )}
-        </div>
+        <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono text-black/60 bg-black/[0.05] border border-black/10 uppercase tracking-widest font-medium">
+          {language === "es" ? "CATÁLOGO DE BENEFICIOS EXCLUSIVOS" : "EXCLUSIVE BENEFITS CATALOG"}
+        </span>
 
         <RevealText className="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-[#111] leading-tight">
           {language === "es"
