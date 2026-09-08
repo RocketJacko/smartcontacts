@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useLanguage } from "@/lib/language-context"
 
@@ -14,42 +14,13 @@ const NAV_STYLE = {
 export function MobileNav() {
   const [open, setOpen] = useState(false)
   const { language, setLanguage, t } = useLanguage()
-  const [hasReferral, setHasReferral] = useState(false)
 
   const close = () => setOpen(false)
-
-  useEffect(() => {
-    const checkRef = () => {
-      try {
-        const fromLocal = localStorage.getItem("sc_ref_code")
-        if (fromLocal && fromLocal.trim()) {
-          setHasReferral(true)
-          return
-        }
-        const match = document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/)
-        if (match && match[1]) {
-          setHasReferral(true)
-          return
-        }
-        const search = window.location.search
-        if (search.includes("ref=") || search.includes("referido=")) {
-          setHasReferral(true)
-          return
-        }
-      } catch {}
-      setHasReferral(false)
-    }
-
-    checkRef()
-    window.addEventListener("sc_referral_updated", checkRef)
-    return () => window.removeEventListener("sc_referral_updated", checkRef)
-  }, [])
 
   const navLinks = [
     { label: t.nav.platform,   href: "/propuesta" },
     { label: t.nav.coverage,   href: "/cobertura" },
     { label: t.nav.modalities, href: "/modalidades" },
-    ...(hasReferral ? [{ label: t.nav.benefits || "Beneficios", href: "/beneficios" }] : []),
     { label: t.nav.about,      href: "/sobre-mi" },
     { label: t.nav.schedule,   href: "/agendar" },
   ]
