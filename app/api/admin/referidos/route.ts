@@ -9,13 +9,16 @@ export const revalidate = 0
 const nuevoAfiliadoSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').trim(),
   email: z.string().email('Correo electrónico no válido').toLowerCase().trim(),
-  telefono: z.string().optional().default(''),
-  codigo_deseado: z.string().optional().transform(v => (v ? v.trim().toUpperCase() : undefined)),
-  banco: z.string().optional().default('Bancolombia'),
-  tipo_cuenta: z.enum(['ahorros', 'corriente', 'billetera_digital']).optional().default('ahorros'),
-  numero_cuenta: z.string().optional().default(''),
-  titular_cuenta: z.string().optional().default(''),
-  numero_documento: z.string().optional().default('0'),
+  telefono: z.string().nullable().optional().transform(v => (v ? v.trim() : '')),
+  codigo_deseado: z.string().nullable().optional().transform(v => (v && v.trim() ? v.trim().toUpperCase() : undefined)),
+  banco: z.string().nullable().optional().transform(v => (v && v.trim() ? v.trim() : 'Bancolombia')),
+  tipo_cuenta: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? 'ahorros' : v),
+    z.enum(['ahorros', 'corriente', 'billetera_digital']).default('ahorros')
+  ),
+  numero_cuenta: z.string().nullable().optional().transform(v => (v ? v.trim() : '')),
+  titular_cuenta: z.string().nullable().optional().transform(v => (v ? v.trim() : '')),
+  numero_documento: z.string().nullable().optional().transform(v => (v && v.trim() ? v.trim() : '0')),
 })
 
 /**
@@ -125,6 +128,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Revendedor creado exitosamente',
       afiliado: data,
+      data: data,
     }, { status: 201 })
 
   } catch (err: any) {

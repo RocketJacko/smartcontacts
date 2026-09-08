@@ -30,7 +30,7 @@ async function verificarSuperAdmin() {
  */
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await verificarSuperAdmin()
@@ -38,7 +38,7 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const vigente = Boolean(body?.vigente)
 
@@ -62,7 +62,7 @@ export async function PATCH(
  */
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await verificarSuperAdmin()
@@ -70,7 +70,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
     }
 
-    const { id } = params
+    const { id } = await params
     const { data, error } = await authCheck.supabase!.rpc('admin_eliminar_plan_platzi', {
       p_id: id,
     })
