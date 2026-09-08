@@ -70,6 +70,12 @@ export async function POST(request: Request) {
       countryCode,
       countryName,
       currency,
+      plan,
+      planName,
+      planId,
+      meses_cubrimiento,
+      precio,
+      precio_formateado,
     } = body
 
     if (!inputCode || !String(inputCode).trim()) {
@@ -95,12 +101,19 @@ export async function POST(request: Request) {
 
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
+    const selectedPlanLabel = String(plan || planName || "Plan 6 Meses").trim()
 
     // Clean payload matching exact form fields + inputCode sent directly to n8n
     const payloadToWebhook = {
       event: "verify_code_and_activate",
       step: 2,
       product: "Platzi",
+      plan: selectedPlanLabel,
+      planName: selectedPlanLabel,
+      planId: planId ? String(planId).trim() : "",
+      meses_cubrimiento: meses_cubrimiento ? Number(meses_cubrimiento) : 6,
+      precioPlan: precio ? Number(precio) : null,
+      precio_formateado: precio_formateado ? String(precio_formateado).trim() : "",
       currency: currency || "COP",
       inputCode: String(inputCode).trim(),
       codigo: String(inputCode).trim(),

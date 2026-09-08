@@ -13,6 +13,50 @@ interface PlatziActivationModalProps {
   onClose: () => void
 }
 
+export interface PlatziPlan {
+  id: string
+  nombre_plan: string
+  meses_cubrimiento: number
+  precio: number
+  moneda: string
+  vigente: boolean
+  caracteristicas?: string
+  total_disponibles?: number | null
+}
+
+const DEFAULT_PLANS: PlatziPlan[] = [
+  {
+    id: "cc7a5125-02a8-44d7-92b5-9e6ef4dca49f",
+    nombre_plan: "Plan 6 Meses",
+    meses_cubrimiento: 6,
+    precio: 95000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
+  },
+  {
+    id: "b381bcfd-53f5-4ef3-b5d6-6c5863bb3450",
+    nombre_plan: "Plan 12 Meses Pago Único",
+    meses_cubrimiento: 12,
+    precio: 180000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
+  },
+]
+
+function formatPlanPrice(price: number, currency: string = "COP"): string {
+  try {
+    return new Intl.NumberFormat(currency === "COP" ? "es-CO" : "en-US", {
+      style: "currency",
+      currency: currency || "COP",
+      maximumFractionDigits: 0,
+    }).format(price)
+  } catch {
+    return `$${Number(price).toLocaleString()} ${currency}`
+  }
+}
+
 function cleanErrorForUI(raw: string): string {
   if (!raw) return ""
   let str = String(raw).trim()
@@ -50,7 +94,7 @@ function cleanErrorForUI(raw: string): string {
 
 export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModalProps) {
   const { language } = useLanguage()
-  const { countryCode, countryName, userCurrency, formattedPlatziPrice } = useGeoLocation()
+  const { countryCode, countryName, userCurrency } = useGeoLocation()
 
   // Estados del Formulario
   const [name, setName] = useState("")
@@ -61,10 +105,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [captchaToken, setCaptchaToken] = useState("")
   const [captchaAnswer, setCaptchaAnswer] = useState("")
 
+  // Estados de Planes Disponibles
+  const [plans, setPlans] = useState<PlatziPlan[]>(DEFAULT_PLANS)
+  const [selectedPlan, setSelectedPlan] = useState<PlatziPlan>(DEFAULT_PLANS[0])
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false)
+
   // Estados dinámicos de producto / plan
-  const [displayPrice, setDisplayPrice] = useState<string>(formattedPlatziPrice || "$400.909,75 COP")
-  const [displayDuration, setDisplayDuration] = useState<string>("1 año")
-  const [displayPlanName, setDisplayPlanName] = useState<string>("Plan Basic")
+  const [displayPrice, setDisplayPrice] = useState<string>(
+    formatPlanPrice(DEFAULT_PLANS[0].precio, DEFAULT_PLANS[0].moneda)
+  )
+  const [displayDuration, setDisplayDuration] = useState<string>("6 meses")
+  const [displayPlanName, setDisplayPlanName] = useState<string>(DEFAULT_PLANS[0].nombre_plan)
 
   // Pasos: 1 (Ingreso de datos) | 2 (Código PIN recibido al correo) | 3 (Confirmación exitosa)
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -74,12 +125,44 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Sincronizar precio según geolocalización
+  // Cargar planes vigentes desde la API
   useEffect(() => {
-    if (formattedPlatziPrice) {
-      setDisplayPrice(formattedPlatziPrice)
+    if (!isOpen) return
+    let isMounted = true
+
+    async function loadPlans() {
+      setIsLoadingPlans(true)
+      try {
+        const res = await fetch("/api/benefits/platzi/plans")
+        const data = await res.json()
+        if (isMounted && data.success && Array.isArray(data.planes) && data.planes.length > 0) {
+          setPlans(data.planes)
+          setSelectedPlan((prev) => {
+            const found = prev ? data.planes.find((p: PlatziPlan) => p.id === prev.id) : null
+            const chosen = found || data.planes[0]
+            setDisplayPlanName(chosen.nombre_plan)
+            setDisplayPrice(formatPlanPrice(chosen.precio, chosen.moneda))
+            setDisplayDuration(
+              chosen.meses_cubrimiento === 12
+                ? language === "es" ? "1 año" : "1 year"
+                : `${chosen.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
+            )
+            return chosen
+          })
+        }
+      } catch {
+        // Mantener fallback DEFAULT_PLANS
+      } finally {
+        if (isMounted) setIsLoadingPlans(false)
+      }
     }
-  }, [formattedPlatziPrice])
+
+    loadPlans()
+
+    return () => {
+      isMounted = false
+    }
+  }, [isOpen, language])
 
   // Obtener internamente el código de revendedor atribuido (URL ?ref=... o localStorage / cookie)
   useEffect(() => {
@@ -109,6 +192,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }, [isOpen])
 
+  const handleSelectPlan = (planItem: PlatziPlan) => {
+    setSelectedPlan(planItem)
+    setDisplayPlanName(planItem.nombre_plan)
+    setDisplayPrice(formatPlanPrice(planItem.precio, planItem.moneda))
+    setDisplayDuration(
+      planItem.meses_cubrimiento === 12
+        ? language === "es" ? "1 año" : "1 year"
+        : `${planItem.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
+    )
+  }
+
   if (!isOpen) return null
 
   const handleResetModal = () => {
@@ -117,9 +211,15 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     setErrorMsg("")
     setSuccessMessage("")
     setCaptchaAnswer("")
-    setDisplayPrice(formattedPlatziPrice || "$400.909,75 COP")
-    setDisplayDuration("1 año")
-    setDisplayPlanName("Plan Basic")
+    const basePlan = plans[0] || DEFAULT_PLANS[0]
+    setSelectedPlan(basePlan)
+    setDisplayPrice(formatPlanPrice(basePlan.precio, basePlan.moneda))
+    setDisplayDuration(
+      basePlan.meses_cubrimiento === 12
+        ? language === "es" ? "1 año" : "1 year"
+        : `${basePlan.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
+    )
+    setDisplayPlanName(basePlan.nombre_plan)
     onClose()
   }
 
@@ -197,7 +297,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       // Código de revendedor interno atribuido por enlace
       const cleanCode = discountCode.trim().toUpperCase()
 
-      // 4. Enviar los datos del usuario con el código de revendedor incluido internamente en la petición
+      // 4. Enviar los datos del usuario con el código de revendedor y plan seleccionado incluidos en la petición
       const res = await fetch("/api/benefits/platzi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -213,6 +313,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           countryCode,
           countryName,
           currency: userCurrency,
+          plan: selectedPlan?.nombre_plan || displayPlanName,
+          planName: selectedPlan?.nombre_plan || displayPlanName,
+          planId: selectedPlan?.id || "",
+          meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
+          precio: selectedPlan?.precio || 95000,
+          precio_formateado: displayPrice,
         }),
       })
 
@@ -276,7 +382,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     try {
       const cleanCode = discountCode.trim().toUpperCase()
 
-      // Se envían los datos completos nuevamente junto con el código recibido
+      // Se envían los datos completos nuevamente junto con el código recibido y el plan seleccionado
       const res = await fetch("/api/benefits/platzi/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -291,6 +397,12 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           countryCode,
           countryName,
           currency: userCurrency,
+          plan: selectedPlan?.nombre_plan || displayPlanName,
+          planName: selectedPlan?.nombre_plan || displayPlanName,
+          planId: selectedPlan?.id || "",
+          meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
+          precio: selectedPlan?.precio || 95000,
+          precio_formateado: displayPrice,
         }),
       })
 
@@ -489,9 +601,74 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   {displayPrice}
                 </span>
                 <span className="text-xs text-black/60 font-mono">
-                  — {displayDuration} (Para 1 estudiante)
+                  — {displayDuration} ({displayPlanName})
                 </span>
               </div>
+            </div>
+
+            {/* 1. Selector de Planes Disponibles */}
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
+                {language === "es" ? "Planes Disponibles *" : "Available Plans *"}
+              </label>
+
+              {isLoadingPlans ? (
+                <div className="p-4 rounded-2xl bg-[#FAF9F5] border border-black/10 flex items-center justify-center gap-2 text-xs font-mono text-black/50">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{language === "es" ? "Cargando planes disponibles..." : "Loading available plans..."}</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  {plans.map((p) => {
+                    const isSelected = selectedPlan?.id === p.id
+                    return (
+                      <div
+                        key={p.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSelectPlan(p)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            handleSelectPlan(p)
+                          }
+                        }}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? "bg-black/[0.04] border-black text-[#111] shadow-xs"
+                            : "bg-[#FAF9F5] border-black/10 hover:border-black/30 hover:bg-black/[0.02] text-black/70"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ${
+                              isSelected ? "border-black bg-black text-white" : "border-black/30 bg-white"
+                            }`}
+                          >
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-mono font-bold text-[#111] truncate">{p.nombre_plan}</div>
+                            <div className="text-[11px] text-black/60 font-light truncate">
+                              {p.caracteristicas || `${p.meses_cubrimiento} meses de acceso`}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right font-mono shrink-0">
+                          <span className="text-xs font-bold text-[#111] block">
+                            {formatPlanPrice(p.precio, p.moneda)}
+                          </span>
+                          <span className="text-[10px] text-black/50 block">
+                            {p.meses_cubrimiento === 12
+                              ? language === "es" ? "12 meses" : "12 months"
+                              : `${p.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Input Fields Container */}

@@ -50,6 +50,39 @@ CREATE INDEX IF NOT EXISTS idx_platzi_ventas_fecha ON platzi.ventas(fecha_regist
 -- PROCEDIMIENTOS ALMACENADOS (RPC) PARA GESTIÓN DE PLANES PLATZI
 -- ==============================================================================
 
+-- RPC 0: Obtener Planes Platzi Activos para Usuarios Públicos
+CREATE OR REPLACE FUNCTION public.obtener_planes_platzi_activos()
+RETURNS TABLE (
+    id UUID,
+    nombre_plan VARCHAR,
+    meses_cubrimiento INT,
+    precio NUMERIC,
+    moneda VARCHAR,
+    vigente BOOLEAN,
+    caracteristicas TEXT,
+    total_disponibles INT
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT 
+        p.id,
+        p.nombre_plan,
+        p.meses_cubrimiento,
+        p.precio,
+        p.moneda,
+        p.vigente,
+        p.caracteristicas,
+        p.total_disponibles
+    FROM platzi.planes p
+    WHERE p.vigente = true
+    ORDER BY p.meses_cubrimiento ASC, p.precio ASC;
+$$;
+
+GRANT USAGE ON SCHEMA platzi TO anon, authenticated, service_role;
+GRANT SELECT ON platzi.planes TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.obtener_planes_platzi_activos() TO anon, authenticated, service_role;
+
 -- RPC 1: Listar Planes Platzi
 CREATE OR REPLACE FUNCTION public.admin_obtener_planes_platzi()
 RETURNS TABLE (

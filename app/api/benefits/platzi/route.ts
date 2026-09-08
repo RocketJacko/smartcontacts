@@ -140,7 +140,24 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { name, phone, email, platziAccountEmail, discountCode, countryCode, countryName, currency, captchaToken, captchaAnswer } = body
+    const {
+      name,
+      phone,
+      email,
+      platziAccountEmail,
+      discountCode,
+      countryCode,
+      countryName,
+      currency,
+      captchaToken,
+      captchaAnswer,
+      plan,
+      planName,
+      planId,
+      meses_cubrimiento,
+      precio,
+      precio_formateado,
+    } = body
 
     // 2. Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo)
     const captchaCheck = verifyCaptcha(captchaToken, captchaAnswer)
@@ -190,11 +207,18 @@ export async function POST(request: Request) {
 
     const webhookKey = String(rawKey).trim()
     const rawCode = String(discountCode || "").trim()
+    const selectedPlanLabel = String(plan || planName || "Plan 6 Meses").trim()
 
     const payloadToWebhook = {
       event: "request_code",
       step: 1,
       product: "Platzi",
+      plan: selectedPlanLabel,
+      planName: selectedPlanLabel,
+      planId: planId ? String(planId).trim() : "",
+      meses_cubrimiento: meses_cubrimiento ? Number(meses_cubrimiento) : 6,
+      precioPlan: precio ? Number(precio) : null,
+      precio_formateado: precio_formateado ? String(precio_formateado).trim() : "",
       currency: currency || "COP",
       name: String(name).trim(),
       phone: String(phone).trim(),
@@ -315,7 +339,7 @@ export async function POST(request: Request) {
           p_cod_revendedor: effectiveRef,
           p_discount_code: rawCode || null,
           p_cod_generado: dataObj?.codigo || dataObj?.CodGenerado || null,
-          p_precio_venta: Number(dataObj?.price || dataObj?.Valor || 0),
+          p_precio_venta: Number(precio || dataObj?.price || dataObj?.Valor || 0),
         })
       } catch (syncErr) {
         console.error('Error registrando venta en platzi.ventas:', syncErr)
