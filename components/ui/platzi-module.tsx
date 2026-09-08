@@ -24,6 +24,9 @@ import {
   ToggleRight,
   Trash2,
   Edit,
+  Phone,
+  ChevronRight,
+  Send,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
 
@@ -100,7 +103,7 @@ export function PlatziModule() {
         setPlanes(data.planes || [])
       }
     } catch {
-      // Ignorar error de conexión
+      // Ignorar error
     } finally {
       setLoadingPlanes(false)
     }
@@ -116,7 +119,7 @@ export function PlatziModule() {
         setVentas(data.ventas || [])
       }
     } catch {
-      // Ignorar error de conexión
+      // Ignorar error
     } finally {
       setLoadingVentas(false)
     }
@@ -261,9 +264,7 @@ export function PlatziModule() {
         setVentas((prev) =>
           prev.map((v) => (v.id === venta.id ? { ...v, [campo]: nuevoValor } : v))
         )
-        setFeedbackToast(
-          isEs ? "Estado de venta actualizado." : "Sale status updated."
-        )
+        setFeedbackToast(isEs ? "Estado actualizado." : "Status updated.")
       }
     } catch {
       alert("Error actualizando venta")
@@ -307,427 +308,433 @@ export function PlatziModule() {
   }, [ventas, searchVentas])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 font-sans">
       {/* Toast Feedback */}
       {feedbackToast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-black text-white text-xs font-mono tracking-wider shadow-2xl border border-white/20 animate-in fade-in slide-in-from-top-3 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#111] text-white text-xs font-mono shadow-2xl border border-white/20 animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{feedbackToast}</span>
         </div>
       )}
 
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-black/[0.06]">
-        <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-black/[0.03] border border-black/[0.06] text-[11px] font-mono text-black/60 mb-2 font-medium">
-            <Layers className="w-3.5 h-3.5 text-black/70" />
-            <span>PLATZI BUSINESS MODULE</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#111]">
-            {pT.title || "Administración Platzi"}
-          </h2>
-          <p className="text-xs sm:text-sm text-black/50 font-light mt-0.5">
-            {pT.subtitle || "Catálogo de planes ofertados, control de vigencias y trazabilidad de ventas sincronizadas con revendedores."}
-          </p>
-        </div>
-
-        {/* Botón Refrescar */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              loadPlanes()
-              loadVentas()
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.06] text-xs font-mono text-black/60 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>{isEs ? "Actualizar" : "Refresh"}</span>
-          </button>
-        </div>
+      {/* ── TOP TITLE BANNER ─────────────────────────────────────────────────── */}
+      <div className="pb-4 border-b border-black/[0.08]">
+        <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+          {pT.title || "Gestión de Planes & Ventas Platzi"}
+        </h1>
+        <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+          {pT.subtitle || "Catálogo de planes ofertados, control de vigencias y trazabilidad de ventas sincronizadas con revendedores."}
+        </p>
       </div>
 
-      {/* Bento Grid de Métricas */}
+      {/* ── BENTO GRID KPIS LIMPIO ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Card 1: Planes Totales */}
-        <div className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.06] flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
-              {pT.kpiTotalPlans || "TOTAL DE PLANES"}
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+              PLANES CONFIGURADOS
             </span>
-            <Layers className="w-4 h-4 text-black/40" />
+            <Layers className="w-4 h-4 text-black/30" />
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold font-mono tracking-tight text-[#111]">
+            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
               {planes.length}
             </span>
-            <span className="text-[11px] text-black/40 font-mono block mt-0.5">
-              {planesVigentesCount} {isEs ? "vigentes en catálogo" : "active in catalog"}
+            <span className="text-xs text-black/40 font-normal block mt-0.5">
+              {planesVigentesCount} vigentes en catálogo
             </span>
           </div>
         </div>
 
-        {/* Card 2: Ventas Registradas */}
-        <div className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.06] flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
-              {pT.kpiTotalSales || "VENTAS REGISTRADAS"}
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+              TOTAL VENTAS REGISTRADAS
             </span>
-            <ShoppingBag className="w-4 h-4 text-black/40" />
+            <ShoppingBag className="w-4 h-4 text-black/30" />
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold font-mono tracking-tight text-[#111]">
+            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
               {ventas.length}
             </span>
-            <span className="text-[11px] text-black/40 font-mono block mt-0.5">
-              {ventasConRevendedorCount} {isEs ? "por revendedores" : "via resellers"}
+            <span className="text-xs text-black/40 font-normal block mt-0.5">
+              {ventasConRevendedorCount} referidas por aliados
             </span>
           </div>
         </div>
 
-        {/* Card 3: Cuentas Activas */}
-        <div className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.06] flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
-              {pT.kpiActiveAccounts || "CUENTAS ACTIVAS"}
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+              CUENTAS ACTIVAS
             </span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold font-mono tracking-tight text-[#111]">
+            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
               {ventasActivasCount}
             </span>
-            <span className="text-[11px] text-emerald-600 font-mono block mt-0.5 font-medium">
-              {ventas.length > 0 ? Math.round((ventasActivasCount / ventas.length) * 100) : 0}% {isEs ? "activación efectiva" : "activation rate"}
+            <span className="text-xs text-emerald-600 font-medium block mt-0.5">
+              {ventas.length > 0 ? Math.round((ventasActivasCount / ventas.length) * 100) : 0}% efectividad
             </span>
           </div>
         </div>
 
-        {/* Card 4: Códigos Canjeados */}
-        <div className="p-4 rounded-xl bg-black/[0.02] border border-black/[0.06] flex flex-col justify-between">
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">
-              {pT.kpiRedeemedCodes || "CÓDIGOS CANJEADOS"}
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+              CÓDIGOS CANJEADOS
             </span>
             <Tag className="w-4 h-4 text-blue-500" />
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold font-mono tracking-tight text-[#111]">
+            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
               {ventasCanjeadasCount}
             </span>
-            <span className="text-[11px] text-black/40 font-mono block mt-0.5">
-              {ventas.length - ventasCanjeadasCount} {isEs ? "códigos por canjear" : "pending redemption"}
+            <span className="text-xs text-black/40 font-normal block mt-0.5">
+              {ventas.length - ventasCanjeadasCount} pendientes de canje
             </span>
           </div>
         </div>
       </div>
 
-      {/* Navegación por Pestañas */}
+      {/* ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── */}
       <div className="flex items-center gap-2 border-b border-black/[0.08] pb-1">
         <button
           onClick={() => setActiveTab("planes")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-mono text-xs font-semibold tracking-wider transition-all border-b-2 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl font-sans text-xs font-semibold tracking-wide transition-all border-b-2 cursor-pointer ${
             activeTab === "planes"
-              ? "border-black text-black bg-black/[0.03]"
+              ? "border-black text-black bg-[#F5F4F0]"
               : "border-transparent text-black/40 hover:text-black/70"
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>{pT.tabPlans || "Planes Ofertados"} ({planes.length})</span>
+          <span>Planes Ofertados ({planes.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("ventas")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg font-mono text-xs font-semibold tracking-wider transition-all border-b-2 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl font-sans text-xs font-semibold tracking-wide transition-all border-b-2 cursor-pointer ${
             activeTab === "ventas"
-              ? "border-black text-black bg-black/[0.03]"
+              ? "border-black text-black bg-[#F5F4F0]"
               : "border-transparent text-black/40 hover:text-black/70"
           }`}
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>{pT.tabSales || "Ventas & Canjes"} ({ventas.length})</span>
+          <span>Ventas & Canjes ({ventas.length})</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA 1: PLANES OFERTADOS */}
+      {/* VISTA 1: PLANES OFERTADOS (DATA TABLE CORPORATIVA) */}
       {/* ========================================================================= */}
       {activeTab === "planes" && (
         <div className="space-y-4">
-          {/* Barra de Búsqueda y Botón Crear Plan */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-black/30 absolute left-3 top-2.5" />
+          {/* Barra de Controles */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
+            <div className="relative flex-1 sm:w-80">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
               <input
                 type="text"
                 value={searchPlanes}
                 onChange={(e) => setSearchPlanes(e.target.value)}
-                placeholder={pT.searchPlansPlaceholder || "Buscar plan..."}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.08] text-xs font-mono text-[#111] placeholder:text-black/30 focus:outline-none focus:border-black transition-colors"
+                placeholder="Buscar plan por nombre o características..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
               />
             </div>
 
-            <button
-              onClick={() => handleOpenPlanModal()}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[#111] hover:bg-black text-white text-xs font-mono font-bold tracking-wider uppercase transition-colors shadow-sm cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{pT.newPlanButton || "NUEVO PLAN"}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadPlanes}
+                title="Refrescar Planes"
+                className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingPlanes ? "animate-spin text-[#111]" : ""}`} />
+              </button>
+
+              <button
+                onClick={() => handleOpenPlanModal()}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-2xs shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Plan</span>
+              </button>
+            </div>
           </div>
 
-          {/* Listado de Planes */}
-          {loadingPlanes ? (
-            <div className="p-8 text-center text-xs font-mono text-black/40 flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{isEs ? "Cargando catálogo de planes..." : "Loading plans..."}</span>
+          {/* Tabla de Planes */}
+          <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse font-sans">
+                <thead>
+                  <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                    <th className="py-3 px-3.5 font-bold">Nombre del Plan</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Meses de Cobertura</th>
+                    <th className="py-3 px-3.5 font-bold">Precio Formateado</th>
+                    <th className="py-3 px-3.5 font-bold">Características</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Estado / Vigente</th>
+                    <th className="py-3 px-3.5 font-bold text-right">Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-black/[0.05]">
+                  {loadingPlanes ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-xs font-mono text-black/40">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
+                        <span>Cargando catálogo de planes...</span>
+                      </td>
+                    </tr>
+                  ) : filteredPlanes.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-xs font-mono text-black/40">
+                        No se encontraron planes registrados.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPlanes.map((plan) => (
+                      <tr key={plan.id} className="hover:bg-black/[0.015] transition-colors">
+                        {/* Nombre */}
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs font-semibold text-[#111] block">
+                            {plan.nombre_plan}
+                          </span>
+                        </td>
+
+                        {/* Meses */}
+                        <td className="py-3 px-3.5 text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F5F4F0] text-xs font-mono font-bold text-[#111]">
+                            {plan.meses_cubrimiento} Meses
+                          </span>
+                        </td>
+
+                        {/* Precio */}
+                        <td className="py-3 px-3.5 font-mono text-xs font-bold text-[#111]">
+                          ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
+                        </td>
+
+                        {/* Características */}
+                        <td className="py-3 px-3.5 text-xs text-black/60 font-normal max-w-xs truncate">
+                          {plan.caracteristicas || "Sin detalles adicionales"}
+                        </td>
+
+                        {/* Estado / Vigente */}
+                        <td className="py-3 px-3.5 text-center">
+                          <button
+                            onClick={() => handleToggleVigencia(plan)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
+                              plan.vigente
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                plan.vigente ? "bg-emerald-500" : "bg-black/30"
+                              }`}
+                            />
+                            <span>{plan.vigente ? "Vigente" : "Inactivo"}</span>
+                          </button>
+                        </td>
+
+                        {/* Acciones */}
+                        <td className="py-3 px-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleOpenPlanModal(plan)}
+                              title="Editar Plan"
+                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleDeletePlan(plan)}
+                              title="Eliminar Plan"
+                              className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          ) : filteredPlanes.length === 0 ? (
-            <div className="p-12 text-center rounded-xl bg-black/[0.01] border border-dashed border-black/10">
-              <Layers className="w-8 h-8 text-black/20 mx-auto mb-2" />
-              <p className="text-xs font-mono text-black/40">
-                {isEs ? "No se encontraron planes configurados." : "No plans configured."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredPlanes.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 rounded-xl bg-black/[0.015] hover:bg-black/[0.03] border border-black/[0.05] transition-all"
-                >
-                  <div className="flex items-start sm:items-center gap-3">
-                    <span
-                      className={`w-2 h-2 rounded-full mt-1.5 sm:mt-0 shrink-0 ${
-                        plan.vigente ? "bg-emerald-500" : "bg-black/20"
-                      }`}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#111] tracking-tight">
-                          {plan.nombre_plan}
-                        </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/[0.04] text-black/70 font-bold">
-                          {plan.meses_cubrimiento} {isEs ? "MESES" : "MONTHS"}
-                        </span>
-                      </div>
-                      {plan.caracteristicas && (
-                        <p className="text-xs text-black/50 font-light mt-0.5">
-                          {plan.caracteristicas}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-black/[0.04]">
-                    {/* Precio Formateado */}
-                    <div className="text-left sm:text-right">
-                      <span className="text-sm font-mono font-bold text-[#111]">
-                        ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
-                      </span>
-                      <span className="text-[10px] font-mono text-black/40 block">
-                        {plan.vigente ? (isEs ? "Vigente en catálogo" : "Active") : (isEs ? "Desactivado" : "Disabled")}
-                      </span>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleToggleVigencia(plan)}
-                        title={plan.vigente ? "Desactivar" : "Activar"}
-                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                          plan.vigente
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                            : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
-                        }`}
-                      >
-                        {plan.vigente ? (
-                          <ToggleRight className="w-4 h-4" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenPlanModal(plan)}
-                        className="p-1.5 rounded-lg bg-black/[0.03] hover:bg-black/[0.06] text-black/60 transition-colors cursor-pointer"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => handleDeletePlan(plan)}
-                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* VISTA 2: VENTAS & CANJES */}
+      {/* VISTA 2: VENTAS & CANJES (DATA TABLE CORPORATIVA) */}
       {/* ========================================================================= */}
       {activeTab === "ventas" && (
         <div className="space-y-4">
-          {/* Buscador de Ventas */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="relative w-full sm:w-96">
-              <Search className="w-4 h-4 text-black/30 absolute left-3 top-2.5" />
+          {/* Barra de Controles */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
+            <div className="relative flex-1 sm:w-96">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
               <input
                 type="text"
                 value={searchVentas}
                 onChange={(e) => setSearchVentas(e.target.value)}
-                placeholder={pT.searchSalesPlaceholder || "Buscar por cliente, correo o revendedor..."}
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.08] text-xs font-mono text-[#111] placeholder:text-black/30 focus:outline-none focus:border-black transition-colors"
+                placeholder="Buscar por cliente, correo o revendedor..."
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
               />
             </div>
+
+            <button
+              onClick={loadVentas}
+              title="Refrescar Ventas"
+              className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer self-end sm:self-auto"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingVentas ? "animate-spin text-[#111]" : ""}`} />
+            </button>
           </div>
 
-          {/* Listado de Ventas */}
-          {loadingVentas ? (
-            <div className="p-8 text-center text-xs font-mono text-black/40 flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{isEs ? "Cargando registro de ventas..." : "Loading sales..."}</span>
-            </div>
-          ) : filteredVentas.length === 0 ? (
-            <div className="p-12 text-center rounded-xl bg-black/[0.01] border border-dashed border-black/10">
-              <ShoppingBag className="w-8 h-8 text-black/20 mx-auto mb-2" />
-              <p className="text-xs font-mono text-black/40">
-                {isEs ? "No se encontraron ventas registradas." : "No sales found."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredVentas.map((venta) => (
-                <div
-                  key={venta.id}
-                  className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-3.5 rounded-xl bg-black/[0.015] hover:bg-black/[0.03] border border-black/[0.05] transition-all"
-                >
-                  {/* Info Cliente */}
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                        venta.cuenta_activa ? "bg-emerald-500" : "bg-amber-400"
-                      }`}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#111] tracking-tight">
-                          {venta.name}
-                        </span>
-                        {venta.cod_revendedor ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60">
-                            REF: {venta.cod_revendedor}
+          {/* Tabla de Ventas */}
+          <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse font-sans">
+                <thead>
+                  <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                    <th className="py-3 px-3.5 font-bold">Cliente / Comprador</th>
+                    <th className="py-3 px-3.5 font-bold">Cuenta Platzi</th>
+                    <th className="py-3 px-3.5 font-bold">Revendedor Asociado</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Código Generado</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Cuenta Activa</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Canjeado</th>
+                    <th className="py-3 px-3.5 font-bold text-right">Fecha Solicitud</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-black/[0.05]">
+                  {loadingVentas ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
+                        <span>Cargando historial de ventas...</span>
+                      </td>
+                    </tr>
+                  ) : filteredVentas.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
+                        No se encontraron ventas registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVentas.map((venta) => (
+                      <tr key={venta.id} className="hover:bg-black/[0.015] transition-colors">
+                        {/* Cliente */}
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs font-semibold text-[#111] block">
+                            {venta.name}
                           </span>
-                        ) : (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/[0.04] text-black/40">
-                            DIRECTO
+                          <span className="text-[11px] text-black/50 font-normal block">
+                            {venta.email}
                           </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-black/50 font-light mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3 text-black/30" />
-                          {venta.email}
-                        </span>
-                        <span className="text-black/20">•</span>
-                        <span>Platzi: <strong className="font-medium text-black/70">{venta.platzi_account_email}</strong></span>
-                        {venta.phone && (
-                          <>
-                            <span className="text-black/20">•</span>
-                            <span>{venta.phone}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                        </td>
 
-                  {/* Estado, Código y Acciones */}
-                  <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 border-t lg:border-t-0 pt-2 lg:pt-0 border-black/[0.04]">
-                    {/* Código Generado */}
-                    {venta.cod_generado ? (
-                      <button
-                        onClick={() => handleCopyCode(venta.id, venta.cod_generado!)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.06] text-xs font-mono font-bold tracking-widest text-[#111] cursor-pointer"
-                      >
-                        <span>{venta.cod_generado}</span>
-                        {copiedCodeId === venta.id ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3 text-black/30" />
-                        )}
-                      </button>
-                    ) : (
-                      <span className="text-[11px] font-mono text-black/30">Sin código</span>
-                    )}
+                        {/* Cuenta Platzi */}
+                        <td className="py-3 px-3.5">
+                          <span className="text-xs font-mono text-black/80 font-medium">
+                            {venta.platzi_account_email}
+                          </span>
+                        </td>
 
-                    {/* Botón Switch Cuenta Activa */}
-                    <button
-                      onClick={() => handleToggleVenta(venta, "cuenta_activa")}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
-                        venta.cuenta_activa
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                          : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          venta.cuenta_activa ? "bg-emerald-500" : "bg-black/30"
-                        }`}
-                      />
-                      <span>
-                        {venta.cuenta_activa
-                          ? pT.accountActive || "Activa"
-                          : pT.accountInactive || "Inactiva"}
-                      </span>
-                    </button>
+                        {/* Revendedor */}
+                        <td className="py-3 px-3.5">
+                          {venta.cod_revendedor ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[11px] font-mono font-bold border border-emerald-200/60">
+                              REF: {venta.cod_revendedor}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-mono text-black/40">
+                              Directo (Sin código)
+                            </span>
+                          )}
+                        </td>
 
-                    {/* Botón Switch Código Canjeado */}
-                    <button
-                      onClick={() => handleToggleVenta(venta, "cod_canjeado")}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
-                        venta.cod_canjeado
-                          ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                          : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
-                      }`}
-                    >
-                      <span>
-                        {venta.cod_canjeado
-                          ? pT.codeRedeemed || "Canjeado"
-                          : pT.codePending || "Pendiente"}
-                      </span>
-                    </button>
+                        {/* Código Generado Copiable */}
+                        <td className="py-3 px-3.5 text-center">
+                          {venta.cod_generado ? (
+                            <button
+                              onClick={() => handleCopyCode(venta.id, venta.cod_generado!)}
+                              title="Copiar código de activación"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono font-bold text-[#111] tracking-wider transition-colors cursor-pointer"
+                            >
+                              <span>{venta.cod_generado}</span>
+                              {copiedCodeId === venta.id ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3 h-3 text-black/30" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-xs font-mono text-black/30">-</span>
+                          )}
+                        </td>
 
-                    {/* Fecha de Registro */}
-                    <span className="text-[10px] font-mono text-black/30 hidden sm:inline-block">
-                      {new Date(venta.fecha_registro).toLocaleDateString("es-CO")}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                        {/* Cuenta Activa (Switch interactivo) */}
+                        <td className="py-3 px-3.5 text-center">
+                          <button
+                            onClick={() => handleToggleVenta(venta, "cuenta_activa")}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
+                              venta.cuenta_activa
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                venta.cuenta_activa ? "bg-emerald-500" : "bg-black/30"
+                              }`}
+                            />
+                            <span>{venta.cuenta_activa ? "Activa" : "Inactiva"}</span>
+                          </button>
+                        </td>
+
+                        {/* Código Canjeado (Switch interactivo) */}
+                        <td className="py-3 px-3.5 text-center">
+                          <button
+                            onClick={() => handleToggleVenta(venta, "cod_canjeado")}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
+                              venta.cod_canjeado
+                                ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                                : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
+                            }`}
+                          >
+                            <span>{venta.cod_canjeado ? "Canjeado" : "Pendiente"}</span>
+                          </button>
+                        </td>
+
+                        {/* Fecha */}
+                        <td className="py-3 px-3.5 text-right font-mono text-xs text-black/60">
+                          {new Date(venta.fecha_registro).toLocaleDateString("es-CO")}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL CREAR / EDITAR PLAN */}
-      {/* ========================================================================= */}
+      {/* ── MODAL CREAR / EDITAR PLAN ─────────────────────────────────────────── */}
       {isPlanModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-black/10 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
               <div>
                 <h3 className="text-base font-semibold text-[#111] tracking-tight">
-                  {editingPlan ? (isEs ? "Editar Plan Platzi" : "Edit Plan") : pT.planModalTitle || "Configuración de Plan Platzi"}
+                  {editingPlan ? "Editar Plan Platzi" : "Configuración de Plan Platzi"}
                 </h3>
-                <p className="text-xs text-black/50 font-light mt-0.5">
-                  {pT.planModalDesc || "Define la oferta de planes, meses y precio."}
+                <p className="text-xs text-black/50 font-normal mt-0.5">
+                  Define la oferta de planes, meses de cobertura y precio.
                 </p>
               </div>
               <button
@@ -741,7 +748,7 @@ export function PlatziModule() {
             <form onSubmit={handleSavePlan} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                  {pT.planNameLabel || "NOMBRE DEL PLAN *"}
+                  NOMBRE DEL PLAN *
                 </label>
                 <input
                   type="text"
@@ -749,14 +756,14 @@ export function PlatziModule() {
                   value={planNombre}
                   onChange={(e) => setPlanNombre(e.target.value)}
                   placeholder="Ej. Plan 5 Meses"
-                  className="w-full px-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.1] text-xs font-mono text-[#111] focus:outline-none focus:border-black transition-colors"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                    {pT.planMonthsLabel || "MESES *"}
+                    MESES DE CUBRIMIENTO *
                   </label>
                   <input
                     type="number"
@@ -764,13 +771,13 @@ export function PlatziModule() {
                     required
                     value={planMeses}
                     onChange={(e) => setPlanMeses(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.1] text-xs font-mono text-[#111] focus:outline-none focus:border-black transition-colors"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] outline-none focus:border-black/30"
                   />
                 </div>
 
                 <div className="space-y-1">
                   <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                    {pT.planPriceLabel || "PRECIO (COP) *"}
+                    PRECIO (COP) *
                   </label>
                   <input
                     type="number"
@@ -779,21 +786,21 @@ export function PlatziModule() {
                     value={planPrecio}
                     onChange={(e) => setPlanPrecio(e.target.value)}
                     placeholder="85000"
-                    className="w-full px-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.1] text-xs font-mono text-[#111] focus:outline-none focus:border-black transition-colors"
+                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                  {pT.planFeaturesLabel || "CARACTERÍSTICAS"}
+                  CARACTERÍSTICAS / DETALLES
                 </label>
                 <textarea
                   rows={2}
                   value={planCaracteristicas}
                   onChange={(e) => setPlanCaracteristicas(e.target.value)}
                   placeholder="Ej. Acceso completo a rutas y cursos por 5 meses..."
-                  className="w-full px-3 py-2 rounded-lg bg-black/[0.02] border border-black/[0.1] text-xs font-mono text-[#111] focus:outline-none focus:border-black transition-colors resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30 resize-none"
                 />
               </div>
 
@@ -807,9 +814,9 @@ export function PlatziModule() {
                 />
                 <label
                   htmlFor="planVigenteCheck"
-                  className="text-xs font-mono text-black/80 font-medium cursor-pointer"
+                  className="text-xs font-sans text-black/80 font-medium cursor-pointer"
                 >
-                  {pT.planActiveLabel || "Plan Vigente y disponible en catálogo"}
+                  Plan Vigente (mostrar en catálogo ofertado)
                 </label>
               </div>
 
@@ -817,21 +824,17 @@ export function PlatziModule() {
                 <button
                   type="button"
                   onClick={() => setIsPlanModalOpen(false)}
-                  className="px-3 py-2 rounded-lg text-xs font-mono text-black/60 hover:text-black transition-colors"
+                  className="px-3.5 py-2 rounded-xl text-xs font-sans text-black/60 hover:text-black transition-colors"
                 >
-                  {isEs ? "Cancelar" : "Cancel"}
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingPlan}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#111] hover:bg-black text-white text-xs font-mono font-bold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111] hover:bg-black text-white text-xs font-medium uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {isSubmittingPlan && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>
-                    {isSubmittingPlan
-                      ? pT.savingPlan || "GUARDANDO..."
-                      : pT.savePlanButton || "GUARDAR PLAN"}
-                  </span>
+                  <span>{isSubmittingPlan ? "Guardando..." : "Guardar Plan"}</span>
                 </button>
               </div>
             </form>
