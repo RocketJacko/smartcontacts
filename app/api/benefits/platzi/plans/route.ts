@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerSupabaseClient } from '@/lib/infrastructure/supabase/server-client'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -30,14 +30,7 @@ const DEFAULT_PLANS = [
 
 export async function GET() {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json({ success: true, planes: DEFAULT_PLANS }, { status: 200 })
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabase = await createServerSupabaseClient()
 
     // 1. Intentar llamar a la función RPC pública optimizada
     const { data: rpcData, error: rpcError } = await supabase.rpc('obtener_planes_platzi_activos')
