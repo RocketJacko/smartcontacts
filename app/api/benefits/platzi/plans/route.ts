@@ -47,6 +47,7 @@ export async function GET() {
 
     // 2. Fallback de consulta directa a la tabla platzi.planes
     const { data: tableData, error: tableError } = await supabase
+      .schema('platzi')
       .from('planes')
       .select('id, nombre_plan, meses_cubrimiento, precio, moneda, vigente, caracteristicas, total_disponibles')
       .eq('vigente', true)

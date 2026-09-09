@@ -16,11 +16,18 @@ export default function BeneficiosClientPage() {
 
   useEffect(() => {
     try {
-      // 1. Revisar URL search params
+      // 1. Revisar URL search params (referidos o convenios de ofertas especiales)
       const params = new URLSearchParams(window.location.search)
       const urlCode = params.get("ref") || params.get("referido")
+      const offerCode = params.get("oferta") || params.get("convenio") || params.get("promo")
       if (urlCode && urlCode.trim()) {
         const clean = urlCode.trim().toUpperCase()
+        setActiveCode(clean)
+        setHasReferral(true)
+        return
+      }
+      if (offerCode && offerCode.trim()) {
+        const clean = offerCode.trim().toUpperCase()
         setActiveCode(clean)
         setHasReferral(true)
         return

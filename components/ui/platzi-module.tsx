@@ -59,6 +59,31 @@ export interface VentaPlatzi {
   created_at: string
 }
 
+const DEFAULT_PLANES: PlanPlatzi[] = [
+  {
+    id: "cc7a5125-02a8-44d7-92b5-9e6ef4dca49f",
+    nombre_plan: "Plan 6 Meses",
+    meses_cubrimiento: 6,
+    precio: 95000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
+    total_disponibles: null,
+    created_at: "2026-09-08T06:10:33.689Z",
+  },
+  {
+    id: "b381bcfd-53f5-4ef3-b5d6-6c5863bb3450",
+    nombre_plan: "Plan 12 Meses Pago Único",
+    meses_cubrimiento: 12,
+    precio: 180000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
+    total_disponibles: null,
+    created_at: "2026-09-08T06:10:33.689Z",
+  },
+]
+
 export function PlatziModule() {
   const { t, language } = useLanguage()
   const isEs = language === "es"
@@ -66,14 +91,14 @@ export function PlatziModule() {
 
   const [activeTab, setActiveTab] = useState<"planes" | "ventas">("planes")
 
-  // Estados de Planes
-  const [planes, setPlanes] = useState<PlanPlatzi[]>([])
-  const [loadingPlanes, setLoadingPlanes] = useState(true)
+  // Estados de Planes: inicializado inmediatamente con catálogo base para evitar esperas y bloqueos
+  const [planes, setPlanes] = useState<PlanPlatzi[]>(DEFAULT_PLANES)
+  const [loadingPlanes, setLoadingPlanes] = useState(false)
   const [searchPlanes, setSearchPlanes] = useState("")
 
   // Estados de Ventas
   const [ventas, setVentas] = useState<VentaPlatzi[]>([])
-  const [loadingVentas, setLoadingVentas] = useState(true)
+  const [loadingVentas, setLoadingVentas] = useState(false)
   const [searchVentas, setSearchVentas] = useState("")
 
   // Modales
@@ -93,34 +118,52 @@ export function PlatziModule() {
   const [feedbackToast, setFeedbackToast] = useState("")
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null)
 
-  // Cargar Planes
+  // Cargar Planes en segundo plano con timeout estricto de 4 segundos
   const loadPlanes = async () => {
     setLoadingPlanes(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 4000)
     try {
-      const res = await fetch("/api/admin/platzi/plans")
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setPlanes(data.planes || [])
+      const res = await fetch("/api/admin/platzi/plans", {
+        signal: controller.signal,
+        headers: { "Cache-Control": "no-cache" },
+      })
+      clearTimeout(timeoutId)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && Array.isArray(data.planes) && data.planes.length > 0) {
+          setPlanes(data.planes)
+        }
       }
     } catch {
-      // Ignorar error
+      // Si falla o hay timeout en el servidor, se mantiene el catálogo base sin romper la interfaz
     } finally {
+      clearTimeout(timeoutId)
       setLoadingPlanes(false)
     }
   }
 
-  // Cargar Ventas
+  // Cargar Ventas en segundo plano con timeout estricto de 4 segundos
   const loadVentas = async () => {
     setLoadingVentas(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 4000)
     try {
-      const res = await fetch("/api/admin/platzi/sales")
-      const data = await res.json()
-      if (res.ok && data.success) {
-        setVentas(data.ventas || [])
+      const res = await fetch("/api/admin/platzi/sales", {
+        signal: controller.signal,
+        headers: { "Cache-Control": "no-cache" },
+      })
+      clearTimeout(timeoutId)
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && Array.isArray(data.ventas)) {
+          setVentas(data.ventas)
+        }
       }
     } catch {
       // Ignorar error
     } finally {
+      clearTimeout(timeoutId)
       setLoadingVentas(false)
     }
   }
@@ -478,7 +521,7 @@ export function PlatziModule() {
                 </thead>
 
                 <tbody className="divide-y divide-black/[0.05]">
-                  {loadingPlanes ? (
+                  {loadingPlanes && planes.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-xs font-mono text-black/40">
                         <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
