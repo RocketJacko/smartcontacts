@@ -427,3 +427,352 @@ BEGIN
 END;
 $$;
 
+-- ==============================================================================
+-- 7. TABLA DE OFERTAS ESPECIALES Y CONVENIOS TEMPORALES
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    codigo_oferta TEXT UNIQUE NOT NULL, -- Código / Slug (ej: 'UNAL-2026', 'PLATZI-EDU')
+    titulo TEXT NOT NULL, -- Título de la oferta / convenio
+    descripcion TEXT, -- Descripción o condiciones
+    institucion_empresa TEXT, -- Nombre de la institución o empresa aliada
+    precio_cop NUMERIC(14, 2) NOT NULL, -- Precio en COP
+    precio_usd NUMERIC(10, 2) NOT NULL, -- Precio en USD
+    meses_cubrimiento INT NOT NULL DEFAULT 12, -- Duración del plan
+    caracteristicas JSONB DEFAULT '[]'::jsonb, -- Array con puntos clave
+    afiliado_id UUID REFERENCES referidos.afiliados(id) ON DELETE SET NULL, -- Revendedor atribuido
+    fecha_inicio TIMESTAMPTZ DEFAULT NOW(),
+    fecha_fin TIMESTAMPTZ, -- Vencimiento opcional
+    cupos_maximos INT, -- Límite de activaciones
+    cupos_usados INT NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT true, -- Toggle de activación
+    creado_en TIMESTAMPTZ DEFAULT NOW(),
+    actualizado_en TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_codigo ON referidos.ofertas_especiales(codigo_oferta);
+CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_afiliado ON referidos.ofertas_especiales(afiliado_id);
+CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_activo ON referidos.ofertas_especiales(activo);
+
+-- RPC 7: Obtener Oferta Pública (Landing y Modal de Activación)
+CREATE OR REPLACE FUNCTION public.obtener_oferta_publica(p_codigo TEXT)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_oferta RECORD;
+    v_afiliado RECORD;
+    v_enlace RECORD;
+    v_valida BOOLEAN := true;
+    v_motivo TEXT := 'valida';
+BEGIN
+    SELECT * INTO v_oferta
+    FROM referidos.ofertas_especiales
+    WHERE UPPER(TRIM(codigo_oferta)) = UPPER(TRIM(p_codigo));
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'valida', false,
+            'motivo', 'no_encontrada',
+            'error', 'La oferta o convenio especificado no existe.'
+        );
+    END IF;
+
+    IF NOT v_oferta.activo THEN
+        v_valida := false;
+        v_motivo := 'pausada';
+    ELSIF v_oferta.fecha_inicio IS NOT NULL AND v_oferta.fecha_inicio > NOW() THEN
+        v_valida := false;
+        v_motivo := 'no_iniciada';
+    ELSIF v_oferta.fecha_fin IS NOT NULL AND v_oferta.fecha_fin < NOW() THEN
+        v_valida := false;
+        v_motivo := 'vencida';
+    ELSIF v_oferta.cupos_maximos IS NOT NULL AND v_oferta.cupos_usados >= v_oferta.cupos_maximos THEN
+        v_valida := false;
+        v_motivo := 'agotada';
+    END IF;
+
+    IF v_oferta.afiliado_id IS NOT NULL THEN
+        SELECT id, nombre, email, estado INTO v_afiliado
+        FROM referidos.afiliados
+        WHERE id = v_oferta.afiliado_id;
+
+        SELECT codigo_referido INTO v_enlace
+        FROM referidos.enlaces
+        WHERE afiliado_id = v_oferta.afiliado_id AND activo = true
+        LIMIT 1;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'valida', v_valida,
+        'motivo', v_motivo,
+        'oferta', jsonb_build_object(
+            'id', v_oferta.id,
+            'codigo_oferta', v_oferta.codigo_oferta,
+            'titulo', v_oferta.titulo,
+            'descripcion', v_oferta.descripcion,
+            'institucion_empresa', v_oferta.institucion_empresa,
+            'precio_cop', v_oferta.precio_cop,
+            'precio_usd', v_oferta.precio_usd,
+            'meses_cubrimiento', v_oferta.meses_cubrimiento,
+            'caracteristicas', v_oferta.caracteristicas,
+            'cupos_maximos', v_oferta.cupos_maximos,
+            'cupos_usados', v_oferta.cupos_usados,
+            'fecha_fin', v_oferta.fecha_fin,
+            'activo', v_oferta.activo,
+            'afiliado_id', v_oferta.afiliado_id,
+            'afiliado_nombre', v_afiliado.nombre,
+            'codigo_referido', v_enlace.codigo_referido
+        )
+    );
+END;
+$$;
+
+-- RPC 8: Admin Listar Ofertas
+CREATE OR REPLACE FUNCTION public.admin_listar_ofertas()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_result jsonb;
+BEGIN
+    SELECT jsonb_agg(
+        jsonb_build_object(
+            'id', o.id,
+            'codigo_oferta', o.codigo_oferta,
+            'titulo', o.titulo,
+            'descripcion', o.descripcion,
+            'institucion_empresa', o.institucion_empresa,
+            'precio_cop', o.precio_cop,
+            'precio_usd', o.precio_usd,
+            'meses_cubrimiento', o.meses_cubrimiento,
+            'caracteristicas', o.caracteristicas,
+            'afiliado_id', o.afiliado_id,
+            'afiliado_nombre', a.nombre,
+            'afiliado_email', a.email,
+            'codigo_referido', e.codigo_referido,
+            'fecha_inicio', o.fecha_inicio,
+            'fecha_fin', o.fecha_fin,
+            'cupos_maximos', o.cupos_maximos,
+            'cupos_usados', o.cupos_usados,
+            'activo', o.activo,
+            'creado_en', o.creado_en,
+            'actualizado_en', o.actualizado_en
+        ) ORDER BY o.creado_en DESC
+    ) INTO v_result
+    FROM referidos.ofertas_especiales o
+    LEFT JOIN referidos.afiliados a ON o.afiliado_id = a.id
+    LEFT JOIN referidos.enlaces e ON a.id = e.afiliado_id AND e.activo = true;
+
+    RETURN COALESCE(v_result, '[]'::jsonb);
+END;
+$$;
+
+-- RPC 9: Admin Crear Oferta Especial
+CREATE OR REPLACE FUNCTION public.admin_crear_oferta(
+    p_codigo_oferta TEXT,
+    p_titulo TEXT,
+    p_descripcion TEXT,
+    p_institucion_empresa TEXT,
+    p_precio_cop NUMERIC,
+    p_precio_usd NUMERIC,
+    p_meses_cubrimiento INT,
+    p_caracteristicas JSONB,
+    p_afiliado_id UUID DEFAULT NULL,
+    p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
+    p_cupos_maximos INT DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_clean_code TEXT := UPPER(TRIM(p_codigo_oferta));
+    v_id UUID;
+BEGIN
+    IF v_clean_code IS NULL OR v_clean_code = '' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'El código de oferta es requerido.');
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM referidos.ofertas_especiales WHERE UPPER(codigo_oferta) = v_clean_code) THEN
+        RETURN jsonb_build_object('success', false, 'error', 'El código de oferta ya se encuentra registrado.');
+    END IF;
+
+    INSERT INTO referidos.ofertas_especiales (
+        codigo_oferta,
+        titulo,
+        descripcion,
+        institucion_empresa,
+        precio_cop,
+        precio_usd,
+        meses_cubrimiento,
+        caracteristicas,
+        afiliado_id,
+        fecha_fin,
+        cupos_maximos,
+        activo
+    ) VALUES (
+        v_clean_code,
+        TRIM(p_titulo),
+        TRIM(p_descripcion),
+        TRIM(p_institucion_empresa),
+        p_precio_cop,
+        p_precio_usd,
+        COALESCE(p_meses_cubrimiento, 12),
+        COALESCE(p_caracteristicas, '[]'::jsonb),
+        p_afiliado_id,
+        p_fecha_fin,
+        p_cupos_maximos,
+        true
+    ) RETURNING id INTO v_id;
+
+    RETURN jsonb_build_object('success', true, 'id', v_id, 'codigo_oferta', v_clean_code);
+END;
+$$;
+
+-- RPC 10: Admin Actualizar Oferta Especial
+CREATE OR REPLACE FUNCTION public.admin_actualizar_oferta(
+    p_id UUID,
+    p_titulo TEXT,
+    p_descripcion TEXT,
+    p_institucion_empresa TEXT,
+    p_precio_cop NUMERIC,
+    p_precio_usd NUMERIC,
+    p_meses_cubrimiento INT,
+    p_caracteristicas JSONB,
+    p_afiliado_id UUID DEFAULT NULL,
+    p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
+    p_cupos_maximos INT DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE referidos.ofertas_especiales
+    SET titulo = TRIM(p_titulo),
+        descripcion = TRIM(p_descripcion),
+        institucion_empresa = TRIM(p_institucion_empresa),
+        precio_cop = p_precio_cop,
+        precio_usd = p_precio_usd,
+        meses_cubrimiento = COALESCE(p_meses_cubrimiento, 12),
+        caracteristicas = COALESCE(p_caracteristicas, '[]'::jsonb),
+        afiliado_id = p_afiliado_id,
+        fecha_fin = p_fecha_fin,
+        cupos_maximos = p_cupos_maximos,
+        actualizado_en = NOW()
+    WHERE id = p_id;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Oferta no encontrada.');
+    END IF;
+
+    RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- RPC 11: Admin Conmutar Toggle de Oferta Especial
+CREATE OR REPLACE FUNCTION public.admin_toggle_oferta(
+    p_id UUID,
+    p_activo BOOLEAN
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE referidos.ofertas_especiales
+    SET activo = p_activo,
+        actualizado_en = NOW()
+    WHERE id = p_id;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Oferta no encontrada.');
+    END IF;
+
+    RETURN jsonb_build_object('success', true, 'activo', p_activo);
+END;
+$$;
+
+-- RPC 12: Admin Eliminar Oferta Especial
+CREATE OR REPLACE FUNCTION public.admin_eliminar_oferta(
+    p_id UUID
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    DELETE FROM referidos.ofertas_especiales
+    WHERE id = p_id;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Oferta no encontrada.');
+    END IF;
+
+    RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- RPC 13: Admin Actualizar Datos de Revendedor
+CREATE OR REPLACE FUNCTION public.admin_actualizar_afiliado(
+    p_afiliado_id UUID,
+    p_nombre TEXT,
+    p_email TEXT,
+    p_telefono TEXT DEFAULT NULL,
+    p_banco TEXT DEFAULT 'Bancolombia',
+    p_tipo_cuenta TEXT DEFAULT 'ahorros',
+    p_numero_cuenta TEXT DEFAULT NULL,
+    p_titular_cuenta TEXT DEFAULT NULL,
+    p_numero_documento TEXT DEFAULT '0'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE referidos.afiliados
+    SET nombre = TRIM(p_nombre),
+        email = LOWER(TRIM(p_email)),
+        telefono = NULLIF(TRIM(p_telefono), ''),
+        actualizado_en = NOW()
+    WHERE id = p_afiliado_id;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Afiliado no encontrado.');
+    END IF;
+
+    INSERT INTO referidos.datos_pago (
+        afiliado_id,
+        banco,
+        tipo_cuenta,
+        numero_cuenta,
+        titular_cuenta,
+        numero_documento,
+        actualizado_en
+    ) VALUES (
+        p_afiliado_id,
+        COALESCE(NULLIF(TRIM(p_banco), ''), 'Bancolombia'),
+        COALESCE(NULLIF(TRIM(p_tipo_cuenta), ''), 'ahorros'),
+        COALESCE(NULLIF(TRIM(p_numero_cuenta), ''), '0'),
+        COALESCE(NULLIF(TRIM(p_titular_cuenta), ''), TRIM(p_nombre)),
+        COALESCE(NULLIF(TRIM(p_numero_documento), ''), '0'),
+        NOW()
+    )
+    ON CONFLICT (afiliado_id) DO UPDATE
+    SET banco = EXCLUDED.banco,
+        tipo_cuenta = EXCLUDED.tipo_cuenta,
+        numero_cuenta = EXCLUDED.numero_cuenta,
+        titular_cuenta = EXCLUDED.titular_cuenta,
+        numero_documento = EXCLUDED.numero_documento,
+        actualizado_en = NOW();
+
+    RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+

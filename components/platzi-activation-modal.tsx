@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react"
+import { X, CheckCircle2, Loader2, User, Mail, KeyRound, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -22,6 +22,22 @@ export interface PlatziPlan {
   vigente: boolean
   caracteristicas?: string
   total_disponibles?: number | null
+}
+
+export interface SpecialOfferData {
+  id: string
+  codigo_oferta: string
+  titulo: string
+  descripcion: string
+  institucion_empresa: string
+  precio_cop: number
+  precio_usd: number
+  meses_cubrimiento: number
+  caracteristicas?: string[]
+  afiliado_id?: string
+  afiliado_nombre?: string
+  codigo_referido?: string
+  activo: boolean
 }
 
 const DEFAULT_PLANS: PlatziPlan[] = [
@@ -116,6 +132,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [plans, setPlans] = useState<PlatziPlan[]>(DEFAULT_PLANS)
   const [selectedPlan, setSelectedPlan] = useState<PlatziPlan>(DEFAULT_PLANS[0])
   const [isLoadingPlans, setIsLoadingPlans] = useState(false)
+  const [specialOffer, setSpecialOffer] = useState<SpecialOfferData | null>(null)
 
   // Estados dinámicos de producto / plan
   const [displayPrice, setDisplayPrice] = useState<string>(
@@ -139,7 +156,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Cargar planes vigentes desde la API
+  // Cargar planes vigentes y validar si existe una oferta especial / convenio
   useEffect(() => {
     if (!isOpen) return
     let isMounted = true
@@ -147,22 +164,63 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     async function loadPlans() {
       setIsLoadingPlans(true)
       try {
+        let offerItem: PlatziPlan | null = null
+
+        // 1. Detectar si la URL incluye parámetro de oferta o convenio (?oferta=... o ?convenio=...)
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search)
+          const offerSlug = params.get("oferta") || params.get("convenio") || params.get("promo")
+          if (offerSlug && offerSlug.trim()) {
+            try {
+              const offerRes = await fetch(`/api/benefits/offers/${encodeURIComponent(offerSlug.trim().toUpperCase())}`)
+              const offerData = await offerRes.json()
+              if (offerData?.success && offerData?.valida && offerData?.oferta) {
+                const off = offerData.oferta as SpecialOfferData
+                if (isMounted) setSpecialOffer(off)
+
+                // Si la oferta tiene un revendedor asignado, atribuir su código automáticamente
+                if (off.codigo_referido && isMounted) {
+                  const refUpper = off.codigo_referido.toUpperCase().trim()
+                  setDiscountCode(refUpper)
+                  try {
+                    localStorage.setItem("sc_ref_code", refUpper)
+                  } catch {}
+                }
+
+                offerItem = {
+                  id: `offer-${off.id}`,
+                  nombre_plan: off.titulo,
+                  meses_cubrimiento: off.meses_cubrimiento,
+                  precio: Number(off.precio_cop),
+                  moneda: "COP",
+                  vigente: true,
+                  caracteristicas:
+                    off.descripcion ||
+                    (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : "Plan exclusivo de convenio"),
+                }
+              }
+            } catch {}
+          }
+        }
+
+        // 2. Cargar planes generales de base de datos
         const res = await fetch("/api/benefits/platzi/plans")
         const data = await res.json()
-        if (isMounted && data.success && Array.isArray(data.planes) && data.planes.length > 0) {
-          setPlans(data.planes)
-          setSelectedPlan((prev) => {
-            const found = prev ? data.planes.find((p: PlatziPlan) => p.id === prev.id) : null
-            const chosen = found || data.planes[0]
-            setDisplayPlanName(chosen.nombre_plan)
-            setDisplayPrice(formatPlanPriceDynamic(chosen.precio, chosen.moneda))
-            setDisplayDuration(
-              chosen.meses_cubrimiento === 12
-                ? language === "es" ? "1 año" : "1 year"
-                : `${chosen.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
-            )
-            return chosen
-          })
+        const standardPlans: PlatziPlan[] =
+          data?.success && Array.isArray(data?.planes) && data.planes.length > 0 ? data.planes : DEFAULT_PLANS
+
+        const mergedPlans = offerItem ? [offerItem, ...standardPlans] : standardPlans
+        if (isMounted) {
+          setPlans(mergedPlans)
+          const chosen = offerItem || mergedPlans[0]
+          setSelectedPlan(chosen)
+          setDisplayPlanName(chosen.nombre_plan)
+          setDisplayPrice(formatPlanPriceDynamic(chosen.precio, chosen.moneda))
+          setDisplayDuration(
+            chosen.meses_cubrimiento === 12
+              ? language === "es" ? "1 año" : "1 year"
+              : `${chosen.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
+          )
         }
       } catch {
         // Mantener fallback DEFAULT_PLANS
@@ -176,7 +234,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     return () => {
       isMounted = false
     }
-  }, [isOpen, language])
+  }, [isOpen, language, formatPlanPriceDynamic])
 
   // Obtener internamente el código de revendedor atribuido (URL ?ref=... o localStorage / cookie)
   useEffect(() => {
@@ -333,6 +391,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
+          oferta_id: specialOffer?.id || null,
+          oferta_codigo: specialOffer?.codigo_oferta || null,
+          institucion: specialOffer?.institucion_empresa || null,
         }),
       })
 
@@ -417,6 +478,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
+          oferta_id: specialOffer?.id || null,
+          oferta_codigo: specialOffer?.codigo_oferta || null,
+          institucion: specialOffer?.institucion_empresa || null,
         }),
       })
 
@@ -635,6 +699,23 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   — {displayDuration} ({displayPlanName})
                 </span>
               </div>
+
+              {/* Banner Institucional de Oferta Especial / Convenio */}
+              {specialOffer && (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-950 mt-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold uppercase tracking-wider text-[10px] text-amber-800 block">
+                      {language === "es" ? "Convenio Institucional Aplicado" : "Institutional Deal Applied"}
+                    </span>
+                    <span className="font-medium truncate block">
+                      {specialOffer.institucion_empresa
+                        ? `${specialOffer.institucion_empresa} — ${specialOffer.titulo}`
+                        : specialOffer.titulo}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 1. Selector de Planes Disponibles */}

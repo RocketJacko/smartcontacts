@@ -28,8 +28,12 @@ import {
   User,
   Clock,
   ArrowUpRight,
+  Sparkles,
+  Pencil,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { SpecialOffersTab } from "./special-offers-tab"
+import { EditResellerModal } from "./edit-reseller-modal"
 
 export interface AfiliadoData {
   id: string
@@ -63,6 +67,10 @@ export function ResellersModule() {
   const [errorMsg, setErrorMsg] = useState("")
   const [successToast, setSuccessToast] = useState("")
 
+  // Pestaña Activa: Revendedores u Ofertas Especiales
+  const [activeTab, setActiveTab] = useState<"resellers" | "offers">("resellers")
+  const [offersCount, setOffersCount] = useState<number>(0)
+
   // Filtros
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "activo" | "suspendido">("all")
@@ -72,6 +80,7 @@ export function ResellersModule() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isLiquidarOpen, setIsLiquidarOpen] = useState(false)
   const [selectedAfiliado, setSelectedAfiliado] = useState<AfiliadoData | null>(null)
+  const [editingAfiliado, setEditingAfiliado] = useState<AfiliadoData | null>(null)
 
   // Formulario creación
   const [formNombre, setFormNombre] = useState("")
@@ -191,7 +200,7 @@ export function ResellersModule() {
         setAfiliados((prev) =>
           prev.map((item) => (item.id === afiliado.id ? { ...item, estado: nuevoEstado, enlace_activo: nuevoEstado === "activo" } : item))
         )
-        setSuccessToast(isEs ? `Estado actualizado a "${nuevoEstado}"` : `Status updated to "${nuevoEstado}"`)
+        setSuccessToast(isEs ? `Estado de ${afiliado.nombre} actualizado a "${nuevoEstado}"` : `Status updated to "${nuevoEstado}"`)
       } else {
         alert(data.error || "Error al actualizar estado")
       }
@@ -312,375 +321,439 @@ export function ResellersModule() {
       )}
 
       {/* ── TOP TITLE BANNER ─────────────────────────────────────────────────── */}
-      <div className="pb-4 border-b border-black/[0.08]">
-        <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
-          {resT.title || "Programa de Revendedores & Afiliados"}
-        </h1>
-        <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
-          {resT.subtitle || "Control de aliados comerciales, enlaces de atribución, seguimiento de clics y liquidación de comisiones."}
-        </p>
-      </div>
-
-      {/* ── BENTO GRID KPIS (LIMPIO Y PROFESIONAL) ────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Card 1: Revendedores */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              {resT.kpiTotal || "TOTAL REVENDEDORES"}
-            </span>
-            <Users className="w-4 h-4 text-black/30" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
-              {kpis.total}
-            </span>
-            <span className="text-xs text-black/40 font-normal block mt-0.5">
-              Aliados registrados
-            </span>
-          </div>
+      <div className="pb-4 border-b border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+            {resT.title || "Programa de Revendedores & Afiliados"}
+          </h1>
+          <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+            {resT.subtitle || "Control de aliados comerciales, convenios institucionales, ofertas especiales y liquidaciones."}
+          </p>
         </div>
 
-        {/* Card 2: Clics Acumulados */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              {resT.kpiClicks || "CLICS ACUMULADOS"}
-            </span>
-            <Share2 className="w-4 h-4 text-black/30" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
-              {kpis.clics}
-            </span>
-            <span className="text-xs text-black/40 font-normal block mt-0.5">
-              Tráfico atribuido por enlaces
-            </span>
-          </div>
-        </div>
-
-        {/* Card 3: Ventas Cerradas */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              VENTAS CERRADAS
-            </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
-              {kpis.ventas}
-            </span>
-            <span className="text-xs text-emerald-600 font-medium block mt-0.5">
-              Sincronizadas desde Platzi
-            </span>
-          </div>
-        </div>
-
-        {/* Card 4: Saldo Pendiente */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              {resT.kpiPendingBalance || "SALDO PENDIENTE"}
-            </span>
-            <DollarSign className="w-4 h-4 text-black/30" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
-              ${Number(kpis.saldoPendiente).toLocaleString("es-CO")}
-            </span>
-            <span className="text-xs text-black/40 font-normal block mt-0.5">
-              Comisiones por liquidar
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── TOP BAR & CONTROLES DE FILTRO (ESTILO CALENDARDATATABLE4) ──────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
-        {/* Selector de Estado */}
-        <div className="flex items-center gap-3">
-          <label className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold shrink-0">
-            FILTRAR ESTADO:
-          </label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] font-medium outline-none focus:border-black/30 cursor-pointer transition-colors"
-          >
-            <option value="all">Todos los Aliados ({afiliados.length})</option>
-            <option value="activo">Solo Activos</option>
-            <option value="suspendido">Solo Suspendidos</option>
-          </select>
-        </div>
-
-        {/* Buscador y Botón Crear */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por Nombre, Código o Correo..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
-            />
-          </div>
-
+        {/* ── NAVEGACIÓN SEGMENTADA POR PESTAÑAS ───────────────────────────────── */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#F5F4F0] border border-black/[0.06] self-start sm:self-auto shrink-0">
           <button
-            onClick={loadAfiliados}
-            title="Refrescar Lista"
-            className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+            type="button"
+            onClick={() => setActiveTab("resellers")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+              activeTab === "resellers"
+                ? "bg-white shadow-2xs text-[#111]"
+                : "text-black/50 hover:text-[#111]"
+            }`}
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#111]" : ""}`} />
+            <Users className="w-3.5 h-3.5" />
+            <span>Revendedores ({afiliados.length})</span>
           </button>
-
           <button
-            onClick={() => setIsCreateOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-2xs shrink-0"
+            type="button"
+            onClick={() => setActiveTab("offers")}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+              activeTab === "offers"
+                ? "bg-white shadow-2xs text-[#111]"
+                : "text-black/50 hover:text-[#111]"
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>{resT.createButton || "Nuevo Revendedor"}</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>Ofertas Especiales {offersCount > 0 ? `(${offersCount})` : ""}</span>
           </button>
         </div>
       </div>
 
-      {/* ── DATA TABLE CORPORATIVA (IDÉNTICA A CALENDAR DATA TABLE 4) ─────────── */}
-      <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse font-sans">
-            <thead>
-              <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
-                <th className="py-3 px-3.5 w-8 text-center"></th>
-                <th className="py-3 px-3.5 font-bold">Revendedor / Aliado</th>
-                <th className="py-3 px-3.5 font-bold">Código de Referido</th>
-                <th className="py-3 px-3.5 font-bold">Contacto</th>
-                <th className="py-3 px-3.5 font-bold text-center">Clics</th>
-                <th className="py-3 px-3.5 font-bold text-center">Ventas Cerradas</th>
-                <th className="py-3 px-3.5 font-bold text-right">Saldo Pendiente</th>
-                <th className="py-3 px-3.5 font-bold text-center">Estado</th>
-                <th className="py-3 px-3.5 font-bold text-right">Acciones</th>
-              </tr>
-            </thead>
+      {/* ── CONTENIDO SEGÚN PESTAÑA ACTIVA ──────────────────────────────────── */}
+      {activeTab === "offers" ? (
+        <SpecialOffersTab afiliados={afiliados} onOffersCountChange={setOffersCount} />
+      ) : (
+        <>
+          {/* ── BENTO GRID KPIS (LIMPIO Y PROFESIONAL) ────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Card 1: Revendedores */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-black/40">
+                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+                  {resT.kpiTotal || "TOTAL REVENDEDORES"}
+                </span>
+                <Users className="w-4 h-4 text-black/30" />
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
+                  {kpis.total}
+                </span>
+                <span className="text-xs text-black/40 font-normal block mt-0.5">
+                  Aliados registrados
+                </span>
+              </div>
+            </div>
 
-            <tbody className="divide-y divide-black/[0.05]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-xs font-mono text-black/40">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
-                    <span>Cargando lista de revendedores...</span>
-                  </td>
-                </tr>
-              ) : filteredAfiliados.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-xs font-mono text-black/40">
-                    No se encontraron revendedores registrados con los filtros aplicados.
-                  </td>
-                </tr>
-              ) : (
-                filteredAfiliados.map((afiliado) => {
-                  const isExpanded = !!expandedRowIds[afiliado.id]
-                  const code = afiliado.codigo_referido || "SIN-CODIGO"
+            {/* Card 2: Clics Acumulados */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-black/40">
+                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+                  {resT.kpiClicks || "CLICS ACUMULADOS"}
+                </span>
+                <Share2 className="w-4 h-4 text-black/30" />
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
+                  {kpis.clics}
+                </span>
+                <span className="text-xs text-black/40 font-normal block mt-0.5">
+                  Tráfico atribuido por enlaces
+                </span>
+              </div>
+            </div>
 
-                  return (
-                    <React.Fragment key={afiliado.id}>
-                      {/* FILA PRINCIPAL */}
-                      <tr
-                        onClick={() => toggleRow(afiliado.id)}
-                        className={`group cursor-pointer transition-colors ${
-                          isExpanded ? "bg-[#F5F4F0]/60" : "hover:bg-black/[0.02]"
-                        }`}
-                      >
-                        {/* Chevron expandible */}
-                        <td className="py-3 px-3.5 text-center">
-                          <ChevronRight
-                            className={`w-4 h-4 text-black/30 group-hover:text-[#111] transition-transform duration-200 ${
-                              isExpanded ? "rotate-90 text-[#111]" : ""
+            {/* Card 3: Ventas Cerradas */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-black/40">
+                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+                  VENTAS CERRADAS
+                </span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
+                  {kpis.ventas}
+                </span>
+                <span className="text-xs text-emerald-600 font-medium block mt-0.5">
+                  Sincronizadas desde Platzi
+                </span>
+              </div>
+            </div>
+
+            {/* Card 4: Saldo Pendiente */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-black/40">
+                <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+                  {resT.kpiPendingBalance || "SALDO PENDIENTE"}
+                </span>
+                <DollarSign className="w-4 h-4 text-black/30" />
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
+                  ${Number(kpis.saldoPendiente).toLocaleString("es-CO")}
+                </span>
+                <span className="text-xs text-black/40 font-normal block mt-0.5">
+                  Comisiones por liquidar
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── TOP BAR & CONTROLES DE FILTRO ─────────────────────────────────── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
+            {/* Selector de Estado */}
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold shrink-0">
+                FILTRAR ESTADO:
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] font-medium outline-none focus:border-black/30 cursor-pointer transition-colors"
+              >
+                <option value="all">Todos los Aliados ({afiliados.length})</option>
+                <option value="activo">Solo Activos</option>
+                <option value="suspendido">Solo Suspendidos</option>
+              </select>
+            </div>
+
+            {/* Buscador y Botón Crear */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por Nombre, Código o Correo..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
+                />
+              </div>
+
+              <button
+                onClick={loadAfiliados}
+                title="Refrescar Lista"
+                className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-[#111]" : ""}`} />
+              </button>
+
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-2xs shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{resT.createButton || "Nuevo Revendedor"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── DATA TABLE CORPORATIVA ────────────────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse font-sans">
+                <thead>
+                  <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
+                    <th className="py-3 px-3.5 w-8 text-center"></th>
+                    <th className="py-3 px-3.5 font-bold">Revendedor / Aliado</th>
+                    <th className="py-3 px-3.5 font-bold">Código de Referido</th>
+                    <th className="py-3 px-3.5 font-bold">Contacto</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Clics</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Ventas Cerradas</th>
+                    <th className="py-3 px-3.5 font-bold text-right">Saldo Pendiente</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Estado (Toggle)</th>
+                    <th className="py-3 px-3.5 font-bold text-right">Acciones</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-black/[0.05]">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-xs font-mono text-black/40">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
+                        <span>Cargando lista de revendedores...</span>
+                      </td>
+                    </tr>
+                  ) : filteredAfiliados.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-xs font-mono text-black/40">
+                        No se encontraron revendedores registrados con los filtros aplicados.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAfiliados.map((afiliado) => {
+                      const isExpanded = !!expandedRowIds[afiliado.id]
+                      const code = afiliado.codigo_referido || "SIN-CODIGO"
+
+                      return (
+                        <React.Fragment key={afiliado.id}>
+                          {/* FILA PRINCIPAL */}
+                          <tr
+                            onClick={() => toggleRow(afiliado.id)}
+                            className={`group cursor-pointer transition-colors ${
+                              isExpanded ? "bg-[#F5F4F0]/60" : "hover:bg-black/[0.02]"
                             }`}
-                          />
-                        </td>
-
-                        {/* Nombre */}
-                        <td className="py-3 px-3.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-[#111]">
-                              {afiliado.nombre}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-black/50 font-normal flex items-center gap-1 mt-0.5">
-                            <Mail className="w-3 h-3 text-black/30" />
-                            {afiliado.email}
-                          </span>
-                        </td>
-
-                        {/* Código con botón de copia rápida */}
-                        <td className="py-3 px-3.5">
-                          <button
-                            onClick={(e) => handleCopyCleanLink(afiliado, e)}
-                            title="Copiar URL directa"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono font-bold text-[#111] tracking-wider transition-colors cursor-pointer"
                           >
-                            <span>{code}</span>
-                            {copiedLink === afiliado.id ? (
-                              <Check className="w-3 h-3 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3 h-3 text-black/30" />
-                            )}
-                          </button>
-                        </td>
+                            {/* Chevron expandible */}
+                            <td className="py-3 px-3.5 text-center">
+                              <ChevronRight
+                                className={`w-4 h-4 text-black/30 group-hover:text-[#111] transition-transform duration-200 ${
+                                  isExpanded ? "rotate-90 text-[#111]" : ""
+                                }`}
+                              />
+                            </td>
 
-                        {/* Contacto */}
-                        <td className="py-3 px-3.5">
-                          <span className="text-xs text-black/80 font-mono flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-black/30 shrink-0" />
-                            {afiliado.telefono || "No registrado"}
-                          </span>
-                        </td>
+                            {/* Nombre */}
+                            <td className="py-3 px-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-[#111]">
+                                  {afiliado.nombre}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-black/50 font-normal flex items-center gap-1 mt-0.5">
+                                <Mail className="w-3 h-3 text-black/30" />
+                                {afiliado.email}
+                              </span>
+                            </td>
 
-                        {/* Clics */}
-                        <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-black/70">
-                          {afiliado.clics_totales || 0}
-                        </td>
-
-                        {/* Ventas Cerradas */}
-                        <td className="py-3 px-3.5 text-center font-mono text-xs font-bold text-emerald-700">
-                          {afiliado.total_referidos_cerrados || 0}
-                        </td>
-
-                        {/* Saldo Pendiente */}
-                        <td className="py-3 px-3.5 text-right font-mono text-xs font-bold text-[#111]">
-                          ${Number(afiliado.saldo_pendiente || 0).toLocaleString("es-CO")}
-                        </td>
-
-                        {/* Estado */}
-                        <td className="py-3 px-3.5 text-center">
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-black/70">
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                afiliado.estado === "activo" ? "bg-emerald-500" : "bg-black/30"
-                              }`}
-                            />
-                            {afiliado.estado === "activo" ? "Activo" : "Suspendido"}
-                          </span>
-                        </td>
-
-                        {/* Acciones */}
-                        <td className="py-3 px-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            {/* Botón WhatsApp */}
-                            <button
-                              onClick={(e) => handleCopyWhatsAppLink(afiliado, e)}
-                              title="Copiar texto para WhatsApp"
-                              className="px-2.5 py-1 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] text-[11px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer border border-[#25D366]/30"
-                            >
-                              <Send className="w-3 h-3" />
-                              <span>WhatsApp</span>
-                            </button>
-
-                            {/* Botón Liquidar (si tiene saldo) */}
-                            {Number(afiliado.saldo_pendiente) > 0 && (
+                            {/* Código con botón de copia rápida */}
+                            <td className="py-3 px-3.5">
                               <button
-                                onClick={(e) => handleOpenLiquidar(afiliado, e)}
-                                className="px-2.5 py-1 rounded-lg bg-[#111] hover:bg-black text-white text-[11px] font-mono font-medium flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                                onClick={(e) => handleCopyCleanLink(afiliado, e)}
+                                title="Copiar URL directa"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono font-bold text-[#111] tracking-wider transition-colors cursor-pointer"
                               >
-                                <DollarSign className="w-3 h-3 text-emerald-400" />
-                                <span>Liquidar</span>
+                                <span>{code}</span>
+                                {copiedLink === afiliado.id ? (
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-black/30" />
+                                )}
                               </button>
-                            )}
+                            </td>
 
-                            {/* Botón Toggle Estado */}
-                            <button
-                              onClick={(e) => handleToggleEstado(afiliado, e)}
-                              title={afiliado.estado === "activo" ? "Suspender aliado" : "Reactivar aliado"}
-                              className="p-1 rounded-lg text-black/40 hover:text-[#111] hover:bg-black/[0.05] transition-colors cursor-pointer"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                            {/* Contacto */}
+                            <td className="py-3 px-3.5">
+                              <span className="text-xs text-black/80 font-mono flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-black/30 shrink-0" />
+                                {afiliado.telefono || "No registrado"}
+                              </span>
+                            </td>
 
-                      {/* PANEL DESPLEGABLE EN SITIO (EXPANDIBLE AL CLIC) */}
-                      {isExpanded && (
-                        <tr className="bg-[#F5F4F0]/40 border-b border-black/[0.08]">
-                          <td colSpan={9} className="p-4 sm:p-5">
-                            <div className="bg-white rounded-xl p-4 sm:p-5 border border-black/[0.07] space-y-4 shadow-2xs">
-                              {/* Fila 1: Datos Bancarios */}
-                              <div>
-                                <h4 className="text-xs font-mono uppercase tracking-widest font-bold text-black/50 mb-2.5 flex items-center gap-2">
-                                  <CreditCard className="w-3.5 h-3.5 text-black/40" />
-                                  <span>Información de Pago & Cuentas Bancarias</span>
-                                </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                  <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
-                                    <span className="text-[10px] font-mono text-black/40 block uppercase">Banco</span>
-                                    <span className="text-xs font-medium text-[#111] mt-0.5 block">
-                                      {afiliado.banco || "No registrado"}
-                                    </span>
-                                  </div>
-                                  <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
-                                    <span className="text-[10px] font-mono text-black/40 block uppercase">Tipo de Cuenta</span>
-                                    <span className="text-xs font-medium text-[#111] mt-0.5 block capitalize">
-                                      {afiliado.tipo_cuenta || "Ahorros"}
-                                    </span>
-                                  </div>
-                                  <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
-                                    <span className="text-[10px] font-mono text-black/40 block uppercase">Número de Cuenta</span>
-                                    <span className="text-xs font-mono font-bold text-[#111] mt-0.5 block">
-                                      {afiliado.numero_cuenta || "No registrado"}
-                                    </span>
-                                  </div>
-                                  <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
-                                    <span className="text-[10px] font-mono text-black/40 block uppercase">Titular / Documento</span>
-                                    <span className="text-xs font-medium text-[#111] mt-0.5 block">
-                                      {afiliado.titular_cuenta || afiliado.nombre}
-                                    </span>
-                                  </div>
-                                </div>
+                            {/* Clics */}
+                            <td className="py-3 px-3.5 text-center font-mono text-xs font-semibold text-black/70">
+                              {afiliado.clics_totales || 0}
+                            </td>
+
+                            {/* Ventas Cerradas */}
+                            <td className="py-3 px-3.5 text-center font-mono text-xs font-bold text-emerald-700">
+                              {afiliado.total_referidos_cerrados || 0}
+                            </td>
+
+                            {/* Saldo Pendiente */}
+                            <td className="py-3 px-3.5 text-right font-mono text-xs font-bold text-[#111]">
+                              ${Number(afiliado.saldo_pendiente || 0).toLocaleString("es-CO")}
+                            </td>
+
+                            {/* Estado con Toggle Switch estilo iOS */}
+                            <td className="py-3 px-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={afiliado.estado === "activo"}
+                                  onClick={(e) => handleToggleEstado(afiliado, e)}
+                                  title={afiliado.estado === "activo" ? "Clic para Suspender revendedor" : "Clic para Activar revendedor"}
+                                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                    afiliado.estado === "activo" ? "bg-emerald-500" : "bg-black/20"
+                                  }`}
+                                >
+                                  <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                                      afiliado.estado === "activo" ? "translate-x-4" : "translate-x-0"
+                                    }`}
+                                  />
+                                </button>
+                                <span className={`text-[10px] font-mono uppercase font-bold tracking-wider ${
+                                  afiliado.estado === "activo" ? "text-emerald-700" : "text-black/40"
+                                }`}>
+                                  {afiliado.estado === "activo" ? "Activo" : "Pausado"}
+                                </span>
                               </div>
+                            </td>
 
-                              {/* Fila 2: Enlace de Atribución */}
-                              <div className="pt-2 border-t border-black/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 text-xs font-mono text-black/60">
-                                  <Tag className="w-3.5 h-3.5 text-black/40" />
-                                  <span>URL de Atribución Oficial:</span>
-                                  <span className="px-2 py-0.5 rounded bg-black/[0.04] text-[#111] font-bold select-all">
-                                    https://smartcontacts.cloud/beneficios?ref={code}
-                                  </span>
-                                </div>
+                            {/* Acciones */}
+                            <td className="py-3 px-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                {/* Botón Editar */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditingAfiliado(afiliado)
+                                  }}
+                                  title="Editar revendedor y datos bancarios"
+                                  className="p-1.5 rounded-lg text-black/50 hover:text-[#111] hover:bg-black/[0.05] transition-colors cursor-pointer"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
 
-                                <div className="flex items-center gap-2">
-                                  <a
-                                    href={`https://smartcontacts.cloud/beneficios?ref=${code}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 rounded-lg border border-black/[0.08] text-xs font-mono text-black/70 hover:text-black flex items-center gap-1.5 transition-colors"
-                                  >
-                                    <span>Visitar Enlace</span>
-                                    <ExternalLink className="w-3 h-3 text-black/40" />
-                                  </a>
+                                {/* Botón WhatsApp */}
+                                <button
+                                  onClick={(e) => handleCopyWhatsAppLink(afiliado, e)}
+                                  title="Copiar texto para WhatsApp"
+                                  className="px-2.5 py-1 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] text-[11px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer border border-[#25D366]/30"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  <span>WhatsApp</span>
+                                </button>
 
+                                {/* Botón Liquidar (si tiene saldo) */}
+                                {Number(afiliado.saldo_pendiente) > 0 && (
                                   <button
-                                    onClick={() => handleCopyCleanLink(afiliado)}
-                                    className="px-3 py-1.5 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono text-[#111] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                                    onClick={(e) => handleOpenLiquidar(afiliado, e)}
+                                    className="px-2.5 py-1 rounded-lg bg-[#111] hover:bg-black text-white text-[11px] font-mono font-medium flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                                   >
-                                    <Copy className="w-3 h-3 text-black/40" />
-                                    <span>Copiar Enlace</span>
+                                    <DollarSign className="w-3 h-3 text-emerald-400" />
+                                    <span>Liquidar</span>
                                   </button>
-                                </div>
+                                )}
                               </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                            </td>
+                          </tr>
+
+                          {/* PANEL DESPLEGABLE EN SITIO (EXPANDIBLE AL CLIC) */}
+                          {isExpanded && (
+                            <tr className="bg-[#F5F4F0]/40 border-b border-black/[0.08]">
+                              <td colSpan={9} className="p-4 sm:p-5">
+                                <div className="bg-white rounded-xl p-4 sm:p-5 border border-black/[0.07] space-y-4 shadow-2xs">
+                                  {/* Fila 1: Datos Bancarios */}
+                                  <div>
+                                    <div className="flex items-center justify-between mb-2.5">
+                                      <h4 className="text-xs font-mono uppercase tracking-widest font-bold text-black/50 flex items-center gap-2">
+                                        <CreditCard className="w-3.5 h-3.5 text-black/40" />
+                                        <span>Información de Pago & Cuentas Bancarias</span>
+                                      </h4>
+                                      <button
+                                        onClick={() => setEditingAfiliado(afiliado)}
+                                        className="text-xs font-mono text-black/60 hover:text-[#111] flex items-center gap-1 underline transition-colors cursor-pointer"
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                        <span>Editar información</span>
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                      <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
+                                        <span className="text-[10px] font-mono text-black/40 block uppercase">Banco</span>
+                                        <span className="text-xs font-medium text-[#111] mt-0.5 block">
+                                          {afiliado.banco || "No registrado"}
+                                        </span>
+                                      </div>
+                                      <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
+                                        <span className="text-[10px] font-mono text-black/40 block uppercase">Tipo de Cuenta</span>
+                                        <span className="text-xs font-medium text-[#111] mt-0.5 block capitalize">
+                                          {afiliado.tipo_cuenta || "Ahorros"}
+                                        </span>
+                                      </div>
+                                      <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
+                                        <span className="text-[10px] font-mono text-black/40 block uppercase">Número de Cuenta</span>
+                                        <span className="text-xs font-mono font-bold text-[#111] mt-0.5 block">
+                                          {afiliado.numero_cuenta || "No registrado"}
+                                        </span>
+                                      </div>
+                                      <div className="p-3 rounded-lg bg-[#F5F4F0] border border-black/[0.05]">
+                                        <span className="text-[10px] font-mono text-black/40 block uppercase">Titular / Documento</span>
+                                        <span className="text-xs font-medium text-[#111] mt-0.5 block">
+                                          {afiliado.titular_cuenta || afiliado.nombre}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Fila 2: Enlace de Atribución */}
+                                  <div className="pt-2 border-t border-black/[0.05] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 text-xs font-mono text-black/60">
+                                      <Tag className="w-3.5 h-3.5 text-black/40" />
+                                      <span>URL de Atribución Oficial:</span>
+                                      <span className="px-2 py-0.5 rounded bg-black/[0.04] text-[#111] font-bold select-all">
+                                        https://smartcontacts.cloud/beneficios?ref={code}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <a
+                                        href={`https://smartcontacts.cloud/beneficios?ref=${code}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-3 py-1.5 rounded-lg border border-black/[0.08] text-xs font-mono text-black/70 hover:text-black flex items-center gap-1.5 transition-colors"
+                                      >
+                                        <span>Visitar Enlace</span>
+                                        <ExternalLink className="w-3 h-3 text-black/40" />
+                                      </a>
+
+                                      <button
+                                        onClick={() => handleCopyCleanLink(afiliado)}
+                                        className="px-3 py-1.5 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono text-[#111] font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                                      >
+                                        <Copy className="w-3 h-3 text-black/40" />
+                                        <span>Copiar Enlace</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── MODAL NUEVO REVENDEDOR ────────────────────────────────────────────── */}
       {isCreateOpen && (
@@ -934,6 +1007,14 @@ export function ResellersModule() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL EDITAR REVENDEDOR & DATOS BANCARIOS ──────────────────────────── */}
+      <EditResellerModal
+        isOpen={!!editingAfiliado}
+        onClose={() => setEditingAfiliado(null)}
+        afiliado={editingAfiliado}
+        onSuccess={loadAfiliados}
+      />
     </div>
   )
 }

@@ -76,6 +76,9 @@ export async function POST(request: Request) {
       meses_cubrimiento,
       precio,
       precio_formateado,
+      oferta_id,
+      oferta_codigo,
+      institucion,
     } = body
 
     if (!inputCode || !String(inputCode).trim()) {
@@ -126,6 +129,9 @@ export async function POST(request: Request) {
       Proveedor: rawCode ? rawCode.toUpperCase() : "",
       countryCode: countryCode || "CO",
       countryName: countryName || "Colombia",
+      oferta_id: oferta_id ? String(oferta_id).trim() : null,
+      oferta_codigo: oferta_codigo ? String(oferta_codigo).trim() : null,
+      institucion: institucion ? String(institucion).trim() : null,
       timestamp: new Date().toISOString(),
     }
 
