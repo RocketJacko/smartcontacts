@@ -168,7 +168,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Cargar planes vigentes y validar si existe una oferta especial / convenio / revendedor
+  // Cargar planes vigentes consumiendo la API unificada de planes con soporte de código
   useEffect(() => {
     if (!isOpen) return
     let isMounted = true
@@ -176,133 +176,37 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     async function loadPlans() {
       setIsLoadingPlans(true)
       try {
-        let offerItem: PlatziPlan | null = null
-        const potentialCodes: string[] = []
-
-        // 1. Recopilar posibles códigos desde URL, localStorage y cookies
+        let code = ""
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search)
-          const urlCodes = [
-            params.get("oferta"),
-            params.get("convenio"),
-            params.get("promo"),
-            params.get("ref"),
-            params.get("referido"),
-          ].filter(Boolean) as string[]
-          potentialCodes.push(...urlCodes)
+          code = (
+            params.get("oferta") ||
+            params.get("convenio") ||
+            params.get("promo") ||
+            params.get("ref") ||
+            params.get("referido") ||
+            ""
+          ).trim()
         }
 
-        try {
-          if (typeof localStorage !== "undefined") {
-            const stored = localStorage.getItem("sc_ref_code")
-            if (stored) potentialCodes.push(stored)
-          }
-          if (typeof document !== "undefined") {
-            const match = document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/)
-            if (match && match[1]) potentialCodes.push(decodeURIComponent(match[1]))
-          }
-        } catch {}
-
-        const cleanCodes = Array.from(new Set(potentialCodes.map((c) => c.trim().toUpperCase()))).filter(Boolean)
-
-        // 2. Intentar validar si alguno de los códigos corresponde a una oferta especial
-        for (const code of cleanCodes) {
+        if (!code) {
           try {
-            const offerRes = await fetch(`/api/benefits/offers/${encodeURIComponent(code)}`)
-            const offerData = await offerRes.json()
-            if (offerData?.success && offerData?.valida && offerData?.oferta) {
-              const off = offerData.oferta as SpecialOfferData
-              if (isMounted) setSpecialOffer(off)
-
-              if (off.codigo_referido && isMounted) {
-                const refUpper = off.codigo_referido.toUpperCase().trim()
-                setDiscountCode(refUpper)
-                try {
-                  localStorage.setItem("sc_ref_code", refUpper)
-                } catch {}
-              }
-
-              offerItem = {
-                id: `offer-${off.id}`,
-                nombre_plan: off.titulo,
-                meses_cubrimiento: off.meses_cubrimiento,
-                precio: Number(off.precio_cop),
-                moneda: "COP",
-                tipo_pago: off.tipo_pago || "pago_unico",
-                numero_cuotas: off.numero_cuotas || 1,
-                pago_anticipado: Boolean(off.pago_anticipado),
-                vigente: true,
-                caracteristicas:
-                  off.descripcion ||
-                  (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : "Plan exclusivo de convenio"),
-              }
-              break // Oferta encontrada, detener búsqueda
+            code = (localStorage.getItem("sc_ref_code") || "").trim()
+            if (!code && typeof document !== "undefined") {
+              const match = document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/)
+              if (match && match[1]) code = decodeURIComponent(match[1]).trim()
             }
           } catch {}
         }
 
-        // Si se encontró una oferta especial válida, AISLAR INMEDIATAMENTE y NO cargar planes generales de Platzi
-        if (offerItem && isMounted) {
-          setPlans([offerItem])
-          setSelectedPlan(offerItem)
-          setDisplayPlanName(offerItem.nombre_plan)
-          setDisplayPrice(formatPlanPriceDynamic(offerItem.precio, offerItem.moneda))
-          setDisplayDuration(
-            offerItem.meses_cubrimiento === 12
-              ? language === "es" ? "1 año" : "1 year"
-              : `${offerItem.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
-          )
-          setIsLoadingPlans(false)
-          return
-        }
-
-        // 3. Cargar planes de base de datos y categorizar (separar convenios/ofertas especiales de los planes regulares)
-        const res = await fetch("/api/benefits/platzi/plans")
+        // Petición HTTP unificada al servidor
+        const res = await fetch(`/api/benefits/platzi/plans?code=${encodeURIComponent(code)}`)
         const data = await res.json()
-        const fetchedPlans: PlatziPlan[] =
-          data?.success && Array.isArray(data?.planes) && data.planes.length > 0 ? data.planes : DEFAULT_PLANS
 
-        const isConvenioPlan = (p: PlatziPlan) => {
-          const name = (p.nombre_plan || "").toLowerCase()
-          const char = (p.caracteristicas || "").toLowerCase()
-          return (
-            name.includes("convenio") ||
-            name.includes("universidad") ||
-            name.includes("univalle") ||
-            name.includes("oferta") ||
-            name.includes("promo") ||
-            name.includes("especial") ||
-            char.includes("convenio")
-          )
-        }
-
-        const regularPlans = fetchedPlans.filter((p) => !isConvenioPlan(p))
-        const convenioPlans = fetchedPlans.filter((p) => isConvenioPlan(p))
-
-        // 4. Determinar los planes a mostrar según la atribución (Aislamiento Estricto)
-        let mergedPlans: PlatziPlan[] = regularPlans.length > 0 ? regularPlans : DEFAULT_PLANS
-
-        // Verificar si algún código coincide con el nombre de un plan de convenio almacenado en platzi.planes
-        const matchedConvenio = cleanCodes.length > 0
-          ? convenioPlans.find((cp) =>
-              cleanCodes.some((code) =>
-                cp.nombre_plan.toLowerCase().includes(code.toLowerCase()) ||
-                (cp.caracteristicas || "").toLowerCase().includes(code.toLowerCase())
-              )
-            )
-          : null
-
-        if (matchedConvenio) {
-          // Si coincide con un convenio institucional específico
-          mergedPlans = [matchedConvenio]
-        } else if (cleanCodes.length > 0) {
-          // Si proviene de un enlace de revendedor regular (?ref=), fijar a 1 SOLO plan regular asignado
-          mergedPlans = [regularPlans[0] || fetchedPlans[0]]
-        }
-
-        if (isMounted) {
-          setPlans(mergedPlans)
-          const chosen = offerItem || mergedPlans[0]
+        if (isMounted && data?.success && Array.isArray(data?.planes) && data.planes.length > 0) {
+          const planList: PlatziPlan[] = data.planes
+          setPlans(planList)
+          const chosen = planList[0]
           setSelectedPlan(chosen)
           setDisplayPlanName(chosen.nombre_plan)
           setDisplayPrice(formatPlanPriceDynamic(chosen.precio, chosen.moneda))
@@ -311,9 +215,20 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               ? language === "es" ? "1 año" : "1 year"
               : `${chosen.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
           )
+
+          if (data.oferta) {
+            setSpecialOffer(data.oferta as SpecialOfferData)
+            if (data.oferta.codigo_referido) {
+              const refUpper = data.oferta.codigo_referido.toUpperCase().trim()
+              setDiscountCode(refUpper)
+              try {
+                localStorage.setItem("sc_ref_code", refUpper)
+              } catch {}
+            }
+          }
         }
       } catch {
-        // Mantener fallback DEFAULT_PLANS
+        // Fallback a DEFAULT_PLANS
       } finally {
         if (isMounted) setIsLoadingPlans(false)
       }

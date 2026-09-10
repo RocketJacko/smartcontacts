@@ -28,46 +28,114 @@ const DEFAULT_PLANS = [
   },
 ]
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const code = (
+      searchParams.get('code') ||
+      searchParams.get('oferta') ||
+      searchParams.get('convenio') ||
+      searchParams.get('ref') ||
+      searchParams.get('referido') ||
+      ''
+    ).trim().toUpperCase()
+
     const supabase = await createServerSupabaseClient()
 
-    // 1. Intentar llamar a la función RPC pública optimizada
+    // 1. Si hay un código, verificar si corresponde a una oferta especial activa en referidos.ofertas_especiales
+    if (code) {
+      const { data: offerData } = await supabase.rpc('obtener_oferta_publica', {
+        p_codigo: code,
+      })
+
+      if (offerData?.success && offerData?.valida && offerData?.oferta) {
+        const off = offerData.oferta
+        const offerPlan = {
+          id: `offer-${off.id}`,
+          nombre_plan: off.titulo,
+          meses_cubrimiento: off.meses_cubrimiento,
+          precio: Number(off.precio_cop),
+          moneda: 'COP',
+          tipo_pago: off.tipo_pago || 'pago_unico',
+          numero_cuotas: off.numero_cuotas || 1,
+          pago_anticipado: Boolean(off.pago_anticipado),
+          vigente: true,
+          caracteristicas:
+            off.descripcion ||
+            (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : 'Plan exclusivo de convenio'),
+          codigo_oferta: off.codigo_oferta,
+          codigo_referido: off.codigo_referido,
+          institucion_empresa: off.institucion_empresa,
+        }
+
+        return NextResponse.json(
+          {
+            success: true,
+            tipo: 'oferta_especial',
+            codigo: code,
+            oferta: off,
+            planes: [offerPlan],
+          },
+          { status: 200 }
+        )
+      }
+    }
+
+    // 2. Si no es oferta especial, obtener planes de platzi.planes
     const { data: rpcData, error: rpcError } = await supabase.rpc('obtener_planes_platzi_activos')
 
-    if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
-      return NextResponse.json(
-        {
-          success: true,
-          planes: rpcData,
-        },
-        { status: 200 }
+    const rawPlans = !rpcError && Array.isArray(rpcData) && rpcData.length > 0 ? rpcData : DEFAULT_PLANS
+
+    // Separar convenios institucionales / ofertas especiales de los planes estándar regulares
+    const isConvenio = (p: any) => {
+      const name = (p.nombre_plan || '').toLowerCase()
+      const char = (p.caracteristicas || '').toLowerCase()
+      return (
+        name.includes('convenio') ||
+        name.includes('universidad') ||
+        name.includes('univalle') ||
+        name.includes('oferta') ||
+        name.includes('especial') ||
+        char.includes('convenio')
       )
     }
 
-    // 2. Fallback de consulta directa a la tabla platzi.planes
-    const { data: tableData, error: tableError } = await supabase
-      .schema('platzi')
-      .from('planes')
-      .select('id, nombre_plan, meses_cubrimiento, precio, moneda, vigente, caracteristicas, total_disponibles')
-      .eq('vigente', true)
-      .order('meses_cubrimiento', { ascending: true })
+    const regularPlans = rawPlans.filter((p: any) => !isConvenio(p))
+    const convenioPlans = rawPlans.filter((p: any) => isConvenio(p))
 
-    if (!tableError && Array.isArray(tableData) && tableData.length > 0) {
-      return NextResponse.json(
-        {
-          success: true,
-          planes: tableData,
-        },
-        { status: 200 }
+    // Si el código coincide con el nombre de un plan de convenio en platzi.planes:
+    if (code) {
+      const matched = convenioPlans.find(
+        (cp: any) =>
+          cp.nombre_plan.toLowerCase().includes(code.toLowerCase()) ||
+          (cp.caracteristicas || '').toLowerCase().includes(code.toLowerCase())
       )
+      if (matched) {
+        return NextResponse.json(
+          {
+            success: true,
+            tipo: 'convenio_plan',
+            codigo: code,
+            planes: [matched],
+          },
+          { status: 200 }
+        )
+      }
     }
 
-    // 3. Fallback a catálogo base garantizado
+    // Si es un revendedor regular o acceso sin oferta especial: entregar únicamente planes regulares aislados
+    const finalPlans = code
+      ? [regularPlans[0] || rawPlans[0]]
+      : regularPlans.length > 0
+      ? regularPlans
+      : DEFAULT_PLANS
+
     return NextResponse.json(
       {
         success: true,
-        planes: DEFAULT_PLANS,
+        tipo: code ? 'revendedor' : 'estandar',
+        codigo: code || null,
+        planes: finalPlans,
       },
       { status: 200 }
     )
@@ -76,7 +144,6 @@ export async function GET() {
       {
         success: true,
         planes: DEFAULT_PLANS,
-        warning: 'Fallback aplicado debido a error de conexión con la base de datos',
       },
       { status: 200 }
     )
