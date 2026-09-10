@@ -439,6 +439,8 @@ CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
     precio_cop NUMERIC(14, 2) NOT NULL, -- Precio en COP
     precio_usd NUMERIC(10, 2) NOT NULL, -- Precio en USD
     meses_cubrimiento INT NOT NULL DEFAULT 12, -- Duración del plan
+    tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico', -- 'pago_unico', 'cuotas'
+    numero_cuotas INT NOT NULL DEFAULT 1, -- 1, 2, 3, 6, 12
     caracteristicas JSONB DEFAULT '[]'::jsonb, -- Array con puntos clave
     afiliado_id UUID REFERENCES referidos.afiliados(id) ON DELETE SET NULL, -- Revendedor atribuido
     fecha_inicio TIMESTAMPTZ DEFAULT NOW(),
@@ -449,6 +451,9 @@ CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
     creado_en TIMESTAMPTZ DEFAULT NOW(),
     actualizado_en TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE referidos.ofertas_especiales ADD COLUMN IF NOT EXISTS tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico';
+ALTER TABLE referidos.ofertas_especiales ADD COLUMN IF NOT EXISTS numero_cuotas INT NOT NULL DEFAULT 1;
 
 CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_codigo ON referidos.ofertas_especiales(codigo_oferta);
 CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_afiliado ON referidos.ofertas_especiales(afiliado_id);
@@ -518,6 +523,8 @@ BEGIN
             'precio_cop', v_oferta.precio_cop,
             'precio_usd', v_oferta.precio_usd,
             'meses_cubrimiento', v_oferta.meses_cubrimiento,
+            'tipo_pago', COALESCE(v_oferta.tipo_pago, 'pago_unico'),
+            'numero_cuotas', COALESCE(v_oferta.numero_cuotas, 1),
             'caracteristicas', v_oferta.caracteristicas,
             'cupos_maximos', v_oferta.cupos_maximos,
             'cupos_usados', v_oferta.cupos_usados,
@@ -550,6 +557,8 @@ BEGIN
             'precio_cop', o.precio_cop,
             'precio_usd', o.precio_usd,
             'meses_cubrimiento', o.meses_cubrimiento,
+            'tipo_pago', COALESCE(o.tipo_pago, 'pago_unico'),
+            'numero_cuotas', COALESCE(o.numero_cuotas, 1),
             'caracteristicas', o.caracteristicas,
             'afiliado_id', o.afiliado_id,
             'afiliado_nombre', a.nombre,
@@ -584,7 +593,9 @@ CREATE OR REPLACE FUNCTION public.admin_crear_oferta(
     p_caracteristicas JSONB,
     p_afiliado_id UUID DEFAULT NULL,
     p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
-    p_cupos_maximos INT DEFAULT NULL
+    p_cupos_maximos INT DEFAULT NULL,
+    p_tipo_pago TEXT DEFAULT 'pago_unico',
+    p_numero_cuotas INT DEFAULT 1
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -610,6 +621,8 @@ BEGIN
         precio_cop,
         precio_usd,
         meses_cubrimiento,
+        tipo_pago,
+        numero_cuotas,
         caracteristicas,
         afiliado_id,
         fecha_fin,
@@ -623,6 +636,8 @@ BEGIN
         p_precio_cop,
         p_precio_usd,
         COALESCE(p_meses_cubrimiento, 12),
+        COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
+        COALESCE(p_numero_cuotas, 1),
         COALESCE(p_caracteristicas, '[]'::jsonb),
         p_afiliado_id,
         p_fecha_fin,
@@ -646,7 +661,9 @@ CREATE OR REPLACE FUNCTION public.admin_actualizar_oferta(
     p_caracteristicas JSONB,
     p_afiliado_id UUID DEFAULT NULL,
     p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
-    p_cupos_maximos INT DEFAULT NULL
+    p_cupos_maximos INT DEFAULT NULL,
+    p_tipo_pago TEXT DEFAULT 'pago_unico',
+    p_numero_cuotas INT DEFAULT 1
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -660,6 +677,8 @@ BEGIN
         precio_cop = p_precio_cop,
         precio_usd = p_precio_usd,
         meses_cubrimiento = COALESCE(p_meses_cubrimiento, 12),
+        tipo_pago = COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
+        numero_cuotas = COALESCE(p_numero_cuotas, 1),
         caracteristicas = COALESCE(p_caracteristicas, '[]'::jsonb),
         afiliado_id = p_afiliado_id,
         fecha_fin = p_fecha_fin,

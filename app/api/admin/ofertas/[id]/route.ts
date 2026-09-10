@@ -43,6 +43,8 @@ const actualizarOfertaSchema = z.object({
   afiliado_id: z.string().uuid().optional().nullable(),
   fecha_fin: z.string().optional().nullable(),
   cupos_maximos: z.coerce.number().int().positive().optional().nullable(),
+  tipo_pago: z.enum(['pago_unico', 'cuotas']).default('pago_unico'),
+  numero_cuotas: z.coerce.number().int().positive().default(1),
 })
 
 export async function PATCH(
@@ -103,6 +105,8 @@ export async function PATCH(
       p_afiliado_id: d.afiliado_id || null,
       p_fecha_fin: d.fecha_fin || null,
       p_cupos_maximos: d.cupos_maximos || null,
+      p_tipo_pago: d.tipo_pago,
+      p_numero_cuotas: d.numero_cuotas,
     })
 
     if (error) {

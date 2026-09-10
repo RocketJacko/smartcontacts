@@ -39,6 +39,8 @@ export interface PlanPlatzi {
   vigente: boolean
   caracteristicas: string | null
   total_disponibles: number | null
+  tipo_pago?: string
+  numero_cuotas?: number
   created_at: string
 }
 
@@ -56,6 +58,9 @@ export interface VentaPlatzi {
   cod_canjeado: boolean
   fecha_canje: string | null
   cuenta_activa: boolean
+  tipo_pago?: string
+  numero_cuotas?: number
+  cuotas_pagadas?: number
   created_at: string
 }
 
@@ -69,6 +74,8 @@ const DEFAULT_PLANES: PlanPlatzi[] = [
     vigente: true,
     caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
     total_disponibles: null,
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
     created_at: "2026-09-08T06:10:33.689Z",
   },
   {
@@ -80,6 +87,8 @@ const DEFAULT_PLANES: PlanPlatzi[] = [
     vigente: true,
     caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
     total_disponibles: null,
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
     created_at: "2026-09-08T06:10:33.689Z",
   },
 ]
@@ -110,6 +119,8 @@ export function PlatziModule() {
   const [planMeses, setPlanMeses] = useState<number>(5)
   const [planPrecio, setPlanPrecio] = useState<string>("85000")
   const [planMoneda, setPlanMoneda] = useState("COP")
+  const [planTipoPago, setPlanTipoPago] = useState<"pago_unico" | "cuotas">("pago_unico")
+  const [planNumeroCuotas, setPlanNumeroCuotas] = useState<number>(1)
   const [planVigente, setPlanVigente] = useState(true)
   const [planCaracteristicas, setPlanCaracteristicas] = useState("")
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false)
@@ -188,6 +199,8 @@ export function PlatziModule() {
       setPlanMeses(plan.meses_cubrimiento)
       setPlanPrecio(String(plan.precio))
       setPlanMoneda(plan.moneda || "COP")
+      setPlanTipoPago((plan.tipo_pago as any) === "cuotas" ? "cuotas" : "pago_unico")
+      setPlanNumeroCuotas(plan.numero_cuotas || 1)
       setPlanVigente(plan.vigente)
       setPlanCaracteristicas(plan.caracteristicas || "")
     } else {
@@ -196,6 +209,8 @@ export function PlatziModule() {
       setPlanMeses(5)
       setPlanPrecio("85000")
       setPlanMoneda("COP")
+      setPlanTipoPago("pago_unico")
+      setPlanNumeroCuotas(1)
       setPlanVigente(true)
       setPlanCaracteristicas("")
     }
@@ -214,6 +229,8 @@ export function PlatziModule() {
         meses_cubrimiento: Number(planMeses),
         precio: Number(planPrecio),
         moneda: planMoneda.trim().toUpperCase(),
+        tipo_pago: planTipoPago,
+        numero_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
         vigente: planVigente,
         caracteristicas: planCaracteristicas.trim(),
       }
@@ -551,9 +568,20 @@ export function PlatziModule() {
                           </span>
                         </td>
 
-                        {/* Precio */}
-                        <td className="py-3 px-3.5 font-mono text-xs font-bold text-[#111]">
-                          ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
+                        {/* Precio y Modalidad */}
+                        <td className="py-3 px-3.5">
+                          <div className="font-mono text-xs font-bold text-[#111]">
+                            ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
+                          </div>
+                          {plan.tipo_pago === "cuotas" ? (
+                            <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
+                              {plan.numero_cuotas || 2} Cuotas de ${Math.round(Number(plan.precio) / (plan.numero_cuotas || 2)).toLocaleString("es-CO")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
+                              Pago Único
+                            </span>
+                          )}
                         </td>
 
                         {/* Características */}
@@ -820,7 +848,7 @@ export function PlatziModule() {
 
                 <div className="space-y-1">
                   <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                    PRECIO (COP) *
+                    PRECIO TOTAL (COP) *
                   </label>
                   <input
                     type="number"
@@ -832,6 +860,40 @@ export function PlatziModule() {
                     className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
+                    MODALIDAD DE PAGO *
+                  </label>
+                  <select
+                    value={planTipoPago}
+                    onChange={(e) => setPlanTipoPago(e.target.value as "pago_unico" | "cuotas")}
+                    className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30"
+                  >
+                    <option value="pago_unico">Pago Único (1 cuota)</option>
+                    <option value="cuotas">Diferido en Cuotas</option>
+                  </select>
+                </div>
+
+                {planTipoPago === "cuotas" && (
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
+                      NÚMERO DE CUOTAS *
+                    </label>
+                    <select
+                      value={planNumeroCuotas}
+                      onChange={(e) => setPlanNumeroCuotas(parseInt(e.target.value) || 2)}
+                      className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
+                    >
+                      <option value={2}>2 Cuotas (${Math.round((Number(planPrecio) || 0) / 2).toLocaleString("es-CO")} c/u)</option>
+                      <option value={3}>3 Cuotas (${Math.round((Number(planPrecio) || 0) / 3).toLocaleString("es-CO")} c/u)</option>
+                      <option value={6}>6 Cuotas (${Math.round((Number(planPrecio) || 0) / 6).toLocaleString("es-CO")} c/u)</option>
+                      <option value={12}>12 Cuotas (${Math.round((Number(planPrecio) || 0) / 12).toLocaleString("es-CO")} c/u)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

@@ -43,6 +43,8 @@ export interface SpecialOffer {
   cupos_maximos: number | null
   cupos_usados: number
   activo: boolean
+  tipo_pago?: string
+  numero_cuotas?: number
   creado_en: string
   actualizado_en: string
 }
@@ -74,6 +76,8 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
   const [formPrecioCop, setFormPrecioCop] = useState("95000")
   const [formPrecioUsd, setFormPrecioUsd] = useState("24")
   const [formMeses, setFormMeses] = useState("12")
+  const [formTipoPago, setFormTipoPago] = useState<"pago_unico" | "cuotas">("pago_unico")
+  const [formNumeroCuotas, setFormNumeroCuotas] = useState<number>(1)
   const [formAfiliadoId, setFormAfiliadoId] = useState<string>("")
   const [formFechaFin, setFormFechaFin] = useState("")
   const [formCupos, setFormCupos] = useState("")
@@ -186,6 +190,8 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
     setFormPrecioCop("95000")
     setFormPrecioUsd("24")
     setFormMeses("12")
+    setFormTipoPago("pago_unico")
+    setFormNumeroCuotas(1)
     setFormAfiliadoId("")
     setFormFechaFin("")
     setFormCupos("")
@@ -204,6 +210,8 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
     setFormPrecioCop(String(oferta.precio_cop || "95000"))
     setFormPrecioUsd(String(oferta.precio_usd || "24"))
     setFormMeses(String(oferta.meses_cubrimiento || "12"))
+    setFormTipoPago((oferta.tipo_pago as any) === "cuotas" ? "cuotas" : "pago_unico")
+    setFormNumeroCuotas(oferta.numero_cuotas || 1)
     setFormAfiliadoId(oferta.afiliado_id || "")
     setFormFechaFin(oferta.fecha_fin ? oferta.fecha_fin.split("T")[0] : "")
     setFormCupos(oferta.cupos_maximos ? String(oferta.cupos_maximos) : "")
@@ -263,6 +271,8 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
         precio_cop: cop,
         precio_usd: usd,
         meses_cubrimiento: Number(formMeses) || 12,
+        tipo_pago: formTipoPago,
+        numero_cuotas: formTipoPago === "cuotas" ? Number(formNumeroCuotas) : 1,
         afiliado_id: formAfiliadoId || null,
         fecha_fin: formFechaFin ? new Date(formFechaFin).toISOString() : null,
         cupos_maximos: formCupos ? Number(formCupos) : null,
@@ -529,6 +539,15 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
                         <span className="text-[10px] font-mono text-black/50 block">
                           ${oferta.precio_usd} USD ({oferta.meses_cubrimiento} meses)
                         </span>
+                        {oferta.tipo_pago === "cuotas" ? (
+                          <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
+                            {oferta.numero_cuotas || 2} Cuotas de ${Math.round(Number(oferta.precio_cop) / (oferta.numero_cuotas || 2)).toLocaleString("es-CO")}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
+                            Pago Único
+                          </span>
+                        )}
                       </td>
 
                       {/* Revendedor Atribuido */}
@@ -765,6 +784,41 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
                     <option value="24">24 Meses</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Modalidad de Pago y Cuotas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-mono text-black/70 font-semibold">
+                    Modalidad de Pago *
+                  </label>
+                  <select
+                    value={formTipoPago}
+                    onChange={(e) => setFormTipoPago(e.target.value as "pago_unico" | "cuotas")}
+                    className="w-full px-3 py-2 bg-[#F5F4F0] border border-black/[0.08] rounded-xl text-xs text-[#111] focus:bg-white focus:border-black/30 outline-none transition-colors font-mono cursor-pointer"
+                  >
+                    <option value="pago_unico">Pago Único (1 cuota)</option>
+                    <option value="cuotas">Diferido en Cuotas</option>
+                  </select>
+                </div>
+
+                {formTipoPago === "cuotas" && (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-mono text-black/70 font-semibold">
+                      Número de Cuotas *
+                    </label>
+                    <select
+                      value={formNumeroCuotas}
+                      onChange={(e) => setFormNumeroCuotas(parseInt(e.target.value) || 2)}
+                      className="w-full px-3 py-2 bg-[#F5F4F0] border border-black/[0.08] rounded-xl text-xs text-[#111] focus:bg-white focus:border-black/30 outline-none transition-colors font-mono font-bold cursor-pointer"
+                    >
+                      <option value={2}>2 Cuotas (${Math.round((Number(formPrecioCop) || 0) / 2).toLocaleString("es-CO")} c/u)</option>
+                      <option value={3}>3 Cuotas (${Math.round((Number(formPrecioCop) || 0) / 3).toLocaleString("es-CO")} c/u)</option>
+                      <option value={6}>6 Cuotas (${Math.round((Number(formPrecioCop) || 0) / 6).toLocaleString("es-CO")} c/u)</option>
+                      <option value={12}>12 Cuotas (${Math.round((Number(formPrecioCop) || 0) / 12).toLocaleString("es-CO")} c/u)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Revendedor Asignado */}

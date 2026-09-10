@@ -14,12 +14,17 @@ CREATE TABLE IF NOT EXISTS platzi.planes (
     meses_cubrimiento INT NOT NULL DEFAULT 1,
     precio NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
     moneda VARCHAR(10) NOT NULL DEFAULT 'COP',
+    tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico', -- 'pago_unico', 'cuotas'
+    numero_cuotas INT NOT NULL DEFAULT 1, -- 1, 2, 3, 6, 12
     vigente BOOLEAN NOT NULL DEFAULT true,
     caracteristicas TEXT,
     total_disponibles INT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico';
+ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS numero_cuotas INT NOT NULL DEFAULT 1;
 
 -- 2. TABLA DE VENTAS / SOLICITUDES Y CÓDIGOS GENERADOS
 CREATE TABLE IF NOT EXISTS platzi.ventas (
@@ -31,6 +36,9 @@ CREATE TABLE IF NOT EXISTS platzi.ventas (
     country_name VARCHAR(100) DEFAULT 'Colombia',
     cod_revendedor VARCHAR(100),
     discount_code VARCHAR(100),
+    tipo_pago VARCHAR(50) DEFAULT 'pago_unico',
+    numero_cuotas INT DEFAULT 1,
+    cuotas_pagadas INT DEFAULT 1,
     fecha_registro TIMESTAMPTZ DEFAULT NOW(),
     cod_generado VARCHAR(100),
     cod_canjeado BOOLEAN NOT NULL DEFAULT false,
@@ -39,6 +47,10 @@ CREATE TABLE IF NOT EXISTS platzi.ventas (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS tipo_pago VARCHAR(50) DEFAULT 'pago_unico';
+ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS numero_cuotas INT DEFAULT 1;
+ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS cuotas_pagadas INT DEFAULT 1;
 
 -- Índices de Rendimiento
 CREATE INDEX IF NOT EXISTS idx_platzi_planes_vigente ON platzi.planes(vigente);
@@ -58,6 +70,8 @@ RETURNS TABLE (
     meses_cubrimiento INT,
     precio NUMERIC,
     moneda VARCHAR,
+    tipo_pago VARCHAR,
+    numero_cuotas INT,
     vigente BOOLEAN,
     caracteristicas TEXT,
     total_disponibles INT
@@ -71,6 +85,8 @@ AS $$
         p.meses_cubrimiento,
         p.precio,
         p.moneda,
+        p.tipo_pago,
+        p.numero_cuotas,
         p.vigente,
         p.caracteristicas,
         p.total_disponibles
@@ -91,6 +107,8 @@ RETURNS TABLE (
     meses_cubrimiento INT,
     precio NUMERIC,
     moneda VARCHAR,
+    tipo_pago VARCHAR,
+    numero_cuotas INT,
     vigente BOOLEAN,
     caracteristicas TEXT,
     total_disponibles INT,
@@ -108,6 +126,8 @@ BEGIN
         p.meses_cubrimiento,
         p.precio,
         p.moneda,
+        p.tipo_pago,
+        p.numero_cuotas,
         p.vigente,
         p.caracteristicas,
         p.total_disponibles,
@@ -125,6 +145,8 @@ CREATE OR REPLACE FUNCTION public.admin_guardar_plan_platzi(
     p_meses_cubrimiento INT DEFAULT 1,
     p_precio NUMERIC DEFAULT 0.00,
     p_moneda VARCHAR DEFAULT 'COP',
+    p_tipo_pago VARCHAR DEFAULT 'pago_unico',
+    p_numero_cuotas INT DEFAULT 1,
     p_vigente BOOLEAN DEFAULT true,
     p_caracteristicas TEXT DEFAULT NULL,
     p_total_disponibles INT DEFAULT NULL
@@ -142,6 +164,8 @@ BEGIN
             meses_cubrimiento = p_meses_cubrimiento,
             precio = p_precio,
             moneda = p_moneda,
+            tipo_pago = COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
+            numero_cuotas = COALESCE(p_numero_cuotas, 1),
             vigente = p_vigente,
             caracteristicas = p_caracteristicas,
             total_disponibles = p_total_disponibles,
@@ -150,9 +174,12 @@ BEGIN
         v_id := p_id;
     ELSE
         INSERT INTO platzi.planes (
-            nombre_plan, meses_cubrimiento, precio, moneda, vigente, caracteristicas, total_disponibles
+            nombre_plan, meses_cubrimiento, precio, moneda, tipo_pago, numero_cuotas, vigente, caracteristicas, total_disponibles
         ) VALUES (
-            p_nombre_plan, p_meses_cubrimiento, p_precio, p_moneda, p_vigente, p_caracteristicas, p_total_disponibles
+            p_nombre_plan, p_meses_cubrimiento, p_precio, p_moneda,
+            COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
+            COALESCE(p_numero_cuotas, 1),
+            p_vigente, p_caracteristicas, p_total_disponibles
         )
         RETURNING id INTO v_id;
     END IF;
@@ -210,7 +237,9 @@ CREATE OR REPLACE FUNCTION public.registrar_venta_platzi(
     p_cod_revendedor VARCHAR DEFAULT NULL,
     p_discount_code VARCHAR DEFAULT NULL,
     p_cod_generado VARCHAR DEFAULT NULL,
-    p_precio_venta NUMERIC DEFAULT 0.00
+    p_precio_venta NUMERIC DEFAULT 0.00,
+    p_tipo_pago VARCHAR DEFAULT 'pago_unico',
+    p_numero_cuotas INT DEFAULT 1
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -223,12 +252,14 @@ BEGIN
     -- 1. Insertar en platzi.ventas
     INSERT INTO platzi.ventas (
         name, phone, email, platzi_account_email, country_name,
-        cod_revendedor, discount_code, cod_generado, fecha_registro
+        cod_revendedor, discount_code, tipo_pago, numero_cuotas, cod_generado, fecha_registro
     ) VALUES (
         p_name, p_phone, LOWER(TRIM(p_email)), LOWER(TRIM(p_platzi_account_email)),
         COALESCE(p_country_name, 'Colombia'),
         NULLIF(UPPER(TRIM(p_cod_revendedor)), ''),
         NULLIF(UPPER(TRIM(p_discount_code)), ''),
+        COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
+        COALESCE(p_numero_cuotas, 1),
         p_cod_generado,
         NOW()
     )
@@ -288,6 +319,9 @@ RETURNS TABLE (
     country_name VARCHAR,
     cod_revendedor VARCHAR,
     discount_code VARCHAR,
+    tipo_pago VARCHAR,
+    numero_cuotas INT,
+    cuotas_pagadas INT,
     fecha_registro TIMESTAMPTZ,
     cod_generado VARCHAR,
     cod_canjeado BOOLEAN,
@@ -309,6 +343,9 @@ BEGIN
         v.country_name,
         v.cod_revendedor,
         v.discount_code,
+        v.tipo_pago,
+        v.numero_cuotas,
+        v.cuotas_pagadas,
         v.fecha_registro,
         v.cod_generado,
         v.cod_canjeado,

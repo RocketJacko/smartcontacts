@@ -160,6 +160,8 @@ export async function POST(request: Request) {
       oferta_id,
       oferta_codigo,
       institucion,
+      tipo_pago,
+      numero_cuotas,
     } = body
 
     // 2. Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo)
@@ -222,6 +224,8 @@ export async function POST(request: Request) {
       meses_cubrimiento: meses_cubrimiento ? Number(meses_cubrimiento) : 6,
       precioPlan: precio ? Number(precio) : null,
       precio_formateado: precio_formateado ? String(precio_formateado).trim() : "",
+      tipo_pago: tipo_pago || "pago_unico",
+      numero_cuotas: numero_cuotas ? Number(numero_cuotas) : 1,
       currency: currency || "COP",
       name: String(name).trim(),
       phone: String(phone).trim(),
@@ -346,6 +350,8 @@ export async function POST(request: Request) {
           p_discount_code: rawCode || null,
           p_cod_generado: dataObj?.codigo || dataObj?.CodGenerado || null,
           p_precio_venta: Number(precio || dataObj?.price || dataObj?.Valor || 0),
+          p_tipo_pago: tipo_pago || 'pago_unico',
+          p_numero_cuotas: numero_cuotas ? Number(numero_cuotas) : 1,
         })
       } catch (syncErr) {
         console.error('Error registrando venta en platzi.ventas:', syncErr)

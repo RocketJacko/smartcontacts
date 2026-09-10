@@ -22,6 +22,8 @@ export interface PlatziPlan {
   vigente: boolean
   caracteristicas?: string
   total_disponibles?: number | null
+  tipo_pago?: string
+  numero_cuotas?: number
 }
 
 export interface SpecialOfferData {
@@ -38,6 +40,8 @@ export interface SpecialOfferData {
   afiliado_nombre?: string
   codigo_referido?: string
   activo: boolean
+  tipo_pago?: string
+  numero_cuotas?: number
 }
 
 const DEFAULT_PLANS: PlatziPlan[] = [
@@ -49,6 +53,8 @@ const DEFAULT_PLANS: PlatziPlan[] = [
     moneda: "COP",
     vigente: true,
     caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
   },
   {
     id: "b381bcfd-53f5-4ef3-b5d6-6c5863bb3450",
@@ -58,6 +64,8 @@ const DEFAULT_PLANS: PlatziPlan[] = [
     moneda: "COP",
     vigente: true,
     caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
   },
 ]
 
@@ -391,6 +399,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
+          tipo_pago: selectedPlan?.tipo_pago || specialOffer?.tipo_pago || "pago_unico",
+          numero_cuotas: selectedPlan?.numero_cuotas || specialOffer?.numero_cuotas || 1,
           oferta_id: specialOffer?.id || null,
           oferta_codigo: specialOffer?.codigo_oferta || null,
           institucion: specialOffer?.institucion_empresa || null,
@@ -478,6 +488,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
+          tipo_pago: selectedPlan?.tipo_pago || specialOffer?.tipo_pago || "pago_unico",
+          numero_cuotas: selectedPlan?.numero_cuotas || specialOffer?.numero_cuotas || 1,
           oferta_id: specialOffer?.id || null,
           oferta_codigo: specialOffer?.codigo_oferta || null,
           institucion: specialOffer?.institucion_empresa || null,
@@ -770,11 +782,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                           <span className="text-xs font-bold text-[#111] block">
                             {formatPlanPriceDynamic(p.precio, p.moneda)}
                           </span>
-                          <span className="text-[10px] text-black/50 block">
-                            {p.meses_cubrimiento === 12
-                              ? language === "es" ? "12 meses" : "12 months"
-                              : `${p.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`}
-                          </span>
+                          {p.tipo_pago === "cuotas" ? (
+                            <span className="text-[10px] text-purple-700 font-bold block">
+                              {p.numero_cuotas || 2} cuotas
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-black/50 block">
+                              {p.meses_cubrimiento === 12
+                                ? language === "es" ? "12 meses" : "12 months"
+                                : `${p.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`}
+                            </span>
+                          )}
                         </div>
                       </div>
                     )
