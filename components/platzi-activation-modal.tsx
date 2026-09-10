@@ -168,7 +168,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
 
-  // Cargar planes vigentes y validar si existe una oferta especial / convenio
+  // Cargar planes vigentes y validar si existe una oferta especial / convenio / revendedor
   useEffect(() => {
     if (!isOpen) return
     let isMounted = true
@@ -177,65 +177,81 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       setIsLoadingPlans(true)
       try {
         let offerItem: PlatziPlan | null = null
+        const potentialCodes: string[] = []
 
-        // 1. Detectar si la URL incluye parámetro de oferta o convenio (?oferta=... o ?convenio=...)
+        // 1. Recopilar posibles códigos desde URL, localStorage y cookies
         if (typeof window !== "undefined") {
           const params = new URLSearchParams(window.location.search)
-          const offerSlug = params.get("oferta") || params.get("convenio") || params.get("promo")
-          if (offerSlug && offerSlug.trim()) {
-            try {
-              const offerRes = await fetch(`/api/benefits/offers/${encodeURIComponent(offerSlug.trim().toUpperCase())}`)
-              const offerData = await offerRes.json()
-              if (offerData?.success && offerData?.valida && offerData?.oferta) {
-                const off = offerData.oferta as SpecialOfferData
-                if (isMounted) setSpecialOffer(off)
-
-                // Si la oferta tiene un revendedor asignado, atribuir su código automáticamente
-                if (off.codigo_referido && isMounted) {
-                  const refUpper = off.codigo_referido.toUpperCase().trim()
-                  setDiscountCode(refUpper)
-                  try {
-                    localStorage.setItem("sc_ref_code", refUpper)
-                  } catch {}
-                }
-
-                offerItem = {
-                  id: `offer-${off.id}`,
-                  nombre_plan: off.titulo,
-                  meses_cubrimiento: off.meses_cubrimiento,
-                  precio: Number(off.precio_cop),
-                  moneda: "COP",
-                  tipo_pago: off.tipo_pago || "pago_unico",
-                  numero_cuotas: off.numero_cuotas || 1,
-                  pago_anticipado: Boolean(off.pago_anticipado),
-                  vigente: true,
-                  caracteristicas:
-                    off.descripcion ||
-                    (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : "Plan exclusivo de convenio"),
-                }
-              }
-            } catch {}
-          }
+          const urlCodes = [
+            params.get("oferta"),
+            params.get("convenio"),
+            params.get("promo"),
+            params.get("ref"),
+            params.get("referido"),
+          ].filter(Boolean) as string[]
+          potentialCodes.push(...urlCodes)
         }
 
-        // 2. Cargar planes generales de base de datos
+        try {
+          if (typeof localStorage !== "undefined") {
+            const stored = localStorage.getItem("sc_ref_code")
+            if (stored) potentialCodes.push(stored)
+          }
+          if (typeof document !== "undefined") {
+            const match = document.cookie.match(/(?:^|;\s*)sc_ref_code=([^;]+)/)
+            if (match && match[1]) potentialCodes.push(decodeURIComponent(match[1]))
+          }
+        } catch {}
+
+        const cleanCodes = Array.from(new Set(potentialCodes.map((c) => c.trim().toUpperCase()))).filter(Boolean)
+
+        // 2. Intentar validar si alguno de los códigos corresponde a una oferta especial
+        for (const code of cleanCodes) {
+          try {
+            const offerRes = await fetch(`/api/benefits/offers/${encodeURIComponent(code)}`)
+            const offerData = await offerRes.json()
+            if (offerData?.success && offerData?.valida && offerData?.oferta) {
+              const off = offerData.oferta as SpecialOfferData
+              if (isMounted) setSpecialOffer(off)
+
+              if (off.codigo_referido && isMounted) {
+                const refUpper = off.codigo_referido.toUpperCase().trim()
+                setDiscountCode(refUpper)
+                try {
+                  localStorage.setItem("sc_ref_code", refUpper)
+                } catch {}
+              }
+
+              offerItem = {
+                id: `offer-${off.id}`,
+                nombre_plan: off.titulo,
+                meses_cubrimiento: off.meses_cubrimiento,
+                precio: Number(off.precio_cop),
+                moneda: "COP",
+                tipo_pago: off.tipo_pago || "pago_unico",
+                numero_cuotas: off.numero_cuotas || 1,
+                pago_anticipado: Boolean(off.pago_anticipado),
+                vigente: true,
+                caracteristicas:
+                  off.descripcion ||
+                  (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : "Plan exclusivo de convenio"),
+              }
+              break // Oferta encontrada, detener búsqueda
+            }
+          } catch {}
+        }
+
+        // 3. Cargar planes generales de base de datos
         const res = await fetch("/api/benefits/platzi/plans")
         const data = await res.json()
         const standardPlans: PlatziPlan[] =
           data?.success && Array.isArray(data?.planes) && data.planes.length > 0 ? data.planes : DEFAULT_PLANS
 
-        // 3. Si se accede por oferta especial o enlace de revendedor (?ref=), NO mostrar planes adicionales
-        const hasRefOrOfferParam = typeof window !== "undefined" && Boolean(
-          new URLSearchParams(window.location.search).get("ref") ||
-          new URLSearchParams(window.location.search).get("referido") ||
-          new URLSearchParams(window.location.search).get("oferta") ||
-          new URLSearchParams(window.location.search).get("convenio")
-        )
-
+        // 4. Si hay oferta especial u origen de revendedor/referido, AISLAR a 1 SOLO plan (prohibido mostrar lista general)
         let mergedPlans: PlatziPlan[] = standardPlans
         if (offerItem) {
           mergedPlans = [offerItem]
-        } else if (hasRefOrOfferParam) {
+        } else if (cleanCodes.length > 0) {
           mergedPlans = [standardPlans[0]]
         }
 
