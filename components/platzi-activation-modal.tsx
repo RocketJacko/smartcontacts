@@ -241,18 +241,53 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           } catch {}
         }
 
-        // 3. Cargar planes generales de base de datos
+        // 3. Cargar planes de base de datos y categorizar (separar convenios/ofertas especiales de los planes regulares)
         const res = await fetch("/api/benefits/platzi/plans")
         const data = await res.json()
-        const standardPlans: PlatziPlan[] =
+        const fetchedPlans: PlatziPlan[] =
           data?.success && Array.isArray(data?.planes) && data.planes.length > 0 ? data.planes : DEFAULT_PLANS
 
-        // 4. Si hay oferta especial u origen de revendedor/referido, AISLAR a 1 SOLO plan (prohibido mostrar lista general)
-        let mergedPlans: PlatziPlan[] = standardPlans
+        const isConvenioPlan = (p: PlatziPlan) => {
+          const name = (p.nombre_plan || "").toLowerCase()
+          const char = (p.caracteristicas || "").toLowerCase()
+          return (
+            name.includes("convenio") ||
+            name.includes("universidad") ||
+            name.includes("univalle") ||
+            name.includes("oferta") ||
+            name.includes("promo") ||
+            name.includes("especial") ||
+            char.includes("convenio")
+          )
+        }
+
+        const regularPlans = fetchedPlans.filter((p) => !isConvenioPlan(p))
+        const convenioPlans = fetchedPlans.filter((p) => isConvenioPlan(p))
+
+        // 4. Determinar los planes a mostrar según la atribución (Aislamiento Estricto)
+        let mergedPlans: PlatziPlan[] = regularPlans.length > 0 ? regularPlans : DEFAULT_PLANS
+
         if (offerItem) {
+          // Si proviene de una oferta especial dinámica registrada en referidos.ofertas_especiales
           mergedPlans = [offerItem]
-        } else if (cleanCodes.length > 0) {
-          mergedPlans = [standardPlans[0]]
+        } else {
+          // Verificar si algún código coincide con el nombre de un plan de convenio almacenado en platzi.planes
+          const matchedConvenio = cleanCodes.length > 0
+            ? convenioPlans.find((cp) =>
+                cleanCodes.some((code) =>
+                  cp.nombre_plan.toLowerCase().includes(code.toLowerCase()) ||
+                  (cp.caracteristicas || "").toLowerCase().includes(code.toLowerCase())
+                )
+              )
+            : null
+
+          if (matchedConvenio) {
+            // Si coincide con un convenio institucional específico
+            mergedPlans = [matchedConvenio]
+          } else if (cleanCodes.length > 0) {
+            // Si proviene de un enlace de revendedor regular (?ref=), fijar a 1 SOLO plan regular asignado
+            mergedPlans = [regularPlans[0] || fetchedPlans[0]]
+          }
         }
 
         if (isMounted) {
@@ -747,29 +782,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <span className="text-xs text-black/60 font-mono">
                   — {displayDuration} ({displayPlanName})
                 </span>
-                {selectedPlan?.pago_anticipado && (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-mono font-bold">
-                    ⚡ Pago Anticipado Requerido
-                  </span>
-                )}
               </div>
-
-              {/* Banner Institucional de Oferta Especial / Convenio */}
-              {specialOffer && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs font-mono text-amber-950 mt-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="font-bold uppercase tracking-wider text-[10px] text-amber-800 block">
-                      {language === "es" ? "Convenio Institucional Aplicado" : "Institutional Deal Applied"}
-                    </span>
-                    <span className="font-medium truncate block">
-                      {specialOffer.institucion_empresa
-                        ? `${specialOffer.institucion_empresa} — ${specialOffer.titulo}`
-                        : specialOffer.titulo}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* 1. Selector de Planes Disponibles */}
