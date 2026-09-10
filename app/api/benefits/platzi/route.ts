@@ -162,6 +162,7 @@ export async function POST(request: Request) {
       institucion,
       tipo_pago,
       numero_cuotas,
+      pago_anticipado,
     } = body
 
     // 2. Verificación de Seguridad Anti-Bot (CAPTCHA Autónomo)
@@ -226,6 +227,7 @@ export async function POST(request: Request) {
       precio_formateado: precio_formateado ? String(precio_formateado).trim() : "",
       tipo_pago: tipo_pago || "pago_unico",
       numero_cuotas: numero_cuotas ? Number(numero_cuotas) : 1,
+      pago_anticipado: Boolean(pago_anticipado),
       currency: currency || "COP",
       name: String(name).trim(),
       phone: String(phone).trim(),
@@ -352,6 +354,7 @@ export async function POST(request: Request) {
           p_precio_venta: Number(precio || dataObj?.price || dataObj?.Valor || 0),
           p_tipo_pago: tipo_pago || 'pago_unico',
           p_numero_cuotas: numero_cuotas ? Number(numero_cuotas) : 1,
+          p_pago_anticipado: Boolean(pago_anticipado),
         })
       } catch (syncErr) {
         console.error('Error registrando venta en platzi.ventas:', syncErr)

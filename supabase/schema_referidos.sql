@@ -430,6 +430,9 @@ $$;
 -- ==============================================================================
 -- 7. TABLA DE OFERTAS ESPECIALES Y CONVENIOS TEMPORALES
 -- ==============================================================================
+-- ==============================================================================
+-- 7. TABLA DE OFERTAS ESPECIALES Y CONVENIOS TEMPORALES
+-- ==============================================================================
 CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     codigo_oferta TEXT UNIQUE NOT NULL, -- Código / Slug (ej: 'UNAL-2026', 'PLATZI-EDU')
@@ -441,6 +444,7 @@ CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
     meses_cubrimiento INT NOT NULL DEFAULT 12, -- Duración del plan
     tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico', -- 'pago_unico', 'cuotas'
     numero_cuotas INT NOT NULL DEFAULT 1, -- 1, 2, 3, 6, 12
+    pago_anticipado BOOLEAN NOT NULL DEFAULT false, -- Requiere pago antes de activar
     caracteristicas JSONB DEFAULT '[]'::jsonb, -- Array con puntos clave
     afiliado_id UUID REFERENCES referidos.afiliados(id) ON DELETE SET NULL, -- Revendedor atribuido
     fecha_inicio TIMESTAMPTZ DEFAULT NOW(),
@@ -454,6 +458,7 @@ CREATE TABLE IF NOT EXISTS referidos.ofertas_especiales (
 
 ALTER TABLE referidos.ofertas_especiales ADD COLUMN IF NOT EXISTS tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico';
 ALTER TABLE referidos.ofertas_especiales ADD COLUMN IF NOT EXISTS numero_cuotas INT NOT NULL DEFAULT 1;
+ALTER TABLE referidos.ofertas_especiales ADD COLUMN IF NOT EXISTS pago_anticipado BOOLEAN NOT NULL DEFAULT false;
 
 CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_codigo ON referidos.ofertas_especiales(codigo_oferta);
 CREATE INDEX IF NOT EXISTS idx_referidos_ofertas_afiliado ON referidos.ofertas_especiales(afiliado_id);
@@ -525,6 +530,7 @@ BEGIN
             'meses_cubrimiento', v_oferta.meses_cubrimiento,
             'tipo_pago', COALESCE(v_oferta.tipo_pago, 'pago_unico'),
             'numero_cuotas', COALESCE(v_oferta.numero_cuotas, 1),
+            'pago_anticipado', COALESCE(v_oferta.pago_anticipado, false),
             'caracteristicas', v_oferta.caracteristicas,
             'cupos_maximos', v_oferta.cupos_maximos,
             'cupos_usados', v_oferta.cupos_usados,
@@ -559,6 +565,7 @@ BEGIN
             'meses_cubrimiento', o.meses_cubrimiento,
             'tipo_pago', COALESCE(o.tipo_pago, 'pago_unico'),
             'numero_cuotas', COALESCE(o.numero_cuotas, 1),
+            'pago_anticipado', COALESCE(o.pago_anticipado, false),
             'caracteristicas', o.caracteristicas,
             'afiliado_id', o.afiliado_id,
             'afiliado_nombre', a.nombre,
@@ -595,7 +602,8 @@ CREATE OR REPLACE FUNCTION public.admin_crear_oferta(
     p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
     p_cupos_maximos INT DEFAULT NULL,
     p_tipo_pago TEXT DEFAULT 'pago_unico',
-    p_numero_cuotas INT DEFAULT 1
+    p_numero_cuotas INT DEFAULT 1,
+    p_pago_anticipado BOOLEAN DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -623,6 +631,7 @@ BEGIN
         meses_cubrimiento,
         tipo_pago,
         numero_cuotas,
+        pago_anticipado,
         caracteristicas,
         afiliado_id,
         fecha_fin,
@@ -638,6 +647,7 @@ BEGIN
         COALESCE(p_meses_cubrimiento, 12),
         COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
         COALESCE(p_numero_cuotas, 1),
+        COALESCE(p_pago_anticipado, false),
         COALESCE(p_caracteristicas, '[]'::jsonb),
         p_afiliado_id,
         p_fecha_fin,
@@ -663,7 +673,8 @@ CREATE OR REPLACE FUNCTION public.admin_actualizar_oferta(
     p_fecha_fin TIMESTAMPTZ DEFAULT NULL,
     p_cupos_maximos INT DEFAULT NULL,
     p_tipo_pago TEXT DEFAULT 'pago_unico',
-    p_numero_cuotas INT DEFAULT 1
+    p_numero_cuotas INT DEFAULT 1,
+    p_pago_anticipado BOOLEAN DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -679,6 +690,7 @@ BEGIN
         meses_cubrimiento = COALESCE(p_meses_cubrimiento, 12),
         tipo_pago = COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
         numero_cuotas = COALESCE(p_numero_cuotas, 1),
+        pago_anticipado = COALESCE(p_pago_anticipado, false),
         caracteristicas = COALESCE(p_caracteristicas, '[]'::jsonb),
         afiliado_id = p_afiliado_id,
         fecha_fin = p_fecha_fin,

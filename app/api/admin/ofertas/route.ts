@@ -46,6 +46,7 @@ const crearOfertaSchema = z.object({
   cupos_maximos: z.coerce.number().int().positive().optional().nullable(),
   tipo_pago: z.enum(['pago_unico', 'cuotas']).default('pago_unico'),
   numero_cuotas: z.coerce.number().int().positive().default(1),
+  pago_anticipado: z.boolean().default(false),
 })
 
 export async function GET() {
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
       p_cupos_maximos: dataToSend.cupos_maximos || null,
       p_tipo_pago: dataToSend.tipo_pago,
       p_numero_cuotas: dataToSend.numero_cuotas,
+      p_pago_anticipado: dataToSend.pago_anticipado,
     })
 
     if (error) {

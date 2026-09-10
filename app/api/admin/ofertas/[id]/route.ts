@@ -45,6 +45,7 @@ const actualizarOfertaSchema = z.object({
   cupos_maximos: z.coerce.number().int().positive().optional().nullable(),
   tipo_pago: z.enum(['pago_unico', 'cuotas']).default('pago_unico'),
   numero_cuotas: z.coerce.number().int().positive().default(1),
+  pago_anticipado: z.boolean().default(false),
 })
 
 export async function PATCH(
@@ -107,6 +108,7 @@ export async function PATCH(
       p_cupos_maximos: d.cupos_maximos || null,
       p_tipo_pago: d.tipo_pago,
       p_numero_cuotas: d.numero_cuotas,
+      p_pago_anticipado: d.pago_anticipado,
     })
 
     if (error) {

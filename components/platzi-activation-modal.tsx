@@ -24,6 +24,7 @@ export interface PlatziPlan {
   total_disponibles?: number | null
   tipo_pago?: string
   numero_cuotas?: number
+  pago_anticipado?: boolean
 }
 
 export interface SpecialOfferData {
@@ -42,6 +43,7 @@ export interface SpecialOfferData {
   activo: boolean
   tipo_pago?: string
   numero_cuotas?: number
+  pago_anticipado?: boolean
 }
 
 const DEFAULT_PLANS: PlatziPlan[] = [
@@ -55,6 +57,7 @@ const DEFAULT_PLANS: PlatziPlan[] = [
     caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
     tipo_pago: "pago_unico",
     numero_cuotas: 1,
+    pago_anticipado: false,
   },
   {
     id: "b381bcfd-53f5-4ef3-b5d6-6c5863bb3450",
@@ -66,6 +69,7 @@ const DEFAULT_PLANS: PlatziPlan[] = [
     caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
     tipo_pago: "pago_unico",
     numero_cuotas: 1,
+    pago_anticipado: false,
   },
 ]
 
@@ -201,6 +205,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   meses_cubrimiento: off.meses_cubrimiento,
                   precio: Number(off.precio_cop),
                   moneda: "COP",
+                  tipo_pago: off.tipo_pago || "pago_unico",
+                  numero_cuotas: off.numero_cuotas || 1,
+                  pago_anticipado: Boolean(off.pago_anticipado),
                   vigente: true,
                   caracteristicas:
                     off.descripcion ||
@@ -217,7 +224,21 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         const standardPlans: PlatziPlan[] =
           data?.success && Array.isArray(data?.planes) && data.planes.length > 0 ? data.planes : DEFAULT_PLANS
 
-        const mergedPlans = offerItem ? [offerItem, ...standardPlans] : standardPlans
+        // 3. Si se accede por oferta especial o enlace de revendedor (?ref=), NO mostrar planes adicionales
+        const hasRefOrOfferParam = typeof window !== "undefined" && Boolean(
+          new URLSearchParams(window.location.search).get("ref") ||
+          new URLSearchParams(window.location.search).get("referido") ||
+          new URLSearchParams(window.location.search).get("oferta") ||
+          new URLSearchParams(window.location.search).get("convenio")
+        )
+
+        let mergedPlans: PlatziPlan[] = standardPlans
+        if (offerItem) {
+          mergedPlans = [offerItem]
+        } else if (hasRefOrOfferParam) {
+          mergedPlans = [standardPlans[0]]
+        }
+
         if (isMounted) {
           setPlans(mergedPlans)
           const chosen = offerItem || mergedPlans[0]
@@ -710,6 +731,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 <span className="text-xs text-black/60 font-mono">
                   — {displayDuration} ({displayPlanName})
                 </span>
+                {selectedPlan?.pago_anticipado && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-mono font-bold">
+                    ⚡ Pago Anticipado Requerido
+                  </span>
+                )}
               </div>
 
               {/* Banner Institucional de Oferta Especial / Convenio */}

@@ -45,6 +45,7 @@ export interface SpecialOffer {
   activo: boolean
   tipo_pago?: string
   numero_cuotas?: number
+  pago_anticipado?: boolean
   creado_en: string
   actualizado_en: string
 }
@@ -78,6 +79,7 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
   const [formMeses, setFormMeses] = useState("12")
   const [formTipoPago, setFormTipoPago] = useState<"pago_unico" | "cuotas">("pago_unico")
   const [formNumeroCuotas, setFormNumeroCuotas] = useState<number>(1)
+  const [formPagoAnticipado, setFormPagoAnticipado] = useState(false)
   const [formAfiliadoId, setFormAfiliadoId] = useState<string>("")
   const [formFechaFin, setFormFechaFin] = useState("")
   const [formCupos, setFormCupos] = useState("")
@@ -192,6 +194,7 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
     setFormMeses("12")
     setFormTipoPago("pago_unico")
     setFormNumeroCuotas(1)
+    setFormPagoAnticipado(false)
     setFormAfiliadoId("")
     setFormFechaFin("")
     setFormCupos("")
@@ -212,6 +215,7 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
     setFormMeses(String(oferta.meses_cubrimiento || "12"))
     setFormTipoPago((oferta.tipo_pago as any) === "cuotas" ? "cuotas" : "pago_unico")
     setFormNumeroCuotas(oferta.numero_cuotas || 1)
+    setFormPagoAnticipado(Boolean(oferta.pago_anticipado))
     setFormAfiliadoId(oferta.afiliado_id || "")
     setFormFechaFin(oferta.fecha_fin ? oferta.fecha_fin.split("T")[0] : "")
     setFormCupos(oferta.cupos_maximos ? String(oferta.cupos_maximos) : "")
@@ -273,6 +277,7 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
         meses_cubrimiento: Number(formMeses) || 12,
         tipo_pago: formTipoPago,
         numero_cuotas: formTipoPago === "cuotas" ? Number(formNumeroCuotas) : 1,
+        pago_anticipado: formPagoAnticipado,
         afiliado_id: formAfiliadoId || null,
         fecha_fin: formFechaFin ? new Date(formFechaFin).toISOString() : null,
         cupos_maximos: formCupos ? Number(formCupos) : null,
@@ -539,15 +544,27 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
                         <span className="text-[10px] font-mono text-black/50 block">
                           ${oferta.precio_usd} USD ({oferta.meses_cubrimiento} meses)
                         </span>
-                        {oferta.tipo_pago === "cuotas" ? (
-                          <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
-                            {oferta.numero_cuotas || 2} Cuotas de ${Math.round(Number(oferta.precio_cop) / (oferta.numero_cuotas || 2)).toLocaleString("es-CO")}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
-                            Pago Único
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center justify-center gap-1 mt-0.5">
+                          {oferta.tipo_pago === "cuotas" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
+                              {oferta.numero_cuotas || 2} Cuotas de ${Math.round(Number(oferta.precio_cop) / (oferta.numero_cuotas || 2)).toLocaleString("es-CO")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
+                              Pago Único
+                            </span>
+                          )}
+
+                          {oferta.pago_anticipado ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold">
+                              ⚡ Pago Anticipado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-medium">
+                              ✓ Activación Inmediata
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Revendedor Atribuido */}
@@ -841,6 +858,23 @@ export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffe
                 <p className="text-[10px] font-mono text-black/40">
                   Si asignas un revendedor, todas las compras desde este enlace se registrarán a su favor.
                 </p>
+              </div>
+
+              {/* Checkbox Pago Anticipado */}
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="offerPagoAnticipadoCheck"
+                  checked={formPagoAnticipado}
+                  onChange={(e) => setFormPagoAnticipado(e.target.checked)}
+                  className="rounded border-amber-400 text-amber-600 focus:ring-0 cursor-pointer"
+                />
+                <label
+                  htmlFor="offerPagoAnticipadoCheck"
+                  className="text-xs font-sans text-amber-900 font-medium cursor-pointer flex items-center gap-1"
+                >
+                  <span>⚡ Requiere Pago Anticipado (Cobrar antes de activar cuenta)</span>
+                </label>
               </div>
 
               {/* Vigencia y Cupos */}

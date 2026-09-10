@@ -41,6 +41,7 @@ export interface PlanPlatzi {
   total_disponibles: number | null
   tipo_pago?: string
   numero_cuotas?: number
+  pago_anticipado?: boolean
   created_at: string
 }
 
@@ -61,6 +62,7 @@ export interface VentaPlatzi {
   tipo_pago?: string
   numero_cuotas?: number
   cuotas_pagadas?: number
+  pago_anticipado?: boolean
   created_at: string
 }
 
@@ -121,6 +123,7 @@ export function PlatziModule() {
   const [planMoneda, setPlanMoneda] = useState("COP")
   const [planTipoPago, setPlanTipoPago] = useState<"pago_unico" | "cuotas">("pago_unico")
   const [planNumeroCuotas, setPlanNumeroCuotas] = useState<number>(1)
+  const [planPagoAnticipado, setPlanPagoAnticipado] = useState(false)
   const [planVigente, setPlanVigente] = useState(true)
   const [planCaracteristicas, setPlanCaracteristicas] = useState("")
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false)
@@ -201,6 +204,7 @@ export function PlatziModule() {
       setPlanMoneda(plan.moneda || "COP")
       setPlanTipoPago((plan.tipo_pago as any) === "cuotas" ? "cuotas" : "pago_unico")
       setPlanNumeroCuotas(plan.numero_cuotas || 1)
+      setPlanPagoAnticipado(Boolean(plan.pago_anticipado))
       setPlanVigente(plan.vigente)
       setPlanCaracteristicas(plan.caracteristicas || "")
     } else {
@@ -211,6 +215,7 @@ export function PlatziModule() {
       setPlanMoneda("COP")
       setPlanTipoPago("pago_unico")
       setPlanNumeroCuotas(1)
+      setPlanPagoAnticipado(false)
       setPlanVigente(true)
       setPlanCaracteristicas("")
     }
@@ -231,6 +236,7 @@ export function PlatziModule() {
         moneda: planMoneda.trim().toUpperCase(),
         tipo_pago: planTipoPago,
         numero_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
+        pago_anticipado: planPagoAnticipado,
         vigente: planVigente,
         caracteristicas: planCaracteristicas.trim(),
       }
@@ -573,15 +579,27 @@ export function PlatziModule() {
                           <div className="font-mono text-xs font-bold text-[#111]">
                             ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
                           </div>
-                          {plan.tipo_pago === "cuotas" ? (
-                            <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
-                              {plan.numero_cuotas || 2} Cuotas de ${Math.round(Number(plan.precio) / (plan.numero_cuotas || 2)).toLocaleString("es-CO")}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
-                              Pago Único
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                            {plan.tipo_pago === "cuotas" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
+                                {plan.numero_cuotas || 2} Cuotas de ${Math.round(Number(plan.precio) / (plan.numero_cuotas || 2)).toLocaleString("es-CO")}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
+                                Pago Único
+                              </span>
+                            )}
+
+                            {plan.pago_anticipado ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold">
+                                ⚡ Pago Anticipado
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-medium">
+                                ✓ Activación Inmediata
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Características */}
@@ -909,20 +927,38 @@ export function PlatziModule() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="planVigenteCheck"
-                  checked={planVigente}
-                  onChange={(e) => setPlanVigente(e.target.checked)}
-                  className="rounded border-black/20 text-black focus:ring-0 cursor-pointer"
-                />
-                <label
-                  htmlFor="planVigenteCheck"
-                  className="text-xs font-sans text-black/80 font-medium cursor-pointer"
-                >
-                  Plan Vigente (mostrar en catálogo ofertado)
-                </label>
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="planVigenteCheck"
+                    checked={planVigente}
+                    onChange={(e) => setPlanVigente(e.target.checked)}
+                    className="rounded border-black/20 text-black focus:ring-0 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="planVigenteCheck"
+                    className="text-xs font-sans text-black/80 font-medium cursor-pointer"
+                  >
+                    Plan Vigente (mostrar en catálogo ofertado)
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="planPagoAnticipadoCheck"
+                    checked={planPagoAnticipado}
+                    onChange={(e) => setPlanPagoAnticipado(e.target.checked)}
+                    className="rounded border-amber-400 text-amber-600 focus:ring-0 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="planPagoAnticipadoCheck"
+                    className="text-xs font-sans text-amber-900 font-medium cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⚡ Requiere Pago Anticipado (Cobrar antes de activar cuenta)</span>
+                  </label>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-black/[0.06]">
