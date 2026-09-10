@@ -241,6 +241,21 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           } catch {}
         }
 
+        // Si se encontró una oferta especial válida, AISLAR INMEDIATAMENTE y NO cargar planes generales de Platzi
+        if (offerItem && isMounted) {
+          setPlans([offerItem])
+          setSelectedPlan(offerItem)
+          setDisplayPlanName(offerItem.nombre_plan)
+          setDisplayPrice(formatPlanPriceDynamic(offerItem.precio, offerItem.moneda))
+          setDisplayDuration(
+            offerItem.meses_cubrimiento === 12
+              ? language === "es" ? "1 año" : "1 year"
+              : `${offerItem.meses_cubrimiento} ${language === "es" ? "meses" : "months"}`
+          )
+          setIsLoadingPlans(false)
+          return
+        }
+
         // 3. Cargar planes de base de datos y categorizar (separar convenios/ofertas especiales de los planes regulares)
         const res = await fetch("/api/benefits/platzi/plans")
         const data = await res.json()
@@ -267,27 +282,22 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         // 4. Determinar los planes a mostrar según la atribución (Aislamiento Estricto)
         let mergedPlans: PlatziPlan[] = regularPlans.length > 0 ? regularPlans : DEFAULT_PLANS
 
-        if (offerItem) {
-          // Si proviene de una oferta especial dinámica registrada en referidos.ofertas_especiales
-          mergedPlans = [offerItem]
-        } else {
-          // Verificar si algún código coincide con el nombre de un plan de convenio almacenado en platzi.planes
-          const matchedConvenio = cleanCodes.length > 0
-            ? convenioPlans.find((cp) =>
-                cleanCodes.some((code) =>
-                  cp.nombre_plan.toLowerCase().includes(code.toLowerCase()) ||
-                  (cp.caracteristicas || "").toLowerCase().includes(code.toLowerCase())
-                )
+        // Verificar si algún código coincide con el nombre de un plan de convenio almacenado en platzi.planes
+        const matchedConvenio = cleanCodes.length > 0
+          ? convenioPlans.find((cp) =>
+              cleanCodes.some((code) =>
+                cp.nombre_plan.toLowerCase().includes(code.toLowerCase()) ||
+                (cp.caracteristicas || "").toLowerCase().includes(code.toLowerCase())
               )
-            : null
+            )
+          : null
 
-          if (matchedConvenio) {
-            // Si coincide con un convenio institucional específico
-            mergedPlans = [matchedConvenio]
-          } else if (cleanCodes.length > 0) {
-            // Si proviene de un enlace de revendedor regular (?ref=), fijar a 1 SOLO plan regular asignado
-            mergedPlans = [regularPlans[0] || fetchedPlans[0]]
-          }
+        if (matchedConvenio) {
+          // Si coincide con un convenio institucional específico
+          mergedPlans = [matchedConvenio]
+        } else if (cleanCodes.length > 0) {
+          // Si proviene de un enlace de revendedor regular (?ref=), fijar a 1 SOLO plan regular asignado
+          mergedPlans = [regularPlans[0] || fetchedPlans[0]]
         }
 
         if (isMounted) {
