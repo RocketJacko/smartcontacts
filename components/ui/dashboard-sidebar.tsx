@@ -65,26 +65,43 @@ export type NavGroupData = {
 
 const mockNavGroups: NavGroupData[] = [
   {
+    headingKey: "overview",
+    items: [
+      { id: "overview", titleKey: "overview", icon: LayoutDashboard, shortcut: "⌘1" },
+    ],
+  },
+  {
+    headingKey: "agents",
+    items: [
+      { id: "agents", titleKey: "agents", icon: Bot, shortcut: "⌘2" },
+    ],
+  },
+  {
     headingKey: "operation",
     items: [
-      { id: "calendar", titleKey: "Agenda & Citas", icon: Calendar, badgeKey: "totalProspectos" },
-      { id: "booking-emails", titleKey: "Correos & Solicitudes", icon: Clock },
-      { id: "platzi", titleKey: "Gestión Platzi", icon: Layers },
+      { id: "calendar", titleKey: "calendar", icon: Calendar, badgeKey: "totalProspectos" },
+      { id: "booking-emails", titleKey: "bookingEmails", icon: Clock },
     ],
   },
   {
     headingKey: "marketing",
     items: [
-      { id: "marketing-campaigns", titleKey: "Campañas Masivas", icon: Send },
-      { id: "marketing-audiences", titleKey: "Directorios & Audiencias", icon: Users },
-      { id: "referrals", titleKey: "Revendedores & Afiliados", icon: Share2 },
+      { id: "marketing-campaigns", titleKey: "marketingCampaigns", icon: Send },
+      { id: "marketing-audiences", titleKey: "marketingAudiences", icon: Users },
+    ],
+  },
+  {
+    headingKey: "partners",
+    items: [
+      { id: "referrals", titleKey: "referrals", icon: Share2 },
+      { id: "platzi", titleKey: "platzi", icon: Layers },
     ],
   },
   {
     headingKey: "infrastructure",
     items: [
-      { id: "email-accounts", titleKey: "Cuentas Gmail / Remitentes", icon: Key },
-      { id: "api", titleKey: "Estado de APIs & Cron", icon: Terminal },
+      { id: "email-accounts", titleKey: "emailAccounts", icon: Key },
+      { id: "api", titleKey: "api", icon: Terminal },
     ],
   },
 ]
@@ -264,7 +281,7 @@ export function SidebarNav({
   metrics?: any
 }) {
   const { t } = useLanguage()
-  const [internalId, setInternalId] = useState("home")
+  const [internalId, setInternalId] = useState("overview")
   const currentId = activeId !== undefined ? activeId : internalId
   const handleSelect = onSelect || setInternalId
 
@@ -275,9 +292,12 @@ export function SidebarNav({
       <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col gap-4 mt-1">
         {mockNavGroups.map((group, idx) => {
           const defaultTitles: Record<string, string> = {
-            operation: "Operación Comercial & Citas",
-            marketing: "Email Marketing & Campañas",
-            infrastructure: "Infraestructura & Conectores",
+            overview: "Centro de Mando",
+            agents: "Inteligencia & Fuerza Agéntica IA",
+            operation: "Operación & Agendamiento Comercial",
+            marketing: "Prospección & Outbound Marketing",
+            partners: "Red de Aliados & Convenios",
+            infrastructure: "Infraestructura & Canales",
           }
           const headingText = group.headingKey ? ((t.dashboard?.groups as any)?.[group.headingKey] || defaultTitles[group.headingKey] || group.headingKey) : null
           return (
@@ -302,7 +322,7 @@ export default function SidebarNavPreview() {
   const { t } = useLanguage()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [activeId, setActiveId] = useState("api") // Default directly to "api" (APIs & Google Cloud)
+  const [activeId, setActiveId] = useState("overview") // Default directly to Executive Command Center
   const [activeWorkspace, setActiveWorkspace] = useState("SmartContacts Cloud")
   const [googleMetrics, setGoogleMetrics] = useState<any>(null)
   const [generalMetrics, setGeneralMetrics] = useState<any>(null)
@@ -364,7 +384,7 @@ export default function SidebarNavPreview() {
     setIsMobileOpen(false)
   }
 
-  const activeTitle = (t.dashboard?.menu as any)?.[activeId] || "APIs & Google Cloud"
+  const activeTitle = (t.dashboard?.menu as any)?.[activeId] || "Centro de Mando Agéntico"
 
   return (
     <div className="min-h-screen w-full bg-[#F5F4F0] text-[#111] font-sans antialiased flex flex-col overflow-hidden">
@@ -479,8 +499,352 @@ export default function SidebarNavPreview() {
         {/* MAIN DASHBOARD CONTENT */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
           
-          {/* DEDICATED MODULE: APIS & GOOGLE CLOUD METRICS */}
-          {activeId === "api" || activeId === "home" ? (
+          {/* ── 1. EXECUTIVE COMMAND CENTER (VISIÓN GENERAL) ─────────────────── */}
+          {activeId === "overview" || activeId === "home" ? (
+            <>
+              {/* Header Banner */}
+              <div className="pb-4 border-b border-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold tracking-wider text-emerald-700 bg-emerald-500/10 border border-emerald-500/20 uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5" />
+                      UNIDAD DE CRECIMIENTO EN VIVO
+                    </span>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+                    Centro de Mando Agéntico & Crecimiento Comercial
+                  </h1>
+                  <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+                    Monitoreo consolidado de agendamientos, prospección autónoma sobre +4M contactos, fuerza agéntica RAG y red de aliados.
+                  </p>
+                </div>
+              </div>
+
+              {/* ── BENTO GRID: 4 MAIN EXECUTIVE KPIS ───────────────────────── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                
+                {/* KPI 1: Citas & Agendamiento */}
+                <div
+                  onClick={() => setActiveId("calendar")}
+                  className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md hover:border-black/20 transition-all cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">AGENDA & CITAS</span>
+                      <Calendar className="w-4 h-4 text-purple-600 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      {generalMetrics?.overview?.totalProspectos ?? 0}
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Prospectos Registrados (`calendario`)</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>AGENDAMIENTO</span>
+                    <span className="text-purple-700 font-bold group-hover:underline">VER TABLA →</span>
+                  </div>
+                </div>
+
+                {/* KPI 2: Habeas Data & Trazabilidad */}
+                <div
+                  onClick={() => setActiveId("calendar")}
+                  className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md hover:border-black/20 transition-all cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">CUMPLIMIENTO LEGAL</span>
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-emerald-700 tracking-tight">
+                      100%
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Habeas Data (Ley 1581) Verificado</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>TRAZABILIDAD</span>
+                    <span className="text-emerald-700 font-bold font-mono">CONFORME</span>
+                  </div>
+                </div>
+
+                {/* KPI 3: Fuerza Agéntica IA */}
+                <div
+                  onClick={() => setActiveId("agents")}
+                  className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md hover:border-black/20 transition-all cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">FUERZA AGÉNTICA IA</span>
+                      <BrainCircuit className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      4 AGENTES
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Prospector, Outbound, Orquestador, Cierre</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>ARQUITECTURA</span>
+                    <span className="text-blue-700 font-bold group-hover:underline">VER DETALLE →</span>
+                  </div>
+                </div>
+
+                {/* KPI 4: Red de Aliados & Revendedores */}
+                <div
+                  onClick={() => setActiveId("referrals")}
+                  className="p-5 rounded-2xl border border-black/[0.08] bg-white shadow-2xs hover:shadow-md hover:border-black/20 transition-all cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-mono text-black/50 uppercase tracking-widest font-bold">RED DE REVENDEDORES</span>
+                      <Share2 className="w-4 h-4 text-amber-600 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-[#111] tracking-tight">
+                      ACTIVA
+                    </div>
+                    <p className="text-xs text-black/70 mt-1 font-sans font-medium">Atribución de Enlaces & Convenios</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-black/50">
+                    <span>ALIADOS</span>
+                    <span className="text-amber-700 font-bold group-hover:underline">GESTIONAR →</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ── MIDDLE GRID: GOOGLE WORKSPACE & MARKETING INFRASTRUCTURE ─── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                
+                {/* Integraciones Google Workspace */}
+                <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+                    <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
+                      ESTADO INTEGRACIONES GOOGLE WORKSPACE
+                    </span>
+                    <button
+                      onClick={() => setActiveId("api")}
+                      className="text-xs font-mono text-purple-700 hover:underline font-semibold"
+                    >
+                      VER MONITOR COMPLETO →
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {/* Gmail */}
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <Mail className="w-4 h-4 text-rose-600" />
+                        <span className="text-xs font-medium text-[#111]">Gmail API (Despacho Correos)</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700">OPERACIONAL</span>
+                    </div>
+
+                    {/* Meet */}
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <Activity className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-medium text-[#111]">Google Meet API (Salas Virtuales)</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700">OPERACIONAL</span>
+                    </div>
+
+                    {/* Calendar */}
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-medium text-[#111]">Google Calendar API (Eventos & Agenda)</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700">OPERACIONAL</span>
+                    </div>
+
+                    {/* Sheets */}
+                    <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.02] border border-black/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs font-medium text-[#111]">Google Sheets API (Sync Tablas)</span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700">OPERACIONAL</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prospección & Infraestructura Outbound */}
+                <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+                    <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
+                      CAPACIDAD Y RECURSOS DE PROSPECCIÓN
+                    </span>
+                    <button
+                      onClick={() => setActiveId("marketing-audiences")}
+                      className="text-xs font-mono text-purple-700 hover:underline font-semibold"
+                    >
+                      EXPLORAR BASE +4M →
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/[0.04] flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-[#111]">Base de Datos Propia Colombia</div>
+                        <div className="text-[11px] text-black/50 font-mono">Segmentada por 5 Criterios Clave</div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-purple-700">+4,000,000 REGISTROS</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/[0.04] flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-[#111]">Infraestructura Multi-Remitente</div>
+                        <div className="text-[11px] text-black/50 font-mono">Cuentas Gmail OAuth Vinculadas</div>
+                      </div>
+                      <button
+                        onClick={() => setActiveId("email-accounts")}
+                        className="text-xs font-mono font-bold text-emerald-700 hover:underline"
+                      >
+                        GESTIONAR CUENTAS →
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-black/[0.02] border border-black/[0.04] flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-[#111]">Sectores Atendidos en Salud & Financiero</div>
+                        <div className="text-[11px] text-black/50 font-mono">Libranzas, Prepaga, Domiciliaria, Odontología</div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-blue-700">ACTIVO</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* ── BOTTOM SECTION: AUDIT EVENT FEED (DESIGN.MD PATTERN) ──────── */}
+              <div className="p-5 sm:p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] pb-3">
+                  <div>
+                    <span className="text-xs font-mono text-black/50 uppercase tracking-widest font-bold">
+                      REGISTRO EN TIEMPO REAL DE ACTIVIDAD COMERCIAL & AGÉNTICA
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-black/50">
+                    {googleMetrics?.recentEvents?.length || 0} Eventos Registrados Hoy
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {googleMetrics?.recentEvents && googleMetrics.recentEvents.length > 0 ? (
+                    googleMetrics.recentEvents.map((evt: any, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-black/[0.02] hover:bg-black/[0.04] transition-colors border border-black/[0.04] group cursor-pointer"
+                      >
+                        <span className="text-[10px] text-black/25 font-mono min-w-[60px] font-medium">{evt.time}</span>
+                        <span className="text-xs text-black/80 font-light flex-1 truncate sm:whitespace-normal">
+                          {evt.title} {evt.meetLink ? `(Link Meet: ${evt.meetLink})` : ''}
+                        </span>
+                        <span className="text-[10px] font-mono text-black/50 font-semibold uppercase shrink-0">{evt.service}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500/60 group-hover:bg-green-500 transition-colors shrink-0" />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 flex flex-col items-center justify-center text-center text-black/40 space-y-2">
+                      <InboxIcon className="w-8 h-8 opacity-40" strokeWidth={1.5} />
+                      <p className="text-xs font-sans font-medium">No se han registrado interacciones o eventos adicionales el día de hoy en la API de Google.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : activeId === "agents" ? (
+            /* ── 2. FUERZA AGÉNTICA IA MODULE ──────────────────────────────── */
+            <>
+              <div className="pb-4 border-b border-black/[0.08]">
+                <h1 className="text-2xl sm:text-3xl font-light text-[#111] tracking-tight">
+                  Arquitectura de Agentes de IA & RAG Comercial
+                </h1>
+                <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
+                  Fuerza comercial autónoma entrenada con el conocimiento, voz, productos y políticas de tu marca sobre nuestra base de datos.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Agente 1 */}
+                <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                      <Search className="w-5 h-5" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[#111]">Agente Prospector & Perfilador RAG</h3>
+                      <span className="text-[10px] font-mono text-black/50 uppercase">Base Propia +4M Registros</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-black/70 leading-relaxed font-light">
+                    Selecciona y califica automáticamente prospectos de nuestra base de datos nacional en Colombia alineados al perfil del cliente ideal.
+                  </p>
+                  <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-black/[0.06]">
+                    <span className="text-black/50">COBERTURA</span>
+                    <span className="font-bold text-purple-700">33 DEPARTAMENTOS</span>
+                  </div>
+                </div>
+
+                {/* Agente 2 */}
+                <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                      <Bot className="w-5 h-5" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[#111]">Agente Comercial Outbound (WhatsApp & Voz)</h3>
+                      <span className="text-[10px] font-mono text-black/50 uppercase">Lenguaje Natural & RAG</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-black/70 leading-relaxed font-light">
+                    Presenta la oferta de tu empresa en lenguaje natural, maneja objeciones complejas y envía propuestas personalizadas sin errores humanos.
+                  </p>
+                  <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-black/[0.06]">
+                    <span className="text-black/50">RESPUESTA</span>
+                    <span className="font-bold text-blue-700">100% EXACTA</span>
+                  </div>
+                </div>
+
+                {/* Agente 3 */}
+                <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                      <Activity className="w-5 h-5" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[#111]">Agente Orquestador & CRM Sync</h3>
+                      <span className="text-[10px] font-mono text-black/50 uppercase">Trazabilidad Comercial</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-black/70 leading-relaxed font-light">
+                    Monitorea la trazabilidad en tiempo real y sincroniza las oportunidades calificadas directamente con la operación del cliente.
+                  </p>
+                  <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-black/[0.06]">
+                    <span className="text-black/50">SINCRONIZACIÓN</span>
+                    <span className="font-bold text-amber-700">TIEMPO REAL</span>
+                  </div>
+                </div>
+
+                {/* Agente 4 */}
+                <div className="p-6 rounded-2xl border border-black/[0.08] bg-white shadow-2xs space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                      <CheckCircle2 className="w-5 h-5" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-[#111]">Agente Ejecutor de Cierre & Agendamiento</h3>
+                      <span className="text-[10px] font-mono text-black/50 uppercase">Google Calendar & Meet</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-black/70 leading-relaxed font-light">
+                    Reserva citas automáticamente en Google Calendar generando el link de la sala en Google Meet, o ejecuta el despacho cuando corresponde.
+                  </p>
+                  <div className="pt-2 flex items-center justify-between text-xs font-mono border-t border-black/[0.06]">
+                    <span className="text-black/50">DISPONIBILIDAD</span>
+                    <span className="font-bold text-emerald-700">24/7 AUTÓNOMO</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : activeId === "api" ? (
             <>
               {/* Top Title Banner */}
               <div className="pb-4 border-b border-black/[0.08]">
