@@ -1,5 +1,8 @@
 import SidebarNavPreview from "@/components/ui/dashboard-sidebar"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata = {
   title: "Tablero de Control - Inteligencia Multiagente Comercial | SmartContacts",
   description: "Tablero operacional en tiempo real de agendamiento, consumo de APIs de Google (Gmail, Meet, Calendar) y trazabilidad agéntica.",
