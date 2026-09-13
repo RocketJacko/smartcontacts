@@ -42,6 +42,13 @@ export interface PlanPlatzi {
   tipo_pago?: string
   numero_cuotas?: number
   pago_anticipado?: boolean
+  es_oferta_especial?: boolean
+  codigo_oferta?: string | null
+  institucion_empresa?: string | null
+  admite_cuotas?: boolean
+  max_cuotas?: number
+  cupos_maximos?: number | null
+  cupos_usados?: number
   created_at: string
 }
 
@@ -126,6 +133,10 @@ export function PlatziModule() {
   const [planPagoAnticipado, setPlanPagoAnticipado] = useState(false)
   const [planVigente, setPlanVigente] = useState(true)
   const [planCaracteristicas, setPlanCaracteristicas] = useState("")
+  const [planEsOfertaEspecial, setPlanEsOfertaEspecial] = useState(false)
+  const [planCodigoOferta, setPlanCodigoOferta] = useState("")
+  const [planInstitucionEmpresa, setPlanInstitucionEmpresa] = useState("")
+  const [planCuposMaximos, setPlanCuposMaximos] = useState("")
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false)
 
   // Toast feedback
@@ -203,10 +214,14 @@ export function PlatziModule() {
       setPlanPrecio(String(plan.precio))
       setPlanMoneda(plan.moneda || "COP")
       setPlanTipoPago((plan.tipo_pago as any) === "cuotas" ? "cuotas" : "pago_unico")
-      setPlanNumeroCuotas(plan.numero_cuotas || 1)
+      setPlanNumeroCuotas(plan.numero_cuotas || plan.max_cuotas || 1)
       setPlanPagoAnticipado(Boolean(plan.pago_anticipado))
       setPlanVigente(plan.vigente)
       setPlanCaracteristicas(plan.caracteristicas || "")
+      setPlanEsOfertaEspecial(Boolean(plan.es_oferta_especial))
+      setPlanCodigoOferta(plan.codigo_oferta || "")
+      setPlanInstitucionEmpresa(plan.institucion_empresa || "")
+      setPlanCuposMaximos(plan.cupos_maximos ? String(plan.cupos_maximos) : "")
     } else {
       setEditingPlan(null)
       setPlanNombre("")
@@ -218,6 +233,10 @@ export function PlatziModule() {
       setPlanPagoAnticipado(false)
       setPlanVigente(true)
       setPlanCaracteristicas("")
+      setPlanEsOfertaEspecial(false)
+      setPlanCodigoOferta("")
+      setPlanInstitucionEmpresa("")
+      setPlanCuposMaximos("")
     }
     setIsPlanModalOpen(true)
   }
@@ -236,9 +255,15 @@ export function PlatziModule() {
         moneda: planMoneda.trim().toUpperCase(),
         tipo_pago: planTipoPago,
         numero_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
+        admite_cuotas: planTipoPago === "cuotas",
+        max_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
         pago_anticipado: planPagoAnticipado,
         vigente: planVigente,
         caracteristicas: planCaracteristicas.trim(),
+        es_oferta_especial: planEsOfertaEspecial,
+        codigo_oferta: planEsOfertaEspecial && planCodigoOferta.trim() ? planCodigoOferta.toUpperCase().trim() : null,
+        institucion_empresa: planEsOfertaEspecial && planInstitucionEmpresa.trim() ? planInstitucionEmpresa.trim() : null,
+        cupos_maximos: planEsOfertaEspecial && planCuposMaximos.trim() ? Number(planCuposMaximos) : null,
       }
 
       const res = await fetch("/api/admin/platzi/plans", {
@@ -565,6 +590,23 @@ export function PlatziModule() {
                           <span className="text-xs font-semibold text-[#111] block">
                             {plan.nombre_plan}
                           </span>
+                          {plan.es_oferta_especial && (
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70 text-[9px] font-mono font-bold tracking-wider uppercase">
+                                ⭐ CONVENIO: {plan.codigo_oferta || "OFERTA"}
+                              </span>
+                              {plan.institucion_empresa && (
+                                <span className="text-[10px] text-black/50 font-normal">
+                                  {plan.institucion_empresa}
+                                </span>
+                              )}
+                              {plan.cupos_maximos && (
+                                <span className="text-[10px] font-mono text-black/40">
+                                  ({plan.cupos_usados || 0}/{plan.cupos_maximos} cupos)
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
 
                         {/* Meses */}
@@ -925,6 +967,72 @@ export function PlatziModule() {
                   placeholder="Ej. Acceso completo a rutas y cursos por 5 meses..."
                   className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30 resize-none"
                 />
+              </div>
+
+              {/* Sección Convenio / Oferta Especial */}
+              <div className="p-3 rounded-xl bg-black/[0.02] border border-black/[0.06] space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="planEsOfertaEspecialCheck"
+                    checked={planEsOfertaEspecial}
+                    onChange={(e) => setPlanEsOfertaEspecial(e.target.checked)}
+                    className="rounded border-black/20 text-black focus:ring-0 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="planEsOfertaEspecialCheck"
+                    className="text-xs font-sans text-black/90 font-medium cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⭐ Marcar como Oferta Especial / Convenio Preferencial</span>
+                  </label>
+                </div>
+
+                {planEsOfertaEspecial && (
+                  <div className="space-y-3 pt-2 border-t border-black/[0.04]">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
+                          CÓDIGO OFERTA *
+                        </label>
+                        <input
+                          type="text"
+                          required={planEsOfertaEspecial}
+                          value={planCodigoOferta}
+                          onChange={(e) => setPlanCodigoOferta(e.target.value.toUpperCase())}
+                          placeholder="Ej. UNAL2026"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
+                          CUPOS MÁXIMOS
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={planCuposMaximos}
+                          onChange={(e) => setPlanCuposMaximos(e.target.value)}
+                          placeholder="Sin límite"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] outline-none focus:border-black/30"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
+                        INSTITUCIÓN O EMPRESA ALIADA
+                      </label>
+                      <input
+                        type="text"
+                        value={planInstitucionEmpresa}
+                        onChange={(e) => setPlanInstitucionEmpresa(e.target.value)}
+                        placeholder="Ej. Universidad Nacional de Colombia"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 pt-1">

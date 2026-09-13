@@ -13,8 +13,14 @@ const PlanSchema = z.object({
   moneda: z.string().min(2).default('COP'),
   tipo_pago: z.enum(['pago_unico', 'cuotas']).default('pago_unico'),
   numero_cuotas: z.number().int().min(1).default(1),
+  admite_cuotas: z.boolean().default(false),
+  max_cuotas: z.number().int().min(1).default(1),
   pago_anticipado: z.boolean().default(false),
   vigente: z.boolean().default(true),
+  es_oferta_especial: z.boolean().default(false),
+  codigo_oferta: z.string().optional().nullable(),
+  institucion_empresa: z.string().optional().nullable(),
+  cupos_maximos: z.number().int().nullable().optional(),
   caracteristicas: z.string().optional().default(''),
   total_disponibles: z.number().int().nullable().optional(),
 })
@@ -93,6 +99,12 @@ export async function POST(request: Request) {
       p_vigente: val.vigente,
       p_caracteristicas: val.caracteristicas || null,
       p_total_disponibles: val.total_disponibles ?? null,
+      p_es_oferta_especial: Boolean(val.es_oferta_especial),
+      p_codigo_oferta: val.codigo_oferta || null,
+      p_institucion_empresa: val.institucion_empresa || null,
+      p_admite_cuotas: Boolean(val.admite_cuotas || val.tipo_pago === 'cuotas'),
+      p_max_cuotas: val.max_cuotas || val.numero_cuotas || 1,
+      p_cupos_maximos: val.cupos_maximos ?? null,
     })
 
     if (error) {

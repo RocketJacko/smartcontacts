@@ -24,7 +24,12 @@ export interface PlatziPlan {
   total_disponibles?: number | null
   tipo_pago?: string
   numero_cuotas?: number
+  admite_cuotas?: boolean
+  max_cuotas?: number
   pago_anticipado?: boolean
+  es_oferta_especial?: boolean
+  codigo_oferta?: string
+  institucion_empresa?: string
 }
 
 export interface SpecialOfferData {
@@ -146,6 +151,10 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [isLoadingPlans, setIsLoadingPlans] = useState(false)
   const [specialOffer, setSpecialOffer] = useState<SpecialOfferData | null>(null)
 
+  // Modalidad interactiva de pago: Pago Único vs Cuotas
+  const [paymentMode, setPaymentMode] = useState<"pago_unico" | "cuotas">("pago_unico")
+  const [installments, setInstallments] = useState<number>(1)
+
   // Estados dinámicos de producto / plan
   const [displayPrice, setDisplayPrice] = useState<string>(
     formatPlanPriceDynamic(DEFAULT_PLANS[0].precio, DEFAULT_PLANS[0].moneda)
@@ -153,12 +162,19 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const [displayDuration, setDisplayDuration] = useState<string>("6 meses")
   const [displayPlanName, setDisplayPlanName] = useState<string>(DEFAULT_PLANS[0].nombre_plan)
 
-  // Sincronizar precio dinámico si cambia la moneda detectada (COP <-> USD) o el plan
+  // Sincronizar precio dinámico si cambia la moneda detectada (COP <-> USD), el plan o el modo de pago
   useEffect(() => {
     if (selectedPlan) {
-      setDisplayPrice(formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda))
+      if (paymentMode === "cuotas" && installments > 1) {
+        const installmentPrice = Math.round(selectedPlan.precio / installments)
+        setDisplayPrice(
+          `${installments} cuotas de ${formatPlanPriceDynamic(installmentPrice, selectedPlan.moneda)}`
+        )
+      } else {
+        setDisplayPrice(formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda))
+      }
     }
-  }, [selectedPlan, formatPlanPriceDynamic, userCurrency])
+  }, [selectedPlan, formatPlanPriceDynamic, userCurrency, paymentMode, installments])
 
   // Pasos: 1 (Ingreso de datos) | 2 (Código PIN recibido al correo) | 3 (Confirmación exitosa)
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -272,7 +288,20 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const handleSelectPlan = (planItem: PlatziPlan) => {
     setSelectedPlan(planItem)
     setDisplayPlanName(planItem.nombre_plan)
-    setDisplayPrice(formatPlanPriceDynamic(planItem.precio, planItem.moneda))
+
+    // Configurar cuotas según el plan seleccionado
+    const allowsCuotas = Boolean(planItem.admite_cuotas || (planItem.max_cuotas && planItem.max_cuotas > 1) || planItem.tipo_pago === "cuotas")
+    if (allowsCuotas) {
+      const defaultCuotas = planItem.max_cuotas || planItem.numero_cuotas || 2
+      setInstallments(defaultCuotas)
+      if (planItem.tipo_pago === "cuotas") {
+        setPaymentMode("cuotas")
+      }
+    } else {
+      setPaymentMode("pago_unico")
+      setInstallments(1)
+    }
+
     setDisplayDuration(
       planItem.meses_cubrimiento === 12
         ? language === "es" ? "1 año" : "1 year"
@@ -396,11 +425,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
-          tipo_pago: selectedPlan?.tipo_pago || specialOffer?.tipo_pago || "pago_unico",
-          numero_cuotas: selectedPlan?.numero_cuotas || specialOffer?.numero_cuotas || 1,
-          oferta_id: specialOffer?.id || null,
-          oferta_codigo: specialOffer?.codigo_oferta || null,
-          institucion: specialOffer?.institucion_empresa || null,
+          tipo_pago: paymentMode,
+          numero_cuotas: paymentMode === "cuotas" ? installments : 1,
+          oferta_id: selectedPlan?.codigo_oferta || specialOffer?.id || null,
+          oferta_codigo: selectedPlan?.codigo_oferta || specialOffer?.codigo_oferta || null,
+          institucion: selectedPlan?.institucion_empresa || specialOffer?.institucion_empresa || null,
         }),
       })
 
@@ -780,6 +809,83 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </div>
               )}
             </div>
+
+            {/* Modalidad de Pago Interactiva (Pago Único vs Cuotas) */}
+            {Boolean(selectedPlan?.admite_cuotas || (selectedPlan?.max_cuotas && selectedPlan.max_cuotas > 1) || selectedPlan?.tipo_pago === "cuotas") && (
+              <div className="space-y-2 p-3.5 rounded-2xl bg-black/[0.02] border border-black/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-black/80 uppercase tracking-wider">
+                    {language === "es" ? "Modalidad de Pago *" : "Payment Option *"}
+                  </span>
+                  <span className="text-[11px] font-mono text-emerald-700 font-semibold">
+                    {paymentMode === "cuotas"
+                      ? `${installments} cuotas de ${formatPlanPriceDynamic(Math.round(selectedPlan.precio / installments), selectedPlan.moneda)}`
+                      : `${formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda)} (Pago Único)`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMode("pago_unico")
+                      setInstallments(1)
+                    }}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex flex-col items-center justify-center gap-0.5 border cursor-pointer ${
+                      paymentMode === "pago_unico"
+                        ? "bg-black text-white border-black shadow-xs"
+                        : "bg-white text-black/70 border-black/10 hover:border-black/30"
+                    }`}
+                  >
+                    <span>{language === "es" ? "PAGO ÚNICO" : "ONE-TIME PAYMENT"}</span>
+                    <span className={`text-[10px] font-normal ${paymentMode === "pago_unico" ? "text-white/70" : "text-black/50"}`}>
+                      {formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda)}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMode("cuotas")
+                      setInstallments(selectedPlan.max_cuotas || selectedPlan.numero_cuotas || 2)
+                    }}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex flex-col items-center justify-center gap-0.5 border cursor-pointer ${
+                      paymentMode === "cuotas"
+                        ? "bg-black text-white border-black shadow-xs"
+                        : "bg-white text-black/70 border-black/10 hover:border-black/30"
+                    }`}
+                  >
+                    <span>{language === "es" ? "EN CUOTAS" : "IN INSTALLMENTS"}</span>
+                    <span className={`text-[10px] font-normal ${paymentMode === "cuotas" ? "text-emerald-300" : "text-emerald-700"}`}>
+                      {installments > 1 ? `${installments}x ${formatPlanPriceDynamic(Math.round(selectedPlan.precio / installments), selectedPlan.moneda)}` : "Dividir pago"}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Sub-selector de número de cuotas si está en modo cuotas y max_cuotas > 2 */}
+                {paymentMode === "cuotas" && (selectedPlan.max_cuotas || 2) > 2 && (
+                  <div className="flex items-center justify-between pt-1 text-xs font-mono">
+                    <span className="text-black/60">{language === "es" ? "Número de cuotas:" : "Number of installments:"}</span>
+                    <div className="flex items-center gap-1.5">
+                      {Array.from({ length: (selectedPlan.max_cuotas || 3) - 1 }, (_, i) => i + 2).map((num) => (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setInstallments(num)}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                            installments === num
+                              ? "bg-black text-white"
+                              : "bg-white border border-black/15 text-black/70 hover:bg-black/5"
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Input Fields Container */}
             <div className="space-y-3 pt-1">

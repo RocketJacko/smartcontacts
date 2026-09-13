@@ -355,6 +355,7 @@ export async function POST(request: Request) {
           p_tipo_pago: tipo_pago || 'pago_unico',
           p_numero_cuotas: numero_cuotas ? Number(numero_cuotas) : 1,
           p_pago_anticipado: Boolean(pago_anticipado),
+          p_plan_id: planId && String(planId).length === 36 ? String(planId) : null,
         })
       } catch (syncErr) {
         console.error('Error registrando venta en platzi.ventas:', syncErr)

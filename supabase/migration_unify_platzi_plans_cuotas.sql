@@ -1,86 +1,103 @@
 -- ==============================================================================
--- DEFINICIÓN DDL DEL ESQUEMA `platzi` (SUPABASE POSTGRESQL)
+-- MIGRACIÓN DDL: UNIFICACIÓN DE PLANES PLATZI, OFERTAS ESPECIALES Y CUOTAS
 -- ==============================================================================
 -- Cumplimiento estricto de Regla 5 (AGENTS.md): Nomenclatura por Esquemas (`schema.nombre_tabla`)
--- Cumplimiento estricto de Regla 6 (AGENTS.md): Seguridad y RBAC Super Admin
 -- ==============================================================================
 
 CREATE SCHEMA IF NOT EXISTS platzi;
+CREATE SCHEMA IF NOT EXISTS referidos;
 
--- 1. TABLA DE PLANES OFERTADOS Y CONVENIOS (ADMINISTRABLE POR SUPER ADMIN)
-CREATE TABLE IF NOT EXISTS platzi.planes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nombre_plan VARCHAR(255) NOT NULL,
-    codigo_oferta VARCHAR(100) UNIQUE, -- Código/Slug si es oferta especial (ej. 'UNAL-2026')
-    institucion_empresa VARCHAR(255), -- Entidad o empresa aliada en caso de convenio
-    meses_cubrimiento INT NOT NULL DEFAULT 1,
-    precio NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
-    moneda VARCHAR(10) NOT NULL DEFAULT 'COP',
-    es_oferta_especial BOOLEAN NOT NULL DEFAULT false, -- false = Estándar | true = Oferta Especial
-    tipo_pago VARCHAR(50) NOT NULL DEFAULT 'pago_unico', -- 'pago_unico', 'cuotas'
-    admite_cuotas BOOLEAN NOT NULL DEFAULT false,
-    numero_cuotas INT NOT NULL DEFAULT 1, -- 1, 2, 3, 6, 12
-    max_cuotas INT NOT NULL DEFAULT 1,
-    pago_anticipado BOOLEAN NOT NULL DEFAULT false, -- Requiere pago antes de activar
-    cupos_maximos INT DEFAULT NULL,
-    cupos_usados INT NOT NULL DEFAULT 0,
-    vigente BOOLEAN NOT NULL DEFAULT true,
-    fecha_inicio TIMESTAMPTZ DEFAULT NOW(),
-    fecha_fin TIMESTAMPTZ,
-    caracteristicas TEXT,
-    total_disponibles INT DEFAULT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ==============================================================================
+-- 1. EXTENDER `platzi.planes` CON SOPORTE DE OFERTAS ESPECIALES Y CUOTAS
+-- ==============================================================================
+ALTER TABLE platzi.planes 
+    ADD COLUMN IF NOT EXISTS es_oferta_especial BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS codigo_oferta VARCHAR(100) UNIQUE,
+    ADD COLUMN IF NOT EXISTS institucion_empresa VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS admite_cuotas BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS max_cuotas INT NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS cupos_maximos INT DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS cupos_usados INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS fecha_fin TIMESTAMPTZ;
 
--- Columnas añadidas para idempotencia
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS codigo_oferta VARCHAR(100) UNIQUE;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS institucion_empresa VARCHAR(255);
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS es_oferta_especial BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS admite_cuotas BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS max_cuotas INT NOT NULL DEFAULT 1;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS cupos_maximos INT DEFAULT NULL;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS cupos_usados INT NOT NULL DEFAULT 0;
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS fecha_inicio TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE platzi.planes ADD COLUMN IF NOT EXISTS fecha_fin TIMESTAMPTZ;
+-- Índices de consulta rápida
+CREATE INDEX IF NOT EXISTS idx_platzi_planes_oferta ON platzi.planes(es_oferta_especial);
+CREATE INDEX IF NOT EXISTS idx_platzi_planes_codigo_oferta ON platzi.planes(codigo_oferta);
 
--- 2. TABLA DE VENTAS / SOLICITUDES Y CÓDIGOS GENERADOS
-CREATE TABLE IF NOT EXISTS platzi.ventas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    plan_id UUID REFERENCES platzi.planes(id) ON DELETE RESTRICT,
-    afiliado_id UUID, -- Referencia opcional a referidos.afiliados(id)
-    enlace_id UUID, -- Referencia opcional a referidos.enlaces(id)
-    token_sesion_atribucion VARCHAR(255),
-    name VARCHAR(255) NOT NULL,
-    phone VARCHAR(50),
-    email VARCHAR(255) NOT NULL,
-    platzi_account_email VARCHAR(255) NOT NULL,
-    country_name VARCHAR(100) DEFAULT 'Colombia',
-    cod_revendedor VARCHAR(100),
-    discount_code VARCHAR(100),
-    tipo_pago VARCHAR(50) DEFAULT 'pago_unico',
-    numero_cuotas INT DEFAULT 1,
-    cuotas_pagadas INT DEFAULT 1,
-    pago_anticipado BOOLEAN NOT NULL DEFAULT false,
-    monto_total NUMERIC(14, 2) DEFAULT 0.00,
-    moneda VARCHAR(10) DEFAULT 'COP',
-    fecha_registro TIMESTAMPTZ DEFAULT NOW(),
-    cod_generado VARCHAR(100),
-    cod_canjeado BOOLEAN NOT NULL DEFAULT false,
-    fecha_canje TIMESTAMPTZ,
-    cuenta_activa BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Migrar datos históricos de referidos.ofertas_especiales si la tabla existe
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'referidos' AND table_name = 'ofertas_especiales') THEN
+        INSERT INTO platzi.planes (
+            nombre_plan,
+            codigo_oferta,
+            institucion_empresa,
+            meses_cubrimiento,
+            precio,
+            moneda,
+            es_oferta_especial,
+            admite_cuotas,
+            max_cuotas,
+            pago_anticipado,
+            cupos_maximos,
+            cupos_usados,
+            vigente,
+            fecha_inicio,
+            fecha_fin
+        )
+        SELECT 
+            titulo,
+            codigo_oferta,
+            institucion_empresa,
+            meses_cubrimiento,
+            precio_cop,
+            'COP',
+            true,
+            (tipo_pago = 'cuotas' OR numero_cuotas > 1),
+            COALESCE(numero_cuotas, 1),
+            pago_anticipado,
+            cupos_maximos,
+            cupos_usados,
+            activo,
+            fecha_inicio,
+            fecha_fin
+        FROM referidos.ofertas_especiales
+        ON CONFLICT (codigo_oferta) DO UPDATE SET
+            institucion_empresa = EXCLUDED.institucion_empresa,
+            precio = EXCLUDED.precio,
+            cupos_maximos = EXCLUDED.cupos_maximos;
+    END IF;
+END $$;
 
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES platzi.planes(id) ON DELETE RESTRICT;
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS afiliado_id UUID;
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS enlace_id UUID;
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS token_sesion_atribucion VARCHAR(255);
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS monto_total NUMERIC(14, 2) DEFAULT 0.00;
-ALTER TABLE platzi.ventas ADD COLUMN IF NOT EXISTS moneda VARCHAR(10) DEFAULT 'COP';
+-- ==============================================================================
+-- 2. ASOCIAR `referidos.enlaces` CON `platzi.planes`
+-- ==============================================================================
+-- plan_id = NULL: Enlace de catálogo estándar tradicional
+-- plan_id = UUID: Enlace específico para un plan de convenio / oferta especial
+ALTER TABLE referidos.enlaces
+    ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES platzi.planes(id) ON DELETE SET NULL;
 
--- 3. TABLA DE DESGLOSE ATÓMICO DE CUOTAS
+CREATE INDEX IF NOT EXISTS idx_referidos_enlaces_plan ON referidos.enlaces(plan_id);
+
+-- ==============================================================================
+-- 3. MEJORAR `platzi.ventas` CON CLAVES FORÁNEAS REALES
+-- ==============================================================================
+ALTER TABLE platzi.ventas
+    ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES platzi.planes(id) ON DELETE RESTRICT,
+    ADD COLUMN IF NOT EXISTS afiliado_id UUID REFERENCES referidos.afiliados(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS enlace_id UUID REFERENCES referidos.enlaces(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS token_sesion_atribucion VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS monto_total NUMERIC(14, 2) DEFAULT 0.00,
+    ADD COLUMN IF NOT EXISTS moneda VARCHAR(10) DEFAULT 'COP';
+
+CREATE INDEX IF NOT EXISTS idx_platzi_ventas_plan ON platzi.ventas(plan_id);
+CREATE INDEX IF NOT EXISTS idx_platzi_ventas_afiliado ON platzi.ventas(afiliado_id);
+CREATE INDEX IF NOT EXISTS idx_platzi_ventas_enlace ON platzi.ventas(enlace_id);
+
+-- ==============================================================================
+-- 4. CREAR TABLA ATÓMICA DE CUOTAS (`platzi.pagos_cuotas`)
+-- ==============================================================================
 CREATE TABLE IF NOT EXISTS platzi.pagos_cuotas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     venta_id UUID NOT NULL REFERENCES platzi.ventas(id) ON DELETE CASCADE,
@@ -98,251 +115,34 @@ CREATE TABLE IF NOT EXISTS platzi.pagos_cuotas (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Índices de Rendimiento
-CREATE INDEX IF NOT EXISTS idx_platzi_planes_vigente ON platzi.planes(vigente);
-CREATE INDEX IF NOT EXISTS idx_platzi_planes_oferta ON platzi.planes(es_oferta_especial);
-CREATE INDEX IF NOT EXISTS idx_platzi_planes_codigo_oferta ON platzi.planes(codigo_oferta);
-CREATE INDEX IF NOT EXISTS idx_platzi_ventas_plan ON platzi.ventas(plan_id);
-CREATE INDEX IF NOT EXISTS idx_platzi_ventas_afiliado ON platzi.ventas(afiliado_id);
-CREATE INDEX IF NOT EXISTS idx_platzi_ventas_revendedor ON platzi.ventas(cod_revendedor);
-CREATE INDEX IF NOT EXISTS idx_platzi_ventas_email ON platzi.ventas(email);
-CREATE INDEX IF NOT EXISTS idx_platzi_ventas_fecha ON platzi.ventas(fecha_registro DESC);
 CREATE INDEX IF NOT EXISTS idx_platzi_pagos_cuotas_venta ON platzi.pagos_cuotas(venta_id);
 CREATE INDEX IF NOT EXISTS idx_platzi_pagos_cuotas_estado ON platzi.pagos_cuotas(estado);
+CREATE INDEX IF NOT EXISTS idx_platzi_pagos_cuotas_vencimiento ON platzi.pagos_cuotas(fecha_vencimiento);
 
 -- ==============================================================================
--- PROCEDIMIENTOS ALMACENADOS (RPC) PARA GESTIÓN DE PLANES PLATZI
+-- 5. MEJORAR `referidos.conversiones` PARA VINCULAR DIRECTAMENTE A VENTAS
 -- ==============================================================================
+ALTER TABLE referidos.conversiones
+    ADD COLUMN IF NOT EXISTS venta_id UUID UNIQUE REFERENCES platzi.ventas(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS enlace_id UUID REFERENCES referidos.enlaces(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS valor_comision NUMERIC(14, 2) DEFAULT 0.00;
 
--- RPC 0: Obtener Planes Platzi Activos para Usuarios Públicos
-CREATE OR REPLACE FUNCTION public.obtener_planes_platzi_activos()
-RETURNS TABLE (
-    id UUID,
-    nombre_plan VARCHAR,
-    codigo_oferta VARCHAR,
-    institucion_empresa VARCHAR,
-    meses_cubrimiento INT,
-    precio NUMERIC,
-    moneda VARCHAR,
-    es_oferta_especial BOOLEAN,
-    tipo_pago VARCHAR,
-    admite_cuotas BOOLEAN,
-    numero_cuotas INT,
-    max_cuotas INT,
-    pago_anticipado BOOLEAN,
-    cupos_maximos INT,
-    cupos_usados INT,
-    vigente BOOLEAN,
-    caracteristicas TEXT,
-    total_disponibles INT
-)
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-    SELECT 
-        p.id,
-        p.nombre_plan,
-        p.codigo_oferta,
-        p.institucion_empresa,
-        p.meses_cubrimiento,
-        p.precio,
-        p.moneda,
-        p.es_oferta_especial,
-        p.tipo_pago,
-        p.admite_cuotas,
-        p.numero_cuotas,
-        p.max_cuotas,
-        p.pago_anticipado,
-        p.cupos_maximos,
-        p.cupos_usados,
-        p.vigente,
-        p.caracteristicas,
-        p.total_disponibles
-    FROM platzi.planes p
-    WHERE p.vigente = true
-    ORDER BY p.es_oferta_especial DESC, p.meses_cubrimiento ASC, p.precio ASC;
-$$;
-
-GRANT USAGE ON SCHEMA platzi TO anon, authenticated, service_role;
-GRANT SELECT ON platzi.planes TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.obtener_planes_platzi_activos() TO anon, authenticated, service_role;
-
--- RPC 1: Listar Planes Platzi para Super Admin
-CREATE OR REPLACE FUNCTION public.admin_obtener_planes_platzi()
-RETURNS TABLE (
-    id UUID,
-    nombre_plan VARCHAR,
-    codigo_oferta VARCHAR,
-    institucion_empresa VARCHAR,
-    meses_cubrimiento INT,
-    precio NUMERIC,
-    moneda VARCHAR,
-    es_oferta_especial BOOLEAN,
-    tipo_pago VARCHAR,
-    admite_cuotas BOOLEAN,
-    numero_cuotas INT,
-    max_cuotas INT,
-    pago_anticipado BOOLEAN,
-    cupos_maximos INT,
-    cupos_usados INT,
-    vigente BOOLEAN,
-    fecha_inicio TIMESTAMPTZ,
-    fecha_fin TIMESTAMPTZ,
-    caracteristicas TEXT,
-    total_disponibles INT,
-    created_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+-- Permitir que prospecto_id sea opcional si existía la columna
+DO $$
 BEGIN
-    RETURN QUERY
-    SELECT 
-        p.id,
-        p.nombre_plan,
-        p.codigo_oferta,
-        p.institucion_empresa,
-        p.meses_cubrimiento,
-        p.precio,
-        p.moneda,
-        p.es_oferta_especial,
-        p.tipo_pago,
-        p.admite_cuotas,
-        p.numero_cuotas,
-        p.max_cuotas,
-        p.pago_anticipado,
-        p.cupos_maximos,
-        p.cupos_usados,
-        p.vigente,
-        p.fecha_inicio,
-        p.fecha_fin,
-        p.caracteristicas,
-        p.total_disponibles,
-        p.created_at,
-        p.updated_at
-    FROM platzi.planes p
-    ORDER BY p.vigente DESC, p.es_oferta_especial DESC, p.precio ASC;
-END;
-$$;
-
--- RPC 2: Crear o Editar Plan Platzi
-CREATE OR REPLACE FUNCTION public.admin_guardar_plan_platzi(
-    p_id UUID DEFAULT NULL,
-    p_nombre_plan VARCHAR DEFAULT '',
-    p_meses_cubrimiento INT DEFAULT 1,
-    p_precio NUMERIC DEFAULT 0.00,
-    p_moneda VARCHAR DEFAULT 'COP',
-    p_tipo_pago VARCHAR DEFAULT 'pago_unico',
-    p_numero_cuotas INT DEFAULT 1,
-    p_pago_anticipado BOOLEAN DEFAULT false,
-    p_vigente BOOLEAN DEFAULT true,
-    p_caracteristicas TEXT DEFAULT NULL,
-    p_total_disponibles INT DEFAULT NULL,
-    p_es_oferta_especial BOOLEAN DEFAULT false,
-    p_codigo_oferta VARCHAR DEFAULT NULL,
-    p_institucion_empresa VARCHAR DEFAULT NULL,
-    p_admite_cuotas BOOLEAN DEFAULT false,
-    p_max_cuotas INT DEFAULT 1,
-    p_cupos_maximos INT DEFAULT NULL
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_id UUID;
-    v_cod_oferta VARCHAR := NULLIF(UPPER(TRIM(p_codigo_oferta)), '');
-BEGIN
-    IF p_id IS NOT NULL THEN
-        UPDATE platzi.planes
-        SET nombre_plan = p_nombre_plan,
-            meses_cubrimiento = p_meses_cubrimiento,
-            precio = p_precio,
-            moneda = p_moneda,
-            tipo_pago = COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
-            admite_cuotas = COALESCE(p_admite_cuotas, false),
-            numero_cuotas = COALESCE(p_numero_cuotas, 1),
-            max_cuotas = GREATEST(COALESCE(p_max_cuotas, 1), COALESCE(p_numero_cuotas, 1)),
-            pago_anticipado = COALESCE(p_pago_anticipado, false),
-            vigente = p_vigente,
-            caracteristicas = p_caracteristicas,
-            total_disponibles = p_total_disponibles,
-            es_oferta_especial = COALESCE(p_es_oferta_especial, false),
-            codigo_oferta = v_cod_oferta,
-            institucion_empresa = NULLIF(TRIM(p_institucion_empresa), ''),
-            cupos_maximos = p_cupos_maximos,
-            updated_at = NOW()
-        WHERE id = p_id;
-        v_id := p_id;
-    ELSE
-        INSERT INTO platzi.planes (
-            nombre_plan, meses_cubrimiento, precio, moneda, tipo_pago,
-            admite_cuotas, numero_cuotas, max_cuotas, pago_anticipado, vigente,
-            caracteristicas, total_disponibles, es_oferta_especial,
-            codigo_oferta, institucion_empresa, cupos_maximos
-        ) VALUES (
-            p_nombre_plan, p_meses_cubrimiento, p_precio, p_moneda,
-            COALESCE(NULLIF(TRIM(p_tipo_pago), ''), 'pago_unico'),
-            COALESCE(p_admite_cuotas, false),
-            COALESCE(p_numero_cuotas, 1),
-            GREATEST(COALESCE(p_max_cuotas, 1), COALESCE(p_numero_cuotas, 1)),
-            COALESCE(p_pago_anticipado, false),
-            p_vigente,
-            p_caracteristicas,
-            p_total_disponibles,
-            COALESCE(p_es_oferta_especial, false),
-            v_cod_oferta,
-            NULLIF(TRIM(p_institucion_empresa), ''),
-            p_cupos_maximos
-        )
-        RETURNING id INTO v_id;
+    IF EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_schema = 'referidos' AND table_name = 'conversiones' AND column_name = 'prospecto_id'
+    ) THEN
+        ALTER TABLE referidos.conversiones ALTER COLUMN prospecto_id DROP NOT NULL;
     END IF;
+END $$;
 
-    RETURN jsonb_build_object('success', true, 'id', v_id);
-END;
-$$;
-
--- RPC 3: Cambiar Vigencia de Plan
-CREATE OR REPLACE FUNCTION public.admin_cambiar_vigencia_plan_platzi(
-    p_id UUID,
-    p_vigente BOOLEAN
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    UPDATE platzi.planes
-    SET vigente = p_vigente,
-        updated_at = NOW()
-    WHERE id = p_id;
-
-    IF NOT FOUND THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Plan no encontrado');
-    END IF;
-
-    RETURN jsonb_build_object('success', true, 'vigente', p_vigente);
-END;
-$$;
-
--- RPC 4: Eliminar Plan Platzi
-CREATE OR REPLACE FUNCTION public.admin_eliminar_plan_platzi(p_id UUID)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    DELETE FROM platzi.planes WHERE id = p_id;
-    RETURN jsonb_build_object('success', true);
-END;
-$$;
+CREATE INDEX IF NOT EXISTS idx_referidos_conversiones_venta ON referidos.conversiones(venta_id);
 
 -- ==============================================================================
--- PROCEDIMIENTOS ALMACENADOS (RPC) PARA VENTAS Y ATRIBUCIÓN A REVENDEDORES
+-- 6. PROCEDIMIENTO ALMACENADO OFICIAL DE REGISTRO DE VENTA PLATZI (RPC)
 -- ==============================================================================
-
--- RPC 5: Registrar Venta Platzi con Sincronización Automática al Revendedor y Cuotas
 CREATE OR REPLACE FUNCTION public.registrar_venta_platzi(
     p_name VARCHAR,
     p_phone VARCHAR,
@@ -381,8 +181,9 @@ BEGIN
            OR UPPER(TRIM(e.slug_personalizado)) = UPPER(TRIM(p_cod_revendedor))
         LIMIT 1;
 
+        -- Si el enlace tiene un plan específico asignado y no se pasó explícitamente uno, adoptarlo
         IF p_plan_id IS NULL AND v_plan_id IS NOT NULL THEN
-            -- Adoptar el plan específico asignado al enlace
+            -- v_plan_id ya fue tomado de e.plan_id
         ELSE
             v_plan_id := COALESCE(p_plan_id, v_plan_id);
         END IF;
@@ -405,7 +206,7 @@ BEGIN
         LIMIT 1;
     END IF;
 
-    -- 4. Insertar en platzi.ventas
+    -- 4. Insertar venta en platzi.ventas con claves foráneas
     INSERT INTO platzi.ventas (
         name, phone, email, platzi_account_email, country_name,
         cod_revendedor, discount_code, tipo_pago, numero_cuotas, pago_anticipado,
@@ -427,7 +228,7 @@ BEGIN
     )
     RETURNING id INTO v_venta_id;
 
-    -- 5. Generar desglose interactivo de cuotas en platzi.pagos_cuotas
+    -- 5. Generar desglose interactivo en platzi.pagos_cuotas
     IF p_precio_venta > 0 THEN
         v_monto_cuota := ROUND(p_precio_venta / v_num_cuotas, 2);
         
@@ -457,7 +258,7 @@ BEGIN
         END LOOP;
     END IF;
 
-    -- 6. Incrementar cupos usados si es oferta especial
+    -- 6. Si el plan es oferta especial, incrementar cupos_usados
     IF v_plan_id IS NOT NULL THEN
         UPDATE platzi.planes
         SET cupos_usados = cupos_usados + 1,
@@ -465,13 +266,15 @@ BEGIN
         WHERE id = v_plan_id AND es_oferta_especial = true;
     END IF;
 
-    -- 7. Sincronizar con el revendedor si se identificó afiliado
+    -- 7. Registrar conversión para el afiliado si existe
     IF v_afiliado_id IS NOT NULL THEN
+        -- Incrementar contador de ventas cerradas del afiliado
         UPDATE referidos.afiliados
         SET total_referidos_cerrados = total_referidos_cerrados + 1,
             actualizado_en = NOW()
         WHERE id = v_afiliado_id;
 
+        -- Registrar en referidos.conversiones (1:1 con la venta)
         INSERT INTO referidos.conversiones (
             afiliado_id,
             enlace_id,
@@ -503,91 +306,11 @@ BEGIN
 END;
 $$;
 
--- RPC 6: Obtener Ventas Platzi para Super Admin (con detalles de plan y cuotas)
-CREATE OR REPLACE FUNCTION public.admin_obtener_ventas_platzi()
-RETURNS TABLE (
-    id UUID,
-    name VARCHAR,
-    phone VARCHAR,
-    email VARCHAR,
-    platzi_account_email VARCHAR,
-    country_name VARCHAR,
-    cod_revendedor VARCHAR,
-    discount_code VARCHAR,
-    tipo_pago VARCHAR,
-    numero_cuotas INT,
-    cuotas_pagadas INT,
-    pago_anticipado BOOLEAN,
-    fecha_registro TIMESTAMPTZ,
-    cod_generado VARCHAR,
-    cod_canjeado BOOLEAN,
-    fecha_canje TIMESTAMPTZ,
-    cuenta_activa BOOLEAN,
-    plan_id UUID,
-    nombre_plan VARCHAR,
-    monto_total NUMERIC,
-    created_at TIMESTAMPTZ
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        v.id,
-        v.name,
-        v.phone,
-        v.email,
-        v.platzi_account_email,
-        v.country_name,
-        v.cod_revendedor,
-        v.discount_code,
-        v.tipo_pago,
-        v.numero_cuotas,
-        v.cuotas_pagadas,
-        v.pago_anticipado,
-        v.fecha_registro,
-        v.cod_generado,
-        v.cod_canjeado,
-        v.fecha_canje,
-        v.cuenta_activa,
-        v.plan_id,
-        COALESCE(p.nombre_plan, 'Plan Platzi') AS nombre_plan,
-        COALESCE(v.monto_total, p.precio, 0.00) AS monto_total,
-        v.created_at
-    FROM platzi.ventas v
-    LEFT JOIN platzi.planes p ON p.id = v.plan_id
-    ORDER BY v.fecha_registro DESC;
-END;
-$$;
+-- ==============================================================================
+-- 7. PROCEDIMIENTOS ALMACENADOS DE OFERTAS ESPECIALES UNIFICADAS SOBRE `platzi.planes`
+-- ==============================================================================
 
--- RPC 7: Actualizar Estado de Venta Platzi
-CREATE OR REPLACE FUNCTION public.admin_actualizar_estado_venta_platzi(
-    p_venta_id UUID,
-    p_cuenta_activa BOOLEAN,
-    p_cod_canjeado BOOLEAN
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    UPDATE platzi.ventas
-    SET cuenta_activa = p_cuenta_activa,
-        cod_canjeado = p_cod_canjeado,
-        fecha_canje = CASE WHEN p_cod_canjeado AND fecha_canje IS NULL THEN NOW() ELSE fecha_canje END,
-        updated_at = NOW()
-    WHERE id = p_venta_id;
-
-    IF NOT FOUND THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Venta no encontrada');
-    END IF;
-
-    RETURN jsonb_build_object('success', true);
-END;
-$$;
-
--- RPC 8: Admin Listar Ofertas Especiales desde platzi.planes
+-- RPC: Listar Ofertas Especiales desde platzi.planes
 CREATE OR REPLACE FUNCTION public.admin_listar_ofertas()
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -632,7 +355,7 @@ BEGIN
 END;
 $$;
 
--- RPC 9: Admin Crear Oferta Especial Unificada
+-- RPC: Crear Oferta Especial (guardando en platzi.planes y asociando a referidos.enlaces si hay afiliado)
 CREATE OR REPLACE FUNCTION public.admin_crear_oferta(
     p_codigo_oferta TEXT,
     p_titulo TEXT,
@@ -666,6 +389,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'El código de oferta ya se encuentra registrado.');
     END IF;
 
+    -- Extraer texto de características
     IF p_caracteristicas IS NOT NULL AND jsonb_typeof(p_caracteristicas) = 'array' THEN
         SELECT string_agg(elem::text, ' | ') INTO v_caract_str
         FROM jsonb_array_elements_text(p_caracteristicas) AS elem;
@@ -710,6 +434,7 @@ BEGIN
     )
     RETURNING id INTO v_plan_id;
 
+    -- Si se asignó un afiliado, crear o actualizar enlace asociado
     IF p_afiliado_id IS NOT NULL THEN
         INSERT INTO referidos.enlaces (
             afiliado_id,
@@ -736,7 +461,7 @@ BEGIN
 END;
 $$;
 
--- RPC 10: Admin Actualizar Oferta Especial Unificada
+-- RPC: Actualizar Oferta Especial
 CREATE OR REPLACE FUNCTION public.admin_actualizar_oferta(
     p_id UUID,
     p_titulo TEXT,
@@ -783,6 +508,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = p_id;
 
+    -- Actualizar enlace de afiliado si fue especificado
     IF p_afiliado_id IS NOT NULL THEN
         UPDATE referidos.enlaces
         SET afiliado_id = p_afiliado_id
@@ -793,7 +519,7 @@ BEGIN
 END;
 $$;
 
--- RPC 11: Admin Toggle Oferta
+-- RPC: Alternar Vigencia de Oferta
 CREATE OR REPLACE FUNCTION public.admin_toggle_oferta(
     p_id UUID,
     p_activo BOOLEAN
@@ -808,6 +534,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = p_id;
 
+    -- Sincronizar estado de enlaces vinculados
     UPDATE referidos.enlaces
     SET activo = p_activo
     WHERE plan_id = p_id;
@@ -816,7 +543,7 @@ BEGIN
 END;
 $$;
 
--- RPC 12: Admin Eliminar Oferta
+-- RPC: Eliminar Oferta Especial
 CREATE OR REPLACE FUNCTION public.admin_eliminar_oferta(
     p_id UUID
 )
@@ -825,14 +552,17 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+    -- Desasociar enlaces primero
     DELETE FROM referidos.enlaces WHERE plan_id = p_id;
+    
+    -- Eliminar plan de oferta especial
     DELETE FROM platzi.planes WHERE id = p_id AND es_oferta_especial = true;
 
     RETURN jsonb_build_object('success', true, 'id', p_id);
 END;
 $$;
 
--- RPC 13: Obtener Oferta Pública
+-- RPC: Obtener Oferta Pública
 CREATE OR REPLACE FUNCTION public.obtener_oferta_publica(p_codigo TEXT)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -880,10 +610,13 @@ END;
 $$;
 
 -- Permisos RPC
+GRANT USAGE ON SCHEMA platzi TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA referidos TO anon, authenticated, service_role;
+GRANT ALL ON TABLE platzi.pagos_cuotas TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.registrar_venta_platzi TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_listar_ofertas TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_crear_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_actualizar_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_toggle_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_eliminar_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.obtener_oferta_publica TO anon, authenticated, service_role;
-

@@ -39,13 +39,16 @@ CREATE TABLE IF NOT EXISTS referidos.datos_pago (
 CREATE TABLE IF NOT EXISTS referidos.enlaces (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     afiliado_id UUID NOT NULL REFERENCES referidos.afiliados(id) ON DELETE CASCADE,
+    plan_id UUID REFERENCES platzi.planes(id) ON DELETE SET NULL, -- NULL = Catálogo Estándar | UUID = Oferta Especial
     codigo_referido VARCHAR(100) NOT NULL UNIQUE, -- Ej: 'ALEXIS24', 'VENTAS-VIP'
     slug_personalizado VARCHAR(100) UNIQUE,
-    url_destino TEXT NOT NULL DEFAULT '/#agendar',
+    url_destino TEXT NOT NULL DEFAULT '/beneficios',
     clics_totales INT NOT NULL DEFAULT 0,
     activo BOOLEAN NOT NULL DEFAULT true,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE referidos.enlaces ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES platzi.planes(id) ON DELETE SET NULL;
 
 -- 4. TABLA DE ATRIBUCIONES TEMPORALES (Cookies y Sesiones First-Touch / Last-Touch)
 CREATE TABLE IF NOT EXISTS referidos.atribuciones (
@@ -58,10 +61,12 @@ CREATE TABLE IF NOT EXISTS referidos.atribuciones (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 5. TABLA DE CONVERSIONES Y COMISIONES (Vinculación con `calendario.prospectos`)
+-- 5. TABLA DE CONVERSIONES Y COMISIONES (Vinculada a Ventas Platzi)
 CREATE TABLE IF NOT EXISTS referidos.conversiones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     afiliado_id UUID NOT NULL REFERENCES referidos.afiliados(id) ON DELETE CASCADE,
+    venta_id UUID UNIQUE REFERENCES platzi.ventas(id) ON DELETE CASCADE, -- Venta Platzi atribuida
+    enlace_id UUID REFERENCES referidos.enlaces(id) ON DELETE SET NULL,
     enlace_primer_toque_id UUID REFERENCES referidos.enlaces(id) ON DELETE SET NULL,
     enlace_ultimo_toque_id UUID REFERENCES referidos.enlaces(id) ON DELETE SET NULL,
     prospecto_id UUID REFERENCES calendario.prospectos(id) ON DELETE SET NULL,
@@ -70,7 +75,7 @@ CREATE TABLE IF NOT EXISTS referidos.conversiones (
     monto_transaccion NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
     porcentaje_aplicado NUMERIC(5, 2) DEFAULT 0.00,
     valor_comision_calculado NUMERIC(14, 2) NOT NULL DEFAULT 0.00,
-    estado_liquidacion VARCHAR(50) NOT NULL DEFAULT 'pendiente', -- 'pendiente', 'en_garantia', 'aprobada', 'liquidada', 'cancelada', 'rechazada_autoreferido'
+    estado_liquidacion VARCHAR(50) NOT NULL DEFAULT 'pendiente', -- 'pendiente', 'en_garantia', 'aprobada', 'liquidada', 'cancelada'
     motivo_atribucion_manual TEXT,
     autor_admin VARCHAR(100),
     fecha_adquisicion TIMESTAMP WITH TIME ZONE,
