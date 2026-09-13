@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { createServerSupabaseClient } from "@/lib/infrastructure/supabase/server-client"
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -79,6 +80,8 @@ export async function POST(request: Request) {
       oferta_id,
       oferta_codigo,
       institucion,
+      metodo_pago,
+      referencia_pago,
     } = body
 
     if (!inputCode || !String(inputCode).trim()) {
@@ -132,6 +135,8 @@ export async function POST(request: Request) {
       oferta_id: oferta_id ? String(oferta_id).trim() : null,
       oferta_codigo: oferta_codigo ? String(oferta_codigo).trim() : null,
       institucion: institucion ? String(institucion).trim() : null,
+      metodo_pago: metodo_pago || (countryCode === "CO" ? "Llave @smartcontacts" : "PayPal"),
+      referencia_pago: referencia_pago ? String(referencia_pago).trim() : null,
       timestamp: new Date().toISOString(),
     }
 
@@ -217,6 +222,24 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         )
+      }
+
+      // Sincronizar estado de activación en platzi.ventas
+      try {
+        const supabase = await createServerSupabaseClient()
+        const cleanEmail = String(email || '').trim().toLowerCase()
+        const cleanPlatziEmail = String(platziAccountEmail || '').trim().toLowerCase()
+
+        await supabase
+          .from('platzi.ventas')
+          .update({
+            cuenta_activa: true,
+            cod_canjeado: true,
+            fecha_canje: new Date().toISOString(),
+          })
+          .or(`email.eq.${cleanEmail},platzi_account_email.eq.${cleanPlatziEmail}`)
+      } catch (dbErr) {
+        console.error('Error actualizando venta canjeada:', dbErr)
       }
 
       const cleanSuccessMsg =

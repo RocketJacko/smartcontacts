@@ -1,7 +1,23 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { X, CheckCircle2, Loader2, User, Mail, KeyRound, ArrowLeft, ArrowRight, RefreshCw, Sparkles } from "lucide-react"
+import React, { useState, useEffect, useMemo } from "react"
+import {
+  X,
+  CheckCircle2,
+  Loader2,
+  User,
+  Mail,
+  KeyRound,
+  ArrowLeft,
+  ArrowRight,
+  RefreshCw,
+  Sparkles,
+  Copy,
+  Check,
+  ExternalLink,
+  ShieldCheck,
+  CreditCard,
+} from "lucide-react"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { useLanguage } from "@/lib/language-context"
 import { PhoneInput } from "@/components/phone-input"
@@ -176,13 +192,66 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }, [selectedPlan, formatPlanPriceDynamic, userCurrency, paymentMode, installments])
 
-  // Pasos: 1 (Ingreso de datos) | 2 (Código PIN recibido al correo) | 3 (Confirmación exitosa)
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  // Pasos: 1 (Ingreso de datos) | 2 (Código PIN recibido) | 4 (Pago y Garantía de Cancelación PYTHONCODE) | 3 (Confirmación exitosa)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [inputCode, setInputCode] = useState("")
+  const [paymentReference, setPaymentReference] = useState("")
+  const [copiedLlave, setCopiedLlave] = useState(false)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMessage, setSuccessMessage] = useState("")
+
+  // Detectar si la sesión actual corresponde a la oferta especial PYTHONCODE
+  const isPythonCodeFlow = useMemo(() => {
+    const cleanDiscount = (discountCode || "").trim().toUpperCase()
+    const cleanPlanOffer = (selectedPlan?.codigo_oferta || "").trim().toUpperCase()
+    const cleanSpecialOffer = (specialOffer?.codigo_oferta || "").trim().toUpperCase()
+    if (cleanDiscount === "PYTHONCODE" || cleanPlanOffer === "PYTHONCODE" || cleanSpecialOffer === "PYTHONCODE") {
+      return true
+    }
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const urlOffer = (params.get("oferta") || params.get("convenio") || params.get("ref") || "").trim().toUpperCase()
+      if (urlOffer === "PYTHONCODE") return true
+    }
+    return false
+  }, [discountCode, selectedPlan, specialOffer])
+
+  // Carga y renderizado dinámico del botón oficial de PayPal cuando se ingresa al paso 4 fuera de Colombia
+  useEffect(() => {
+    if (step === 4 && countryCode !== "CO") {
+      const scriptId = "paypal-sdk-hosted-buttons"
+      let script = document.getElementById(scriptId) as HTMLScriptElement | null
+
+      const renderPayPal = () => {
+        const container = document.getElementById("paypal-container-LYMYJAM3YUSZA")
+        if (container && (window as any).paypal?.HostedButtons) {
+          container.innerHTML = ""
+          try {
+            (window as any).paypal.HostedButtons({
+              hostedButtonId: "LYMYJAM3YUSZA",
+            }).render("#paypal-container-LYMYJAM3YUSZA")
+          } catch (e) {
+            console.error("Error al renderizar botón PayPal Hosted:", e)
+          }
+        }
+      }
+
+      if (!script) {
+        script = document.createElement("script")
+        script.id = scriptId
+        script.src = "https://www.paypal.com/sdk/js?client-id=BAA52QJ_2ETawiw8peuRJv0iNnRdyRhvyRdVb5u73l0EamRSaNc4NXC76euwkOiHvR-J3t0Xx2jP99vJg8&components=hosted-buttons&disable-funding=venmo&currency=USD"
+        script.async = true
+        script.onload = () => {
+          renderPayPal()
+        }
+        document.head.appendChild(script)
+      } else {
+        renderPayPal()
+      }
+    }
+  }, [step, countryCode])
 
   // Cargar planes vigentes consumiendo la API unificada de planes con soporte de código
   useEffect(() => {
@@ -314,6 +383,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
   const handleResetModal = () => {
     setStep(1)
     setInputCode("")
+    setPaymentReference("")
+    setCopiedLlave(false)
     setErrorMsg("")
     setSuccessMessage("")
     setCaptchaAnswer("")
@@ -474,7 +545,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
     }
   }
 
-  // ─── PASO 2: Envío del código de seguridad recibido en el correo ───────────
+  // ─── PASO 2: Envío o Validación del código de seguridad recibido ───────────
   const handleStep2Verify = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg("")
@@ -488,12 +559,37 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       return
     }
 
+    // SI ES EL ENLACE / OFERTA PYTHONCODE:
+    // NO activar la cuenta todavía, garantizar primero que el usuario cancele (pague) el plan de 1 año
+    if (isPythonCodeFlow) {
+      if (inputCode.trim().length < 4) {
+        setErrorMsg(
+          language === "es"
+            ? "El código de seguridad ingresado es demasiado corto. Revisa tu correo."
+            : "The security code entered is too short. Please check your email."
+        )
+        return
+      }
+
+      setErrorMsg("")
+      // Avanzar al paso de selección de plan y medios de pago (garantía de cancelación)
+      setStep(4)
+      return
+    }
+
+    // FLUJO ESTÁNDAR / OTROS ENLACES: Procede de forma regular a la verificación y activación
+    await executeFinalActivation()
+  }
+
+  // ─── ACTIVACIÓN DEFINITIVA Y ENVÍO AL WEBHOOK DE ACTIVACIÓN ───────────────
+  const executeFinalActivation = async (paymentMethodUsed?: string) => {
     setIsSubmitting(true)
+    setErrorMsg("")
 
     try {
       const cleanCode = discountCode.trim().toUpperCase()
 
-      // Se envían los datos completos nuevamente junto con el código recibido y el plan seleccionado
+      // Se envían los datos completos al endpoint de verificación y activación
       const res = await fetch("/api/benefits/platzi/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -511,7 +607,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           plan: selectedPlan?.nombre_plan || displayPlanName,
           planName: selectedPlan?.nombre_plan || displayPlanName,
           planId: selectedPlan?.id || "",
-          meses_cubrimiento: selectedPlan?.meses_cubrimiento || 6,
+          meses_cubrimiento: selectedPlan?.meses_cubrimiento || 12,
           precio: selectedPlan?.precio || 95000,
           precio_formateado: displayPrice,
           tipo_pago: selectedPlan?.tipo_pago || specialOffer?.tipo_pago || "pago_unico",
@@ -519,6 +615,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
           oferta_id: specialOffer?.id || null,
           oferta_codigo: specialOffer?.codigo_oferta || null,
           institucion: specialOffer?.institucion_empresa || null,
+          metodo_pago: paymentMethodUsed || (countryCode === "CO" ? "Llave @smartcontacts" : "PayPal"),
+          referencia_pago: paymentReference.trim() || null,
         }),
       })
 
@@ -552,28 +650,34 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
       }
 
       if (data.planInfo) {
-        setDisplayPlanName(data.planInfo.planName || "5 MESES + 7 MESES EXTRAS CONDICIONALES AL CONVENIO")
-        setDisplayPrice(data.planInfo.formattedPrice || "0 COP")
-        setDisplayDuration(data.planInfo.duration || data.planInfo.planName)
+        setDisplayPlanName(data.planInfo.planName || "Plan Platzi 1 Año")
+        setDisplayPrice(data.planInfo.formattedPrice || (countryCode === "CO" ? "$95.000 COP" : "$24 USD"))
+        setDisplayDuration(data.planInfo.duration || "1 año")
       } else if (data.details) {
         const rawDetail = Array.isArray(data.details) ? data.details[0] : data.details
         if (rawDetail?.plan) setDisplayPlanName(rawDetail.plan)
         if (rawDetail?.valor) setDisplayPrice(rawDetail.valor)
       }
 
-      setSuccessMessage(data.resultado || data.message || "Cuenta activada exitosamente")
+      setSuccessMessage(data.resultado || data.message || "¡Cuenta Platzi activada exitosamente!")
       setErrorMsg("")
       // Activación completada con éxito
       setStep(3)
     } catch {
       setErrorMsg(
         language === "es"
-          ? "Error de conexión al verificar el código de seguridad."
-          : "Connection error verifying code."
+          ? "Error de conexión al verificar el código de seguridad y activar la cuenta."
+          : "Connection error verifying code and activating account."
       )
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCopyLlave = () => {
+    navigator.clipboard.writeText("@smartcontacts")
+    setCopiedLlave(true)
+    setTimeout(() => setCopiedLlave(false), 2500)
   }
 
   return (
@@ -590,7 +694,7 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         </button>
 
         {step === 3 ? (
-          /* ─── PASO 3: ACTIVACIÓN EXITOSA ─────────────────────────────────── */
+          /* ─── PASO 3: ACTIVACIÓN EXITOSA & CONFIRMACIÓN DE DATOS ─────────── */
           <div className="text-center py-4 space-y-5">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
@@ -608,8 +712,8 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               {/* Structured Card displaying activation details */}
               <div className="text-xs font-mono text-black/70 pt-3 space-y-2 text-left bg-[#FAF9F5] p-4 rounded-2xl border border-black/10">
                 <div className="flex items-center justify-between border-b border-black/5 pb-2">
-                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Producto</span>
-                  <span className="font-bold text-black">Platzi</span>
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Beneficiario</span>
+                  <span className="font-bold text-black">{name}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-black/5 py-2">
                   <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Cuenta Platzi</span>
@@ -619,9 +723,17 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                   <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Plan Activado</span>
                   <span className="font-bold text-emerald-700 text-xs leading-snug">{displayPlanName}</span>
                 </div>
+                <div className="flex items-center justify-between border-b border-black/5 py-2">
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Medio de Pago</span>
+                  <span className="font-bold text-black text-xs">
+                    {countryCode === "CO" ? "Llave @smartcontacts (Colombia)" : "PayPal (Internacional)"}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Valor</span>
-                  <span className="font-bold text-black text-sm">{displayPrice}</span>
+                  <span className="text-black/50 uppercase tracking-wider font-bold text-[10px]">Estado</span>
+                  <span className="inline-flex items-center gap-1 font-bold text-emerald-600 text-xs">
+                    <Check className="w-3.5 h-3.5" /> Cuenta Activa
+                  </span>
                 </div>
               </div>
             </div>
@@ -633,6 +745,197 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             >
               {language === "es" ? "FINALIZAR" : "FINISH"}
             </button>
+          </div>
+        ) : step === 4 ? (
+          /* ─── PASO 4: GARANTÍA DE PAGO & CANCELACIÓN PREVIA (FLUJO PYTHONCODE) ─── */
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200">
+                <Sparkles className="w-3 h-3 text-amber-600" />
+                <span>CONVENIO PYTHONCODE — PLAN 1 AÑO</span>
+              </div>
+
+              <h3 className="text-2xl font-medium text-[#111] tracking-tight">
+                {language === "es" ? "Confirmación de Plan & Pago" : "Plan & Payment Confirmation"}
+              </h3>
+
+              <p className="text-xs text-black/70 leading-relaxed">
+                {language === "es"
+                  ? "Para garantizar la activación de tu cuenta Platzi por 1 año con la tarifa preferencial de PYTHONCODE, realiza la cancelación según tu ubicación:"
+                  : "To guarantee your 1-year Platzi account activation with the PYTHONCODE preferential rate, complete your payment based on your location:"}
+              </p>
+            </div>
+
+            {/* Tarjeta Resumen del Plan Deseado */}
+            <div className="p-4 rounded-2xl bg-[#FAF9F5] border border-black/10 space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between border-b border-black/5 pb-2">
+                <span className="text-black/50 uppercase text-[10px] font-bold">Plan Solicitado</span>
+                <span className="font-bold text-emerald-800">Plan Platzi 1 Año (12 Meses)</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-black/5 py-2">
+                <span className="text-black/50 uppercase text-[10px] font-bold">Cuenta a Activar</span>
+                <span className="font-bold text-black">{platziAccountEmail}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-black/50 uppercase text-[10px] font-bold">Total a Cancelar</span>
+                <span className="font-bold text-black text-sm">
+                  {countryCode === "CO" ? "$95.000 COP" : "$24 USD"}
+                </span>
+              </div>
+            </div>
+
+            {/* SELECCIÓN DE MEDIO DE PAGO SEGÚN PAÍS */}
+            {countryCode === "CO" ? (
+              /* MEDIO DE PAGO EN COLOMBIA: LLAVE @smartcontacts */
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-3 font-sans">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-900 uppercase">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Pago en Colombia por Llave Oficial</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                    Bancolombia / Nequi / Bre-B
+                  </span>
+                </div>
+
+                <p className="text-xs text-black/70">
+                  Transfiere los <strong className="text-black font-mono">$95.000 COP</strong> directamente desde la app de tu banco favorito o billetera digital ingresando la siguiente llave:
+                </p>
+
+                {/* Caja de Llave con Copiado Rápido */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-emerald-300 shadow-2xs">
+                  <div>
+                    <span className="text-[10px] font-mono text-black/40 block">Llave de Transferencia:</span>
+                    <span className="text-base font-mono font-bold text-[#111] tracking-wide">
+                      @smartcontacts
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyLlave}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#111] text-white text-xs font-mono font-semibold hover:bg-black transition-colors cursor-pointer"
+                  >
+                    {copiedLlave ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>¡Copiada!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-white/70" />
+                        <span>Copiar Llave</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Campo opcional de referencia bancaria */}
+                <div className="space-y-1 pt-1">
+                  <label className="block text-[11px] font-mono text-black/70 uppercase">
+                    Número de comprobante / Aprobación (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                    placeholder="Ej. Nro. de Aprobación o Teléfono remitente"
+                    className="w-full px-3 py-2 bg-white border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/30 focus:outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* MEDIO DE PAGO FUERA DE COLOMBIA: PAYPAL */
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3 font-sans">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-blue-900 uppercase">
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span>Pago Internacional Seguro con PayPal</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                    $24 USD
+                  </span>
+                </div>
+
+                <p className="text-xs text-black/70">
+                  Para activar tu cuenta desde el exterior, realiza el pago de <strong className="text-black font-mono">$24 USD</strong> mediante el botón oficial alojado de PayPal o su enlace seguro:
+                </p>
+
+                {/* Contenedor del Botón Alojado Oficial de PayPal */}
+                <div className="bg-white p-3 rounded-xl border border-blue-150 flex flex-col items-center justify-center min-h-[60px]">
+                  <div id="paypal-container-LYMYJAM3YUSZA" className="w-full flex justify-center py-1"></div>
+                  
+                  {/* Enlace alternativo directo a PayPal */}
+                  <a
+                    href="https://www.paypal.com/ncp/payment/LYMYJAM3YUSZA"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                  >
+                    <span>Abrir pasarela directa de PayPal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                {/* Campo opcional de ID de transacción PayPal */}
+                <div className="space-y-1 pt-1">
+                  <label className="block text-[11px] font-mono text-black/70 uppercase">
+                    ID de Transacción PayPal (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                    placeholder="Ej. Transaction ID o correo PayPal"
+                    className="w-full px-3 py-2 bg-white border border-black/15 rounded-xl text-xs font-mono text-[#111] placeholder:text-black/30 focus:outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <p className="text-xs font-mono font-medium text-red-600 text-center py-1">
+                {errorMsg}
+              </p>
+            )}
+
+            {/* BOTONES DE ACCIÓN PASO 4 */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => executeFinalActivation(countryCode === "CO" ? "Llave @smartcontacts" : "PayPal")}
+                className="w-full py-3.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-wider uppercase hover:bg-black/90 transition-all duration-200 font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{language === "es" ? "ACTIVANDO CUENTA..." : "ACTIVATING..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      {countryCode === "CO"
+                        ? "CONFIRMAR PAGO Y ACTIVAR CUENTA"
+                        : "YA REALICÉ EL PAGO EN PAYPAL — ACTIVAR CUENTA"}
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-emerald-400" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("")
+                  setStep(2)
+                }}
+                className="w-full py-2 text-xs font-mono text-black/60 hover:text-black transition-colors cursor-pointer flex items-center justify-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>{language === "es" ? "Volver a verificar código" : "Back to security code"}</span>
+              </button>
+            </div>
           </div>
         ) : step === 2 ? (
           /* ─── PASO 2: INGRESO DE CÓDIGO RECIBIDO AL CORREO ────────────────── */
@@ -685,7 +988,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                     <span>{language === "es" ? "VERIFICANDO CÓDIGO..." : "VERIFYING..."}</span>
                   </>
                 ) : (
-                  <span>{language === "es" ? "CONFIRMAR ACTIVACIÓN" : "CONFIRM ACTIVATION"}</span>
+                  <span>
+                    {isPythonCodeFlow
+                      ? (language === "es" ? "CONTINUAR AL PAGO (PLAN 1 AÑO)" : "PROCEED TO PAYMENT (1 YEAR)")
+                      : (language === "es" ? "CONFIRMAR ACTIVACIÓN" : "CONFIRM ACTIVATION")}
+                  </span>
                 )}
               </button>
 

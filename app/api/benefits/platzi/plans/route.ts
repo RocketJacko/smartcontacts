@@ -54,6 +54,51 @@ export async function GET(request: Request) {
 
     const supabase = await createServerSupabaseClient()
 
+    // Manejo prioritario para oferta PYTHONCODE (Plan 1 año con pago anticipado)
+    if (code === 'PYTHONCODE') {
+      const planPythonCode = {
+        id: 'plan-pythoncode-1year',
+        nombre_plan: 'Plan Platzi 1 Año',
+        meses_cubrimiento: 12,
+        precio: 95000,
+        moneda: 'COP',
+        vigente: true,
+        es_oferta_especial: true,
+        codigo_oferta: 'PYTHONCODE',
+        institucion_empresa: 'Comunidad Python & Convenio Especial',
+        tipo_pago: 'pago_unico',
+        admite_cuotas: false,
+        numero_cuotas: 1,
+        max_cuotas: 1,
+        pago_anticipado: true,
+        caracteristicas: 'Acceso completo por 1 año a todas las rutas de aprendizaje y escuelas de Platzi',
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          tipo: 'oferta_especial_directa',
+          codigo: 'PYTHONCODE',
+          planes: [planPythonCode],
+          oferta: {
+            id: 'plan-pythoncode-1year',
+            codigo_oferta: 'PYTHONCODE',
+            titulo: 'Plan Platzi 1 Año',
+            descripcion: 'Acceso completo por 1 año a todas las rutas de aprendizaje y escuelas de Platzi',
+            institucion_empresa: 'Comunidad Python & Convenio Especial',
+            precio_cop: 95000,
+            precio_usd: 24,
+            meses_cubrimiento: 12,
+            tipo_pago: 'pago_unico',
+            numero_cuotas: 1,
+            pago_anticipado: true,
+            activo: true,
+          },
+        },
+        { status: 200 }
+      )
+    }
+
     // 1. Si hay un código, consultar si el revendedor tiene un enlace con plan_id asignado (Oferta Especial / Convenio)
     if (code) {
       try {

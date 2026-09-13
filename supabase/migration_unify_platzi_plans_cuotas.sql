@@ -617,6 +617,43 @@ GRANT EXECUTE ON FUNCTION public.registrar_venta_platzi TO anon, authenticated, 
 GRANT EXECUTE ON FUNCTION public.admin_listar_ofertas TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_crear_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_actualizar_oferta TO anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.admin_toggle_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.admin_eliminar_oferta TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.obtener_oferta_publica TO anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 8. PLAN OFICIAL DE OFERTA ESPECIAL PYTHONCODE (1 AÑO - PAGO ANTICIPADO)
+-- ==============================================================================
+INSERT INTO platzi.planes (
+    nombre_plan,
+    codigo_oferta,
+    institucion_empresa,
+    meses_cubrimiento,
+    precio,
+    moneda,
+    es_oferta_especial,
+    admite_cuotas,
+    max_cuotas,
+    tipo_pago,
+    numero_cuotas,
+    pago_anticipado,
+    vigente,
+    caracteristicas
+) VALUES (
+    'Plan Platzi 1 Año — Oferta PYTHONCODE',
+    'PYTHONCODE',
+    'Comunidad Python & Convenio Especial',
+    12,
+    95000,
+    'COP',
+    true,
+    false,
+    1,
+    'pago_unico',
+    1,
+    true,
+    true,
+    'Acceso completo por 1 año a todas las rutas de aprendizaje y escuelas de Platzi'
+) ON CONFLICT (codigo_oferta) DO UPDATE SET
+    pago_anticipado = true,
+    meses_cubrimiento = 12,
+    vigente = true;

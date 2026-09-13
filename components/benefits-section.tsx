@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useLanguage } from "@/lib/language-context"
 import { useGeoLocation } from "@/lib/use-geo-location"
 import { Check, ArrowRight, Clock, ShieldCheck, Sparkles, RefreshCw } from "lucide-react"
@@ -42,6 +42,18 @@ export function BenefitsSection() {
   const { language } = useLanguage()
   const { formattedPlatziPrice, userCurrency, countryName, flagUrl, toggleCurrency } = useGeoLocation()
   const [activeModalId, setActiveModalId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const params = new URLSearchParams(window.location.search)
+        const offer = (params.get("oferta") || params.get("convenio") || "").trim().toUpperCase()
+        if (offer === "PYTHONCODE") {
+          setActiveModalId("platzi")
+        }
+      } catch {}
+    }
+  }, [])
 
   return (
     <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
