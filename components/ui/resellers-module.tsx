@@ -32,7 +32,6 @@ import {
   Pencil,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
-import { SpecialOffersTab } from "./special-offers-tab"
 import { EditResellerModal } from "./edit-reseller-modal"
 
 export interface AfiliadoData {
@@ -66,10 +65,6 @@ export function ResellersModule() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState("")
   const [successToast, setSuccessToast] = useState("")
-
-  // Pestaña Activa: Revendedores u Ofertas Especiales
-  const [activeTab, setActiveTab] = useState<"resellers" | "offers">("resellers")
-  const [offersCount, setOffersCount] = useState<number>(0)
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("")
@@ -331,42 +326,28 @@ export function ResellersModule() {
           </p>
         </div>
 
-        {/* ── NAVEGACIÓN SEGMENTADA POR PESTAÑAS ───────────────────────────────── */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#F5F4F0] border border-black/[0.06] self-start sm:self-auto shrink-0">
+        <div>
           <button
-            type="button"
-            onClick={() => setActiveTab("resellers")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-              activeTab === "resellers"
-                ? "bg-white shadow-2xs text-[#111]"
-                : "text-black/50 hover:text-[#111]"
-            }`}
+            onClick={() => {
+              setFormNombre("")
+              setFormEmail("")
+              setFormTelefono("")
+              setFormCodigo("")
+              setFormNumeroCuenta("")
+              setFormTitularCuenta("")
+              setFormNumeroDocumento("")
+              setIsCreateOpen(true)
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111] text-white text-xs font-mono font-bold tracking-wider uppercase hover:bg-black/90 transition-all cursor-pointer shadow-2xs shrink-0"
           >
-            <Users className="w-3.5 h-3.5" />
-            <span>Revendedores ({afiliados.length})</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("offers")}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-              activeTab === "offers"
-                ? "bg-white shadow-2xs text-[#111]"
-                : "text-black/50 hover:text-[#111]"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Ofertas Especiales {offersCount > 0 ? `(${offersCount})` : ""}</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>{resT.btnNew || "Nuevo Revendedor"}</span>
           </button>
         </div>
       </div>
 
-      {/* ── CONTENIDO SEGÚN PESTAÑA ACTIVA ──────────────────────────────────── */}
-      {activeTab === "offers" ? (
-        <SpecialOffersTab afiliados={afiliados} onOffersCountChange={setOffersCount} />
-      ) : (
-        <>
-          {/* ── BENTO GRID KPIS (LIMPIO Y PROFESIONAL) ────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ── BENTO GRID KPIS (LIMPIO Y PROFESIONAL) ────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Card 1: Revendedores */}
             <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between text-black/40">
@@ -752,8 +733,6 @@ export function ResellersModule() {
               </table>
             </div>
           </div>
-        </>
-      )}
 
       {/* ── MODAL NUEVO REVENDEDOR ────────────────────────────────────────────── */}
       {isCreateOpen && (

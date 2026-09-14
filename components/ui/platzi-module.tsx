@@ -27,8 +27,11 @@ import {
   Phone,
   ChevronRight,
   Send,
+  Sparkles,
+  ExternalLink,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
+import { SpecialOffersTab } from "./special-offers-tab"
 
 export interface PlanPlatzi {
   id: string
@@ -107,7 +110,7 @@ export function PlatziModule() {
   const isEs = language === "es"
   const pT = (t.dashboard as any)?.platzi || {}
 
-  const [activeTab, setActiveTab] = useState<"planes" | "ventas">("planes")
+  const [activeTab, setActiveTab] = useState<"planes" | "ofertas" | "ventas">("planes")
 
   // Estados de Planes: inicializado inmediatamente con catálogo base para evitar esperas y bloqueos
   const [planes, setPlanes] = useState<PlanPlatzi[]>(DEFAULT_PLANES)
@@ -500,7 +503,19 @@ export function PlatziModule() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Planes Ofertados ({planes.length})</span>
+          <span>Planes Estándar ({planes.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ofertas")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl font-sans text-xs font-semibold tracking-wide transition-all border-b-2 cursor-pointer ${
+            activeTab === "ofertas"
+              ? "border-black text-black bg-[#F5F4F0]"
+              : "border-transparent text-black/40 hover:text-black/70"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+          <span>Ofertas Especiales & Convenios</span>
         </button>
 
         <button
@@ -671,7 +686,36 @@ export function PlatziModule() {
                         {/* Acciones */}
                         <td className="py-3 px-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Copiar Enlace Directo */}
                             <button
+                              type="button"
+                              onClick={() => {
+                                const origin = typeof window !== "undefined" ? window.location.origin : "https://smartcontacts.cloud"
+                                const planUrl = plan.codigo_oferta
+                                  ? `${origin}/beneficios?oferta=${plan.codigo_oferta}`
+                                  : `${origin}/beneficios`
+                                navigator.clipboard.writeText(planUrl)
+                                setFeedbackToast(isEs ? "Enlace directo copiado al portapapeles." : "Direct URL copied to clipboard.")
+                              }}
+                              title="Copiar URL directa del plan"
+                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] hover:bg-black/[0.05] transition-colors cursor-pointer"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Probar Enlace en Vivo */}
+                            <a
+                              href={plan.codigo_oferta ? `/beneficios?oferta=${plan.codigo_oferta}` : `/beneficios`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Abrir enlace en nueva pestaña"
+                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] hover:bg-black/[0.05] transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+
+                            <button
+                              type="button"
                               onClick={() => handleOpenPlanModal(plan)}
                               title="Editar Plan"
                               className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
@@ -680,6 +724,7 @@ export function PlatziModule() {
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => handleDeletePlan(plan)}
                               title="Eliminar Plan"
                               className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
@@ -695,6 +740,15 @@ export function PlatziModule() {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VISTA 2: OFERTAS ESPECIALES & CONVENIOS */}
+      {/* ========================================================================= */}
+      {activeTab === "ofertas" && (
+        <div className="pt-1">
+          <SpecialOffersTab />
         </div>
       )}
 

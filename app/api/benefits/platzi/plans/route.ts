@@ -58,20 +58,20 @@ export async function GET(request: Request) {
     if (code === 'PYTHONCODE') {
       const planPythonCode = {
         id: 'plan-pythoncode-1year',
-        nombre_plan: 'Plan Platzi 1 Año',
+        nombre_plan: 'Oferta especial familia PythonCode',
         meses_cubrimiento: 12,
-        precio: 95000,
+        precio: 120000,
         moneda: 'COP',
         vigente: true,
         es_oferta_especial: true,
         codigo_oferta: 'PYTHONCODE',
-        institucion_empresa: 'Comunidad Python & Convenio Especial',
+        institucion_empresa: 'PythonCode',
         tipo_pago: 'pago_unico',
         admite_cuotas: false,
         numero_cuotas: 1,
         max_cuotas: 1,
         pago_anticipado: true,
-        caracteristicas: 'Acceso completo por 1 año a todas las rutas de aprendizaje y escuelas de Platzi',
+        caracteristicas: 'Solo aplica para los integrantes de la cominidad',
       }
 
       return NextResponse.json(
@@ -83,10 +83,10 @@ export async function GET(request: Request) {
           oferta: {
             id: 'plan-pythoncode-1year',
             codigo_oferta: 'PYTHONCODE',
-            titulo: 'Plan Platzi 1 Año',
-            descripcion: 'Acceso completo por 1 año a todas las rutas de aprendizaje y escuelas de Platzi',
-            institucion_empresa: 'Comunidad Python & Convenio Especial',
-            precio_cop: 95000,
+            titulo: 'Oferta especial familia PythonCode',
+            descripcion: 'Solo aplica para los integrantes de la cominidad',
+            institucion_empresa: 'PythonCode',
+            precio_cop: 120000,
             precio_usd: 24,
             meses_cubrimiento: 12,
             tipo_pago: 'pago_unico',
@@ -247,7 +247,18 @@ export async function GET(request: Request) {
     const rawPlans = !rpcError && Array.isArray(rpcData) && rpcData.length > 0 ? rpcData : DEFAULT_PLANS
 
     // Filtrar para mostrar en catálogo público los planes estándar (no ofertas de convenio cerradas)
-    const regularPlans = rawPlans.filter((p: any) => !p.es_oferta_especial)
+    const isSpecialPlan = (p: any) => {
+      if (p.es_oferta_especial === true) return true
+      const name = (p.nombre_plan || '').toLowerCase()
+      const char = (p.caracteristicas || '').toLowerCase()
+      return (
+        name.includes('oferta especial') ||
+        name.includes('convenio') ||
+        name.includes('pythoncode') ||
+        char.includes('solo aplica para')
+      )
+    }
+    const regularPlans = rawPlans.filter((p: any) => !isSpecialPlan(p))
     const finalPlans = regularPlans.length > 0 ? regularPlans : rawPlans
 
     return NextResponse.json(

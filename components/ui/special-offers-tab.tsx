@@ -51,11 +51,11 @@ export interface SpecialOffer {
 }
 
 interface SpecialOffersTabProps {
-  afiliados: AfiliadoData[]
+  afiliados?: AfiliadoData[]
   onOffersCountChange?: (count: number) => void
 }
 
-export function SpecialOffersTab({ afiliados, onOffersCountChange }: SpecialOffersTabProps) {
+export function SpecialOffersTab({ afiliados = [], onOffersCountChange }: SpecialOffersTabProps) {
   const [ofertas, setOfertas] = useState<SpecialOffer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState("")

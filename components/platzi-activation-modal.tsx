@@ -289,7 +289,27 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
         const data = await res.json()
 
         if (isMounted && data?.success && Array.isArray(data?.planes) && data.planes.length > 0) {
-          const planList: PlatziPlan[] = data.planes
+          let planList: PlatziPlan[] = data.planes
+
+          // Si el usuario ingresó por un enlace de oferta especial (ej. PYTHONCODE o convenio),
+          // GARANTIZAR que SOLO se muestre el plan asociado a dicha oferta, ocultando planes estándar.
+          const isUrlOffer = Boolean(
+            (code && (data.tipo === "oferta_especial" || data.tipo === "oferta_especial_directa" || data.tipo === "oferta_especial_enlace")) ||
+            code.toUpperCase() === "PYTHONCODE"
+          )
+
+          if (isUrlOffer) {
+            const offerOnly = planList.filter(
+              (p) =>
+                p.es_oferta_especial ||
+                p.codigo_oferta?.toUpperCase() === code.toUpperCase() ||
+                p.nombre_plan.toLowerCase().includes("pythoncode")
+            )
+            if (offerOnly.length > 0) {
+              planList = offerOnly
+            }
+          }
+
           setPlans(planList)
           const chosen = planList[0]
           setSelectedPlan(chosen)
@@ -770,7 +790,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
             <div className="p-4 rounded-2xl bg-[#FAF9F5] border border-black/10 space-y-2 text-xs font-mono">
               <div className="flex items-center justify-between border-b border-black/5 pb-2">
                 <span className="text-black/50 uppercase text-[10px] font-bold">Plan Solicitado</span>
-                <span className="font-bold text-emerald-800">Plan Platzi 1 Año (12 Meses)</span>
+                <span className="font-bold text-emerald-800">
+                  {selectedPlan?.nombre_plan || "Oferta especial familia PythonCode"} ({selectedPlan?.meses_cubrimiento || 12} Meses)
+                </span>
               </div>
               <div className="flex items-center justify-between border-b border-black/5 py-2">
                 <span className="text-black/50 uppercase text-[10px] font-bold">Cuenta a Activar</span>
@@ -779,7 +801,9 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               <div className="flex items-center justify-between pt-1">
                 <span className="text-black/50 uppercase text-[10px] font-bold">Total a Cancelar</span>
                 <span className="font-bold text-black text-sm">
-                  {countryCode === "CO" ? "$95.000 COP" : "$24 USD"}
+                  {countryCode === "CO"
+                    ? (selectedPlan?.precio ? formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda) : "$ 120.000 COP")
+                    : "$24 USD"}
                 </span>
               </div>
             </div>
@@ -799,7 +823,11 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
                 </div>
 
                 <p className="text-xs text-black/70">
-                  Transfiere los <strong className="text-black font-mono">$95.000 COP</strong> directamente desde la app de tu banco favorito o billetera digital ingresando la siguiente llave:
+                  Transfiere los{" "}
+                  <strong className="text-black font-mono">
+                    {selectedPlan?.precio ? formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda) : "$ 120.000 COP"}
+                  </strong>{" "}
+                  directamente desde la app de tu banco favorito o billetera digital ingresando la siguiente llave:
                 </p>
 
                 {/* Caja de Llave con Copiado Rápido */}
@@ -1046,18 +1074,53 @@ export function PlatziActivationModal({ isOpen, onClose }: PlatziActivationModal
               </div>
             </div>
 
-            {/* 1. Selector de Planes Disponibles */}
+            {/* 1. Selector de Planes Disponibles / Oferta Exclusiva Aplicada */}
             <div className="space-y-2 pt-1">
-              <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
-                {language === "es" ? "Planes Disponibles *" : "Available Plans *"}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-mono text-black/80 font-bold uppercase tracking-wider">
+                  {isPythonCodeFlow || selectedPlan?.es_oferta_especial
+                    ? (language === "es" ? "Plan Incluido en tu Oferta *" : "Plan Included in your Offer *")
+                    : (language === "es" ? "Planes Disponibles *" : "Available Plans *")}
+                </label>
+                {(isPythonCodeFlow || selectedPlan?.es_oferta_especial) && (
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80">
+                    {selectedPlan.codigo_oferta || "OFERTA EXCLUSIVA"}
+                  </span>
+                )}
+              </div>
 
               {isLoadingPlans ? (
                 <div className="p-4 rounded-2xl bg-[#FAF9F5] border border-black/10 flex items-center justify-center gap-2 text-xs font-mono text-black/50">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>{language === "es" ? "Cargando planes disponibles..." : "Loading available plans..."}</span>
                 </div>
+              ) : isPythonCodeFlow || (plans.length === 1 && selectedPlan?.es_oferta_especial) ? (
+                /* TARJETA DESTACADA EXCLUSIVA PARA LA OFERTA (SIN OPCIONES ADICIONALES) */
+                <div className="p-3.5 rounded-2xl bg-amber-500/[0.05] border border-amber-500/30 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-mono font-bold text-[#111] truncate">
+                        {selectedPlan.nombre_plan}
+                      </div>
+                      <div className="text-[11px] text-black/60 font-light truncate">
+                        {selectedPlan.caracteristicas || "Acceso completo por 1 año a Platzi"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right font-mono shrink-0">
+                    <span className="text-xs font-bold text-[#111] block">
+                      {formatPlanPriceDynamic(selectedPlan.precio, selectedPlan.moneda)}
+                    </span>
+                    <span className="text-[10px] text-amber-800/80 font-bold block">
+                      {selectedPlan.meses_cubrimiento === 12 ? "1 año (12 meses)" : `${selectedPlan.meses_cubrimiento} meses`}
+                    </span>
+                  </div>
+                </div>
               ) : (
+                /* CATÁLOGO GENERAL ESTÁNDAR */
                 <div className="grid grid-cols-1 gap-2">
                   {plans.map((p) => {
                     const isSelected = selectedPlan?.id === p.id
