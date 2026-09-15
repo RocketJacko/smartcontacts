@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/infrastructure/supabase/server-client'
+import { createServerClient } from '@supabase/ssr'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // Planes por defecto como fallback seguro en caso de contingencia
-const DEFAULT_PLANS = [
+const DEFAULT_PLANES_ESTANDAR = [
   {
     id: '0807dfb2-83bd-4390-88cc-b85a77eb9388',
     nombre_plan: 'Plan 6 meses',
@@ -58,17 +58,21 @@ const DEFAULT_PLANS = [
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
+    const rawUrl = new URL(request.url)
     let code = (
-      searchParams.get('code') ||
-      searchParams.get('oferta') ||
-      searchParams.get('convenio') ||
-      searchParams.get('ref') ||
-      searchParams.get('referido') ||
+      rawUrl.searchParams.get('code') ||
+      rawUrl.searchParams.get('oferta') ||
+      rawUrl.searchParams.get('convenio') ||
+      rawUrl.searchParams.get('ref') ||
+      rawUrl.searchParams.get('referido') ||
+      request.nextUrl?.searchParams?.get('code') ||
+      request.nextUrl?.searchParams?.get('oferta') ||
+      request.nextUrl?.searchParams?.get('convenio') ||
+      request.nextUrl?.searchParams?.get('ref') ||
       ''
     ).trim().toUpperCase()
 
-    // Fallback: Si no viene en searchParams, extraer de referer header
+    // Fallback: Si no viene en querystring, inspeccionar Referer header
     if (!code) {
       try {
         const referer = request.headers.get('referer')
@@ -85,14 +89,14 @@ export async function GET(request: NextRequest) {
       } catch {}
     }
 
-    // Fallback: Si aún no hay código, inspeccionar cookie de referido sc_ref_code
+    // Fallback: Inspeccionar cookie sc_ref_code
     if (!code) {
-      code = (request.cookies.get('sc_ref_code')?.value || '').trim().toUpperCase()
+      try {
+        code = (request.cookies.get('sc_ref_code')?.value || '').trim().toUpperCase()
+      } catch {}
     }
 
-    const supabase = await createServerSupabaseClient()
-
-    // ── 1. MANEJO PRIORITARIO: Oferta especial PYTHONCODE ($120.000 COP, 1 año) ───────────
+    // ── 1. RESPUESTA INMEDIATA: OFERTA PYTHONCODE (SIN DEPENDENCIAS DE BD) ─────────────
     if (code === 'PYTHONCODE') {
       const planPythonCode = {
         id: '399f6ed5-6d64-4c0f-b7ef-dc69b31038e2',
@@ -137,9 +141,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ── 2. CONSULTA EN TABLA DE OFERTAS ESPECIALES SI HAY CÓDIGO ───────────
+    // Cliente Supabase sin dependencia de cookies de next/headers
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            try {
+              return request.cookies.getAll()
+            } catch {
+              return []
+            }
+          },
+          setAll() {},
+        },
+      }
+    )
+
+    // ── 2. SI HAY OTRO CÓDIGO: CONSULTAR OFERTAS ESPECIALES EN SUPABASE ─────────────────
     if (code) {
-      // 2a. Consultar en referidos.ofertas_especiales
       try {
         const { data: ofertaBd } = await supabase
           .from('referidos.ofertas_especiales')
@@ -179,64 +200,12 @@ export async function GET(request: NextRequest) {
           )
         }
       } catch {}
-
-      // 2b. Consultar en referidos.enlaces (si el afiliado tiene un plan_id exclusivo)
-      try {
-        const { data: enlaceData } = await supabase
-          .from('referidos.enlaces')
-          .select('id, codigo_referido, slug_personalizado, plan_id, afiliado_id')
-          .or(`codigo_referido.ilike.${code},slug_personalizado.ilike.${code}`)
-          .eq('activo', true)
-          .maybeSingle()
-
-        if (enlaceData?.plan_id) {
-          const { data: planEspecial } = await supabase
-            .from('platzi.planes')
-            .select('*')
-            .eq('id', enlaceData.plan_id)
-            .eq('vigente', true)
-            .maybeSingle()
-
-          if (planEspecial) {
-            const planFormat = {
-              id: planEspecial.id,
-              nombre_plan: planEspecial.nombre_plan,
-              meses_cubrimiento: planEspecial.meses_cubrimiento,
-              precio: Number(planEspecial.precio),
-              moneda: planEspecial.moneda || 'COP',
-              tipo_pago: 'pago_unico',
-              admite_cuotas: false,
-              numero_cuotas: 1,
-              max_cuotas: 1,
-              pago_anticipado: false,
-              vigente: true,
-              es_oferta_especial: true,
-              codigo_oferta: code,
-              institucion_empresa: null,
-              caracteristicas: planEspecial.caracteristicas || 'Tarifa preferencial asignada por enlace',
-            }
-
-            return NextResponse.json(
-              {
-                success: true,
-                tipo: 'oferta_especial_enlace',
-                codigo: code,
-                enlace_id: enlaceData.id,
-                afiliado_id: enlaceData.afiliado_id,
-                planes: [planFormat],
-              },
-              { status: 200 }
-            )
-          }
-        }
-      } catch {}
     }
 
-    // ── 3. CATÁLOGO GENERAL ESTÁNDAR: Consultar planes regulares de platzi.planes ───────────
-    const { data: rpcData, error: rpcError } = await supabase.rpc('obtener_planes_platzi_activos')
-    const rawPlans = !rpcError && Array.isArray(rpcData) && rpcData.length > 0 ? rpcData : DEFAULT_PLANS
+    // ── 3. CATÁLOGO GENERAL ESTÁNDAR (PÚBLICO GENERAL) ──────────────────────────────────
+    const { data: rpcData } = await supabase.rpc('obtener_planes_platzi_activos')
+    const rawPlans = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData : DEFAULT_PLANES_ESTANDAR
 
-    // Filtrar para mostrar únicamente los planes regulares al público general
     const isSpecialPlan = (p: any) => {
       if (p.es_oferta_especial === true) return true
       const name = (p.nombre_plan || '').toLowerCase()
@@ -248,6 +217,7 @@ export async function GET(request: NextRequest) {
         char.includes('solo aplica para')
       )
     }
+
     const regularPlans = rawPlans.filter((p: any) => !isSpecialPlan(p))
     const finalPlans = regularPlans.length > 0 ? regularPlans : rawPlans
 
@@ -264,7 +234,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        planes: DEFAULT_PLANS,
+        tipo: 'fallback',
+        planes: DEFAULT_PLANES_ESTANDAR,
       },
       { status: 200 }
     )
