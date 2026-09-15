@@ -31,7 +31,6 @@ import {
   ExternalLink,
 } from "lucide-react"
 import { useLanguage } from "@/lib/language-context"
-import { SpecialOffersTab } from "./special-offers-tab"
 
 export interface PlanPlatzi {
   id: string
@@ -78,30 +77,93 @@ export interface VentaPlatzi {
 
 const DEFAULT_PLANES: PlanPlatzi[] = [
   {
-    id: "cc7a5125-02a8-44d7-92b5-9e6ef4dca49f",
-    nombre_plan: "Plan 6 Meses",
+    id: "0807dfb2-83bd-4390-88cc-b85a77eb9388",
+    nombre_plan: "Plan 6 meses",
     meses_cubrimiento: 6,
-    precio: 95000,
+    precio: 120000,
     moneda: "COP",
     vigente: true,
-    caracteristicas: "Acceso completo a la plataforma Platzi por 6 meses",
+    caracteristicas: "Accesos completo en tu cuneta personal por 6 meses",
     total_disponibles: null,
     tipo_pago: "pago_unico",
     numero_cuotas: 1,
-    created_at: "2026-09-08T06:10:33.689Z",
+    pago_anticipado: false,
+    es_oferta_especial: false,
+    codigo_oferta: null,
+    institucion_empresa: null,
+    created_at: "2026-09-13T20:17:03.333Z",
   },
   {
     id: "b381bcfd-53f5-4ef3-b5d6-6c5863bb3450",
     nombre_plan: "Plan 12 Meses Pago Único",
     meses_cubrimiento: 12,
-    precio: 180000,
+    precio: 160000,
     moneda: "COP",
     vigente: true,
-    caracteristicas: "Suscripción anual con tarifa preferencial y soporte continuo",
+    caracteristicas: "Suscripción anual con tarifa preferencial",
     total_disponibles: null,
     tipo_pago: "pago_unico",
     numero_cuotas: 1,
+    pago_anticipado: false,
+    es_oferta_especial: false,
+    codigo_oferta: null,
+    institucion_empresa: null,
     created_at: "2026-09-08T06:10:33.689Z",
+  },
+  {
+    id: "cc7a5125-02a8-44d7-92b5-9e6ef4dca49f",
+    nombre_plan: "Plan 12  Meses",
+    meses_cubrimiento: 12,
+    precio: 180000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Pagos de 90000 cada 6 meses",
+    total_disponibles: null,
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
+    pago_anticipado: false,
+    es_oferta_especial: false,
+    codigo_oferta: null,
+    institucion_empresa: null,
+    created_at: "2026-09-08T06:10:33.689Z",
+  },
+  {
+    id: "399f6ed5-6d64-4c0f-b7ef-dc69b31038e2",
+    nombre_plan: "Oferta especial familia PythonCode",
+    meses_cubrimiento: 12,
+    precio: 120000,
+    moneda: "COP",
+    vigente: true,
+    caracteristicas: "Solo aplica para los integrantes de la cominidad",
+    total_disponibles: null,
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
+    pago_anticipado: true,
+    es_oferta_especial: true,
+    codigo_oferta: "PYTHONCODE",
+    institucion_empresa: "PythonCode",
+    cupos_maximos: null,
+    cupos_usados: 0,
+    created_at: "2026-09-13T20:27:21.633Z",
+  },
+  {
+    id: "32c6f15c-93d9-4c40-b7f4-995bbc1fc70a",
+    nombre_plan: "Convenio Universidad del Valle",
+    meses_cubrimiento: 6,
+    precio: 85000,
+    moneda: "COP",
+    vigente: false,
+    caracteristicas: "Tarifa exclusiva para estudiantes y docentes de Univalle",
+    total_disponibles: 50,
+    tipo_pago: "pago_unico",
+    numero_cuotas: 1,
+    pago_anticipado: true,
+    es_oferta_especial: true,
+    codigo_oferta: "UNIVALLE-2026",
+    institucion_empresa: "Universidad del Valle",
+    cupos_maximos: 50,
+    cupos_usados: 0,
+    created_at: "2026-09-09T06:38:55.891Z",
   },
 ]
 
@@ -110,9 +172,13 @@ export function PlatziModule() {
   const isEs = language === "es"
   const pT = (t.dashboard as any)?.platzi || {}
 
-  const [activeTab, setActiveTab] = useState<"planes" | "ofertas" | "ventas">("planes")
+  // Pestañas unificadas: solo "planes" (que incluye estándar y ofertas especiales) y "ventas"
+  const [activeTab, setActiveTab] = useState<"planes" | "ventas">("planes")
 
-  // Estados de Planes: inicializado inmediatamente con catálogo base para evitar esperas y bloqueos
+  // Filtro de subcategoría dentro del catálogo de planes
+  const [planCategoryFilter, setPlanCategoryFilter] = useState<"all" | "standard" | "offers">("all")
+
+  // Estados de Planes
   const [planes, setPlanes] = useState<PlanPlatzi[]>(DEFAULT_PLANES)
   const [loadingPlanes, setLoadingPlanes] = useState(false)
   const [searchPlanes, setSearchPlanes] = useState("")
@@ -128,8 +194,8 @@ export function PlatziModule() {
 
   // Formulario Plan
   const [planNombre, setPlanNombre] = useState("")
-  const [planMeses, setPlanMeses] = useState<number>(5)
-  const [planPrecio, setPlanPrecio] = useState<string>("85000")
+  const [planMeses, setPlanMeses] = useState<number>(12)
+  const [planPrecio, setPlanPrecio] = useState<string>("120000")
   const [planMoneda, setPlanMoneda] = useState("COP")
   const [planTipoPago, setPlanTipoPago] = useState<"pago_unico" | "cuotas">("pago_unico")
   const [planNumeroCuotas, setPlanNumeroCuotas] = useState<number>(1)
@@ -146,7 +212,7 @@ export function PlatziModule() {
   const [feedbackToast, setFeedbackToast] = useState("")
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null)
 
-  // Cargar Planes en segundo plano con timeout estricto de 4 segundos
+  // Cargar Catálogo Unificado de Planes (Planes Estándar + Ofertas Especiales)
   const loadPlanes = async () => {
     setLoadingPlanes(true)
     const controller = new AbortController()
@@ -164,14 +230,14 @@ export function PlatziModule() {
         }
       }
     } catch {
-      // Si falla o hay timeout en el servidor, se mantiene el catálogo base sin romper la interfaz
+      // Si hay timeout o error de red, se mantiene el catálogo base sin romper la interfaz
     } finally {
       clearTimeout(timeoutId)
       setLoadingPlanes(false)
     }
   }
 
-  // Cargar Ventas en segundo plano con timeout estricto de 4 segundos
+  // Cargar Ventas en segundo plano
   const loadVentas = async () => {
     setLoadingVentas(true)
     const controller = new AbortController()
@@ -228,8 +294,8 @@ export function PlatziModule() {
     } else {
       setEditingPlan(null)
       setPlanNombre("")
-      setPlanMeses(5)
-      setPlanPrecio("85000")
+      setPlanMeses(12)
+      setPlanPrecio("120000")
       setPlanMoneda("COP")
       setPlanTipoPago("pago_unico")
       setPlanNumeroCuotas(1)
@@ -244,7 +310,7 @@ export function PlatziModule() {
     setIsPlanModalOpen(true)
   }
 
-  // Guardar Plan
+  // Guardar Plan u Oferta Especial
   const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmittingPlan(true)
@@ -260,7 +326,7 @@ export function PlatziModule() {
         numero_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
         admite_cuotas: planTipoPago === "cuotas",
         max_cuotas: planTipoPago === "cuotas" ? Number(planNumeroCuotas) : 1,
-        pago_anticipado: planPagoAnticipado,
+        pago_anticipado: planPagoAnticipado || planEsOfertaEspecial,
         vigente: planVigente,
         caracteristicas: planCaracteristicas.trim(),
         es_oferta_especial: planEsOfertaEspecial,
@@ -279,29 +345,32 @@ export function PlatziModule() {
       if (res.ok && data.success) {
         setFeedbackToast(
           isEs
-            ? editingPlan ? "Plan actualizado exitosamente." : "Plan creado exitosamente."
+            ? editingPlan ? "Plan / Oferta actualizado exitosamente." : "Plan / Oferta creado exitosamente."
             : editingPlan ? "Plan updated successfully." : "Plan created successfully."
         )
         setIsPlanModalOpen(false)
         loadPlanes()
       } else {
-        alert(data.error || "Error al guardar plan")
+        alert(data.error || "Error al guardar el plan")
       }
     } catch {
-      alert("Error de red al guardar plan")
+      alert("Error de red al guardar el plan")
     } finally {
       setIsSubmittingPlan(false)
     }
   }
 
-  // Alternar Vigencia de Plan
+  // Alternar Vigencia de Plan u Oferta Especial
   const handleToggleVigencia = async (plan: PlanPlatzi) => {
     const nuevaVigencia = !plan.vigente
     try {
       const res = await fetch(`/api/admin/platzi/plans/${plan.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vigente: nuevaVigencia }),
+        body: JSON.stringify({
+          vigente: nuevaVigencia,
+          es_oferta_especial: Boolean(plan.es_oferta_especial),
+        }),
       })
 
       const data = await res.json()
@@ -311,27 +380,32 @@ export function PlatziModule() {
         )
         setFeedbackToast(
           isEs
-            ? `Plan "${plan.nombre_plan}" ${nuevaVigencia ? "activado" : "desactivado"}.`
-            : `Plan "${plan.nombre_plan}" ${nuevaVigencia ? "activated" : "deactivated"}.`
+            ? `"${plan.nombre_plan}" ${nuevaVigencia ? "activado" : "desactivado"}.`
+            : `"${plan.nombre_plan}" ${nuevaVigencia ? "activated" : "deactivated"}.`
         )
+      } else {
+        alert(data.error || "Error al cambiar vigencia")
       }
     } catch {
-      alert("Error al actualizar vigencia")
+      alert("Error de red al actualizar vigencia")
     }
   }
 
-  // Eliminar Plan
+  // Eliminar Plan u Oferta Especial
   const handleDeletePlan = async (plan: PlanPlatzi) => {
-    if (!confirm(pT.deletePlanConfirm || "¿Estás seguro de eliminar este plan?")) return
+    if (!confirm(pT.deletePlanConfirm || `¿Estás seguro de eliminar "${plan.nombre_plan}"?`)) return
 
     try {
-      const res = await fetch(`/api/admin/platzi/plans/${plan.id}`, {
-        method: "DELETE",
-      })
+      const res = await fetch(
+        `/api/admin/platzi/plans/${plan.id}?es_oferta_especial=${Boolean(plan.es_oferta_especial)}`,
+        { method: "DELETE" }
+      )
       const data = await res.json()
       if (res.ok && data.success) {
         setPlanes((prev) => prev.filter((p) => p.id !== plan.id))
         setFeedbackToast(isEs ? "Plan eliminado correctamente." : "Plan deleted successfully.")
+      } else {
+        alert(data.error || "Error al eliminar el plan")
       }
     } catch {
       alert("Error al eliminar plan")
@@ -375,6 +449,9 @@ export function PlatziModule() {
 
   // Métricas agregadas
   const planesVigentesCount = useMemo(() => planes.filter((p) => p.vigente).length, [planes])
+  const planesEstandarCount = useMemo(() => planes.filter((p) => !p.es_oferta_especial).length, [planes])
+  const planesOfertasCount = useMemo(() => planes.filter((p) => p.es_oferta_especial).length, [planes])
+
   const ventasActivasCount = useMemo(() => ventas.filter((v) => v.cuenta_activa).length, [ventas])
   const ventasCanjeadasCount = useMemo(() => ventas.filter((v) => v.cod_canjeado).length, [ventas])
   const ventasConRevendedorCount = useMemo(
@@ -382,13 +459,24 @@ export function PlatziModule() {
     [ventas]
   )
 
-  // Filtrado de planes
+  // Filtrado de planes por texto y subcategoría
   const filteredPlanes = useMemo(() => {
-    return planes.filter((p) =>
-      p.nombre_plan.toLowerCase().includes(searchPlanes.toLowerCase()) ||
-      (p.caracteristicas && p.caracteristicas.toLowerCase().includes(searchPlanes.toLowerCase()))
-    )
-  }, [planes, searchPlanes])
+    return planes.filter((p) => {
+      // Filtro de subcategoría
+      if (planCategoryFilter === "standard" && p.es_oferta_especial) return false
+      if (planCategoryFilter === "offers" && !p.es_oferta_especial) return false
+
+      // Filtro de búsqueda
+      if (!searchPlanes.trim()) return true
+      const q = searchPlanes.toLowerCase().trim()
+      return (
+        p.nombre_plan.toLowerCase().includes(q) ||
+        (p.caracteristicas && p.caracteristicas.toLowerCase().includes(q)) ||
+        (p.codigo_oferta && p.codigo_oferta.toLowerCase().includes(q)) ||
+        (p.institucion_empresa && p.institucion_empresa.toLowerCase().includes(q))
+      )
+    })
+  }, [planes, searchPlanes, planCategoryFilter])
 
   // Filtrado de ventas
   const filteredVentas = useMemo(() => {
@@ -417,7 +505,7 @@ export function PlatziModule() {
           {pT.title || "Gestión de Planes & Ventas Platzi"}
         </h1>
         <p className="text-xs sm:text-sm text-black/70 font-normal mt-1">
-          {pT.subtitle || "Catálogo de planes ofertados, control de vigencias y trazabilidad de ventas sincronizadas con revendedores."}
+          Administración centralizada de planes públicos generales, ofertas especiales por convenio y control de activaciones.
         </p>
       </div>
 
@@ -435,7 +523,7 @@ export function PlatziModule() {
               {planes.length}
             </span>
             <span className="text-xs text-black/40 font-normal block mt-0.5">
-              {planesVigentesCount} vigentes en catálogo
+              {planesEstandarCount} estándar • {planesOfertasCount} ofertas especiales
             </span>
           </div>
         </div>
@@ -443,7 +531,24 @@ export function PlatziModule() {
         <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-black/40">
             <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              TOTAL VENTAS REGISTRADAS
+              PLANES VIGENTES
+            </span>
+            <Sparkles className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="mt-3">
+            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
+              {planesVigentesCount}
+            </span>
+            <span className="text-xs text-black/40 font-normal block mt-0.5">
+              Activos en el catálogo de beneficios
+            </span>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-black/40">
+            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
+              TOTAL VENTAS
             </span>
             <ShoppingBag className="w-4 h-4 text-black/30" />
           </div>
@@ -469,30 +574,13 @@ export function PlatziModule() {
               {ventasActivasCount}
             </span>
             <span className="text-xs text-emerald-600 font-medium block mt-0.5">
-              {ventas.length > 0 ? Math.round((ventasActivasCount / ventas.length) * 100) : 0}% efectividad
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-black/[0.07] shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-black/40">
-            <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-              CÓDIGOS CANJEADOS
-            </span>
-            <Tag className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-[#111]">
-              {ventasCanjeadasCount}
-            </span>
-            <span className="text-xs text-black/40 font-normal block mt-0.5">
-              {ventas.length - ventasCanjeadasCount} pendientes de canje
+              {ventas.length > 0 ? Math.round((ventasActivasCount / ventas.length) * 100) : 0}% efectividad de canje
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── NAVEGACIÓN POR PESTAÑAS ───────────────────────────────────────────── */}
+      {/* ── NAVEGACIÓN PRINCIPAL: PLANES UNIFICADOS VS VENTAS ─────────────────── */}
       <div className="flex items-center gap-2 border-b border-black/[0.08] pb-1">
         <button
           onClick={() => setActiveTab("planes")}
@@ -503,19 +591,7 @@ export function PlatziModule() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Planes Estándar ({planes.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("ofertas")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl font-sans text-xs font-semibold tracking-wide transition-all border-b-2 cursor-pointer ${
-            activeTab === "ofertas"
-              ? "border-black text-black bg-[#F5F4F0]"
-              : "border-transparent text-black/40 hover:text-black/70"
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          <span>Ofertas Especiales & Convenios</span>
+          <span>Gestión de Planes & Ofertas Especiales ({planes.length})</span>
         </button>
 
         <button
@@ -527,32 +603,68 @@ export function PlatziModule() {
           }`}
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Ventas & Canjes ({ventas.length})</span>
+          <span>Ventas & Canjes Platzi ({ventas.length})</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA 1: PLANES OFERTADOS (DATA TABLE CORPORATIVA) */}
+      {/* VISTA 1: CATÁLOGO UNIFICADO DE PLANES & OFERTAS ESPECIALES */}
       {/* ========================================================================= */}
       {activeTab === "planes" && (
         <div className="space-y-4">
-          {/* Barra de Controles */}
+          {/* Barra de Controles y Subfiltros */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-black/[0.07] shadow-2xs">
-            <div className="relative flex-1 sm:w-80">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-              <input
-                type="text"
-                value={searchPlanes}
-                onChange={(e) => setSearchPlanes(e.target.value)}
-                placeholder="Buscar plan por nombre o características..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
-              />
+            {/* Píldoras de filtrado por categoría de plan */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#F5F4F0] border border-black/[0.06]">
+              <button
+                onClick={() => setPlanCategoryFilter("all")}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                  planCategoryFilter === "all"
+                    ? "bg-white text-[#111] shadow-2xs"
+                    : "text-black/50 hover:text-[#111]"
+                }`}
+              >
+                Todos ({planes.length})
+              </button>
+              <button
+                onClick={() => setPlanCategoryFilter("standard")}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                  planCategoryFilter === "standard"
+                    ? "bg-white text-[#111] shadow-2xs"
+                    : "text-black/50 hover:text-[#111]"
+                }`}
+              >
+                Planes Estándar ({planesEstandarCount})
+              </button>
+              <button
+                onClick={() => setPlanCategoryFilter("offers")}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                  planCategoryFilter === "offers"
+                    ? "bg-white text-amber-900 shadow-2xs"
+                    : "text-black/50 hover:text-amber-800"
+                }`}
+              >
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                <span>Ofertas Especiales ({planesOfertasCount})</span>
+              </button>
             </div>
 
+            {/* Buscador y Botón Nuevo Plan */}
             <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-72">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
+                <input
+                  type="text"
+                  value={searchPlanes}
+                  onChange={(e) => setSearchPlanes(e.target.value)}
+                  placeholder="Buscar por nombre, código o características..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs text-[#111] placeholder:text-black/40 outline-none focus:border-black/30 transition-all font-sans"
+                />
+              </div>
+
               <button
                 onClick={loadPlanes}
-                title="Refrescar Planes"
+                title="Refrescar Catálogo"
                 className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingPlanes ? "animate-spin text-[#111]" : ""}`} />
@@ -563,21 +675,22 @@ export function PlatziModule() {
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#111] text-white text-xs font-medium hover:bg-black/90 transition-all cursor-pointer shadow-2xs shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>Nuevo Plan</span>
+                <span>Nuevo Plan / Oferta</span>
               </button>
             </div>
           </div>
 
-          {/* Tabla de Planes */}
+          {/* Tabla Unificada de Planes & Ofertas Especiales */}
           <div className="bg-white rounded-2xl border border-black/[0.07] overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse font-sans">
                 <thead>
                   <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
-                    <th className="py-3 px-3.5 font-bold">Nombre del Plan</th>
-                    <th className="py-3 px-3.5 font-bold text-center">Meses de Cobertura</th>
-                    <th className="py-3 px-3.5 font-bold">Precio Formateado</th>
+                    <th className="py-3 px-3.5 font-bold">Nombre & Categoría</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Cobertura</th>
+                    <th className="py-3 px-3.5 font-bold">Precio & Modalidad</th>
                     <th className="py-3 px-3.5 font-bold">Características</th>
+                    <th className="py-3 px-3.5 font-bold">Enlace Directo</th>
                     <th className="py-3 px-3.5 font-bold text-center">Estado / Vigente</th>
                     <th className="py-3 px-3.5 font-bold text-right">Acciones</th>
                   </tr>
@@ -586,169 +699,172 @@ export function PlatziModule() {
                 <tbody className="divide-y divide-black/[0.05]">
                   {loadingPlanes && planes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-xs font-mono text-black/40">
+                      <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
                         <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
-                        <span>Cargando catálogo de planes...</span>
+                        <span>Cargando catálogo de planes y ofertas...</span>
                       </td>
                     </tr>
                   ) : filteredPlanes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-xs font-mono text-black/40">
-                        No se encontraron planes registrados.
+                      <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
+                        No se encontraron planes u ofertas registrados.
                       </td>
                     </tr>
                   ) : (
-                    filteredPlanes.map((plan) => (
-                      <tr key={plan.id} className="hover:bg-black/[0.015] transition-colors">
-                        {/* Nombre */}
-                        <td className="py-3 px-3.5">
-                          <span className="text-xs font-semibold text-[#111] block">
-                            {plan.nombre_plan}
-                          </span>
-                          {plan.es_oferta_especial && (
-                            <div className="flex flex-wrap items-center gap-1 mt-1">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70 text-[9px] font-mono font-bold tracking-wider uppercase">
-                                ⭐ CONVENIO: {plan.codigo_oferta || "OFERTA"}
+                    filteredPlanes.map((plan) => {
+                      const origin = typeof window !== "undefined" ? window.location.origin : "https://smartcontacts.cloud"
+                      const planDirectUrl = plan.codigo_oferta
+                        ? `${origin}/beneficios?oferta=${plan.codigo_oferta}`
+                        : `${origin}/beneficios`
+
+                      return (
+                        <tr key={plan.id} className="hover:bg-black/[0.015] transition-colors">
+                          {/* Nombre & Categoría */}
+                          <td className="py-3 px-3.5">
+                            <span className="text-xs font-semibold text-[#111] block">
+                              {plan.nombre_plan}
+                            </span>
+                            {plan.es_oferta_especial ? (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[9px] font-mono font-bold uppercase tracking-wider">
+                                  ⭐ OFERTA: {plan.codigo_oferta || "CONVENIO"}
+                                </span>
+                                {plan.institucion_empresa && (
+                                  <span className="text-[10px] text-black/60 font-medium">
+                                    • {plan.institucion_empresa}
+                                  </span>
+                                )}
+                                {plan.cupos_maximos && (
+                                  <span className="text-[10px] font-mono text-black/40">
+                                    ({plan.cupos_usados || 0}/{plan.cupos_maximos} cupos)
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-block mt-0.5 text-[9px] font-mono font-semibold text-black/40 uppercase tracking-wider">
+                                Público General
                               </span>
-                              {plan.institucion_empresa && (
-                                <span className="text-[10px] text-black/50 font-normal">
-                                  {plan.institucion_empresa}
+                            )}
+                          </td>
+
+                          {/* Cobertura */}
+                          <td className="py-3 px-3.5 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F5F4F0] text-xs font-mono font-bold text-[#111]">
+                              {plan.meses_cubrimiento} {plan.meses_cubrimiento === 12 ? "Meses (1 Año)" : "Meses"}
+                            </span>
+                          </td>
+
+                          {/* Precio y Modalidad */}
+                          <td className="py-3 px-3.5">
+                            <div className="font-mono text-xs font-bold text-[#111]">
+                              ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                              {plan.tipo_pago === "cuotas" ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200/60 text-[9px] font-mono font-bold">
+                                  {plan.numero_cuotas || 2} Cuotas
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-gray-100 text-gray-700 text-[9px] font-mono font-medium">
+                                  Pago Único
                                 </span>
                               )}
-                              {plan.cupos_maximos && (
-                                <span className="text-[10px] font-mono text-black/40">
-                                  ({plan.cupos_usados || 0}/{plan.cupos_maximos} cupos)
+
+                              {plan.pago_anticipado ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-mono font-bold">
+                                  ⚡ Pago Anticipado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[9px] font-mono font-medium">
+                                  ✓ Inmediato
                                 </span>
                               )}
                             </div>
-                          )}
-                        </td>
+                          </td>
 
-                        {/* Meses */}
-                        <td className="py-3 px-3.5 text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F5F4F0] text-xs font-mono font-bold text-[#111]">
-                            {plan.meses_cubrimiento} Meses
-                          </span>
-                        </td>
+                          {/* Características */}
+                          <td className="py-3 px-3.5 text-xs text-black/60 font-normal max-w-xs truncate">
+                            {plan.caracteristicas || "Sin especificaciones"}
+                          </td>
 
-                        {/* Precio y Modalidad */}
-                        <td className="py-3 px-3.5">
-                          <div className="font-mono text-xs font-bold text-[#111]">
-                            ${Number(plan.precio).toLocaleString("es-CO")} {plan.moneda}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                            {plan.tipo_pago === "cuotas" ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 text-[10px] font-mono font-bold">
-                                {plan.numero_cuotas || 2} Cuotas de ${Math.round(Number(plan.precio) / (plan.numero_cuotas || 2)).toLocaleString("es-CO")}
+                          {/* Enlace Directo */}
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-mono text-black/60 max-w-[130px] truncate bg-[#F5F4F0] px-2 py-0.5 rounded border border-black/[0.06]">
+                                {plan.codigo_oferta ? `?oferta=${plan.codigo_oferta}` : "/beneficios"}
                               </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[10px] font-mono font-medium">
-                                Pago Único
-                              </span>
-                            )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(planDirectUrl)
+                                  setFeedbackToast(`URL copiada: ${planDirectUrl}`)
+                                }}
+                                title="Copiar URL directa al portapapeles"
+                                className="p-1 rounded-lg border border-black/[0.08] bg-white text-black/60 hover:text-black hover:bg-black/[0.04] transition-colors cursor-pointer"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <a
+                                href={planDirectUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="Abrir enlace en nueva pestaña"
+                                className="p-1 rounded-lg border border-black/[0.08] bg-white text-black/60 hover:text-black hover:bg-black/[0.04] transition-colors"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          </td>
 
-                            {plan.pago_anticipado ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-mono font-bold">
-                                ⚡ Pago Anticipado
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-medium">
-                                ✓ Activación Inmediata
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Características */}
-                        <td className="py-3 px-3.5 text-xs text-black/60 font-normal max-w-xs truncate">
-                          {plan.caracteristicas || "Sin detalles adicionales"}
-                        </td>
-
-                        {/* Estado / Vigente */}
-                        <td className="py-3 px-3.5 text-center">
-                          <button
-                            onClick={() => handleToggleVigencia(plan)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
-                              plan.vigente
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                plan.vigente ? "bg-emerald-500" : "bg-black/30"
+                          {/* Estado / Vigente */}
+                          <td className="py-3 px-3.5 text-center">
+                            <button
+                              onClick={() => handleToggleVigencia(plan)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
+                                plan.vigente
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                  : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
                               }`}
-                            />
-                            <span>{plan.vigente ? "Vigente" : "Inactivo"}</span>
-                          </button>
-                        </td>
-
-                        {/* Acciones */}
-                        <td className="py-3 px-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Copiar Enlace Directo */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const origin = typeof window !== "undefined" ? window.location.origin : "https://smartcontacts.cloud"
-                                const planUrl = plan.codigo_oferta
-                                  ? `${origin}/beneficios?oferta=${plan.codigo_oferta}`
-                                  : `${origin}/beneficios`
-                                navigator.clipboard.writeText(planUrl)
-                                setFeedbackToast(isEs ? "Enlace directo copiado al portapapeles." : "Direct URL copied to clipboard.")
-                              }}
-                              title="Copiar URL directa del plan"
-                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] hover:bg-black/[0.05] transition-colors cursor-pointer"
                             >
-                              <Copy className="w-3.5 h-3.5" />
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  plan.vigente ? "bg-emerald-500" : "bg-black/30"
+                                }`}
+                              />
+                              <span>{plan.vigente ? "Vigente" : "Inactivo"}</span>
                             </button>
+                          </td>
 
-                            {/* Probar Enlace en Vivo */}
-                            <a
-                              href={plan.codigo_oferta ? `/beneficios?oferta=${plan.codigo_oferta}` : `/beneficios`}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Abrir enlace en nueva pestaña"
-                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] hover:bg-black/[0.05] transition-colors"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
+                          {/* Acciones */}
+                          <td className="py-3 px-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPlanModal(plan)}
+                                title="Editar Plan"
+                                className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleOpenPlanModal(plan)}
-                              title="Editar Plan"
-                              className="p-1.5 rounded-lg border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePlan(plan)}
-                              title="Eliminar Plan"
-                              className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePlan(plan)}
+                                title="Eliminar Plan"
+                                className="p-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* VISTA 2: OFERTAS ESPECIALES & CONVENIOS */}
-      {/* ========================================================================= */}
-      {activeTab === "ofertas" && (
-        <div className="pt-1">
-          <SpecialOffersTab />
         </div>
       )}
 
@@ -770,13 +886,15 @@ export function PlatziModule() {
               />
             </div>
 
-            <button
-              onClick={loadVentas}
-              title="Refrescar Ventas"
-              className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer self-end sm:self-auto"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingVentas ? "animate-spin text-[#111]" : ""}`} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadVentas}
+                title="Refrescar Ventas"
+                className="p-2 rounded-xl border border-black/[0.08] bg-[#F5F4F0] text-black/60 hover:text-[#111] transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingVentas ? "animate-spin text-[#111]" : ""}`} />
+              </button>
+            </div>
           </div>
 
           {/* Tabla de Ventas */}
@@ -787,26 +905,26 @@ export function PlatziModule() {
                   <tr className="border-b border-black/[0.07] bg-[#F5F4F0] text-[10px] font-mono text-black/40 uppercase tracking-widest font-bold">
                     <th className="py-3 px-3.5 font-bold">Cliente / Comprador</th>
                     <th className="py-3 px-3.5 font-bold">Cuenta Platzi</th>
-                    <th className="py-3 px-3.5 font-bold">Revendedor Asociado</th>
-                    <th className="py-3 px-3.5 font-bold text-center">Código Generado</th>
+                    <th className="py-3 px-3.5 font-bold">Código Activación</th>
+                    <th className="py-3 px-3.5 font-bold">Revendedor</th>
+                    <th className="py-3 px-3.5 font-bold text-center">Canje</th>
                     <th className="py-3 px-3.5 font-bold text-center">Cuenta Activa</th>
-                    <th className="py-3 px-3.5 font-bold text-center">Canjeado</th>
-                    <th className="py-3 px-3.5 font-bold text-right">Fecha Solicitud</th>
+                    <th className="py-3 px-3.5 font-bold">Fecha</th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-black/[0.05]">
-                  {loadingVentas ? (
+                  {loadingVentas && ventas.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
                         <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-black/40" />
-                        <span>Cargando historial de ventas...</span>
+                        <span>Cargando trazabilidad de ventas...</span>
                       </td>
                     </tr>
                   ) : filteredVentas.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-xs font-mono text-black/40">
-                        No se encontraron ventas registradas.
+                        No se encontraron registros de ventas.
                       </td>
                     </tr>
                   ) : (
@@ -814,59 +932,81 @@ export function PlatziModule() {
                       <tr key={venta.id} className="hover:bg-black/[0.015] transition-colors">
                         {/* Cliente */}
                         <td className="py-3 px-3.5">
-                          <span className="text-xs font-semibold text-[#111] block">
-                            {venta.name}
-                          </span>
-                          <span className="text-[11px] text-black/50 font-normal block">
-                            {venta.email}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-[#111]">{venta.name}</span>
+                            <span className="text-[11px] text-black/50 font-normal">{venta.email}</span>
+                            {venta.phone && (
+                              <span className="text-[10px] font-mono text-black/40">{venta.phone}</span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Cuenta Platzi */}
                         <td className="py-3 px-3.5">
-                          <span className="text-xs font-mono text-black/80 font-medium">
+                          <span className="text-xs font-mono font-medium text-[#111]">
                             {venta.platzi_account_email}
                           </span>
+                        </td>
+
+                        {/* Código Activación */}
+                        <td className="py-3 px-3.5">
+                          {venta.cod_generado ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-mono font-bold bg-[#F5F4F0] px-2 py-0.5 rounded border border-black/[0.08] select-all">
+                                {venta.cod_generado}
+                              </span>
+                              <button
+                                onClick={() => handleCopyCode(venta.id, venta.cod_generado!)}
+                                title="Copiar código"
+                                className="p-1 rounded text-black/40 hover:text-black transition-colors cursor-pointer"
+                              >
+                                {copiedCodeId === venta.id ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-black/30 font-mono italic">Sin código</span>
+                          )}
                         </td>
 
                         {/* Revendedor */}
                         <td className="py-3 px-3.5">
                           {venta.cod_revendedor ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[11px] font-mono font-bold border border-emerald-200/60">
-                              REF: {venta.cod_revendedor}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/60 text-[10px] font-mono font-bold">
+                              {venta.cod_revendedor}
                             </span>
                           ) : (
-                            <span className="text-[11px] font-mono text-black/40">
-                              Directo (Sin código)
-                            </span>
+                            <span className="text-[10px] font-mono text-black/40 italic">Directo</span>
                           )}
                         </td>
 
-                        {/* Código Generado Copiable */}
+                        {/* Canje */}
                         <td className="py-3 px-3.5 text-center">
-                          {venta.cod_generado ? (
-                            <button
-                              onClick={() => handleCopyCode(venta.id, venta.cod_generado!)}
-                              title="Copiar código de activación"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F5F4F0] hover:bg-black/[0.08] border border-black/[0.08] text-xs font-mono font-bold text-[#111] tracking-wider transition-colors cursor-pointer"
-                            >
-                              <span>{venta.cod_generado}</span>
-                              {copiedCodeId === venta.id ? (
-                                <Check className="w-3 h-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3 h-3 text-black/30" />
-                              )}
-                            </button>
-                          ) : (
-                            <span className="text-xs font-mono text-black/30">-</span>
-                          )}
+                          <button
+                            onClick={() => handleToggleVenta(venta, "cod_canjeado")}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-colors cursor-pointer border ${
+                              venta.cod_canjeado
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                venta.cod_canjeado ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                            />
+                            <span>{venta.cod_canjeado ? "Canjeado" : "Pendiente"}</span>
+                          </button>
                         </td>
 
-                        {/* Cuenta Activa (Switch interactivo) */}
+                        {/* Cuenta Activa */}
                         <td className="py-3 px-3.5 text-center">
                           <button
                             onClick={() => handleToggleVenta(venta, "cuenta_activa")}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold transition-colors cursor-pointer border ${
                               venta.cuenta_activa
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                 : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
@@ -881,23 +1021,15 @@ export function PlatziModule() {
                           </button>
                         </td>
 
-                        {/* Código Canjeado (Switch interactivo) */}
-                        <td className="py-3 px-3.5 text-center">
-                          <button
-                            onClick={() => handleToggleVenta(venta, "cod_canjeado")}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold transition-colors cursor-pointer border ${
-                              venta.cod_canjeado
-                                ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                                : "bg-black/[0.03] text-black/40 border-black/[0.06] hover:bg-black/[0.06]"
-                            }`}
-                          >
-                            <span>{venta.cod_canjeado ? "Canjeado" : "Pendiente"}</span>
-                          </button>
-                        </td>
-
                         {/* Fecha */}
-                        <td className="py-3 px-3.5 text-right font-mono text-xs text-black/60">
-                          {new Date(venta.fecha_registro).toLocaleDateString("es-CO")}
+                        <td className="py-3 px-3.5 text-[11px] font-mono text-black/50">
+                          {venta.fecha_registro
+                            ? new Date(venta.fecha_registro).toLocaleDateString("es-CO", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "-"}
                         </td>
                       </tr>
                     ))
@@ -909,28 +1041,109 @@ export function PlatziModule() {
         </div>
       )}
 
-      {/* ── MODAL CREAR / EDITAR PLAN ─────────────────────────────────────────── */}
+      {/* ── MODAL NUEVO / EDITAR PLAN U OFERTA ESPECIAL ──────────────────────── */}
       {isPlanModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-black/10 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-black/[0.08] shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.06]">
               <div>
-                <h3 className="text-base font-semibold text-[#111] tracking-tight">
-                  {editingPlan ? "Editar Plan Platzi" : "Configuración de Plan Platzi"}
+                <h3 className="text-lg font-semibold text-[#111]">
+                  {editingPlan ? "Editar Plan / Oferta" : "Crear Nuevo Plan / Oferta"}
                 </h3>
-                <p className="text-xs text-black/50 font-normal mt-0.5">
-                  Define la oferta de planes, meses de cobertura y precio.
+                <p className="text-xs text-black/50 mt-0.5">
+                  Configura tarifas públicas o convenios privados de oferta especial.
                 </p>
               </div>
               <button
                 onClick={() => setIsPlanModalOpen(false)}
-                className="p-1 rounded-lg text-black/40 hover:text-black hover:bg-black/[0.04] transition-colors"
+                className="p-1.5 rounded-full text-black/40 hover:text-black hover:bg-black/5 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSavePlan} className="space-y-4">
+            <form onSubmit={handleSavePlan} className="space-y-4 font-sans">
+              {/* Switch de Oferta Especial / Convenio */}
+              <div className="p-3.5 rounded-2xl bg-amber-500/[0.06] border border-amber-500/25 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-amber-950 block">
+                        ¿Es una Oferta Especial / Convenio?
+                      </span>
+                      <span className="text-[11px] text-amber-800/80 font-normal block">
+                        Solo visible mediante enlace con código (ej. ?oferta=PYTHONCODE)
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    id="planEsOfertaEspecialSwitch"
+                    checked={planEsOfertaEspecial}
+                    onChange={(e) => {
+                      setPlanEsOfertaEspecial(e.target.checked)
+                      if (e.target.checked) setPlanPagoAnticipado(true)
+                    }}
+                    className="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-0 cursor-pointer"
+                  />
+                </div>
+
+                {planEsOfertaEspecial && (
+                  <div className="space-y-3 pt-2.5 border-t border-amber-500/20">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-amber-950">
+                          CÓDIGO DE OFERTA *
+                        </label>
+                        <input
+                          type="text"
+                          required={planEsOfertaEspecial}
+                          value={planCodigoOferta}
+                          onChange={(e) => setPlanCodigoOferta(e.target.value.toUpperCase())}
+                          placeholder="Ej. PYTHONCODE"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 text-xs font-mono font-bold text-[#111] outline-none focus:border-amber-600"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-amber-950">
+                          CUPOS MÁXIMOS
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={planCuposMaximos}
+                          onChange={(e) => setPlanCuposMaximos(e.target.value)}
+                          placeholder="Ilimitados"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 text-xs font-mono text-[#111] outline-none focus:border-amber-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-amber-950">
+                        INSTITUCIÓN O COMUNIDAD ALIADA
+                      </label>
+                      <input
+                        type="text"
+                        value={planInstitucionEmpresa}
+                        onChange={(e) => setPlanInstitucionEmpresa(e.target.value)}
+                        placeholder="Ej. Comunidad PythonCode"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 text-xs font-sans text-[#111] outline-none focus:border-amber-600"
+                      />
+                    </div>
+
+                    {planCodigoOferta && (
+                      <div className="text-[10px] font-mono text-amber-900 bg-white/70 p-2 rounded-lg border border-amber-200">
+                        Enlace generado: <span className="font-bold">https://smartcontacts.cloud/beneficios?oferta={planCodigoOferta}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Nombre del Plan */}
               <div className="space-y-1">
                 <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
                   NOMBRE DEL PLAN *
@@ -940,19 +1153,21 @@ export function PlatziModule() {
                   required
                   value={planNombre}
                   onChange={(e) => setPlanNombre(e.target.value)}
-                  placeholder="Ej. Plan 5 Meses"
+                  placeholder="Ej. Plan 12 Meses Pago Único u Oferta Especial PythonCode"
                   className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30"
                 />
               </div>
 
+              {/* Meses y Precio */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
-                    MESES DE CUBRIMIENTO *
+                    MESES DE COBERTURA *
                   </label>
                   <input
                     type="number"
                     min={1}
+                    max={36}
                     required
                     value={planMeses}
                     onChange={(e) => setPlanMeses(parseInt(e.target.value) || 1)}
@@ -970,12 +1185,13 @@ export function PlatziModule() {
                     required
                     value={planPrecio}
                     onChange={(e) => setPlanPrecio(e.target.value)}
-                    placeholder="85000"
+                    placeholder="120000"
                     className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
                   />
                 </div>
               </div>
 
+              {/* Modalidad de Pago */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
@@ -1004,12 +1220,12 @@ export function PlatziModule() {
                       <option value={2}>2 Cuotas (${Math.round((Number(planPrecio) || 0) / 2).toLocaleString("es-CO")} c/u)</option>
                       <option value={3}>3 Cuotas (${Math.round((Number(planPrecio) || 0) / 3).toLocaleString("es-CO")} c/u)</option>
                       <option value={6}>6 Cuotas (${Math.round((Number(planPrecio) || 0) / 6).toLocaleString("es-CO")} c/u)</option>
-                      <option value={12}>12 Cuotas (${Math.round((Number(planPrecio) || 0) / 12).toLocaleString("es-CO")} c/u)</option>
                     </select>
                   </div>
                 )}
               </div>
 
+              {/* Características */}
               <div className="space-y-1">
                 <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-black/70">
                   CARACTERÍSTICAS / DETALLES
@@ -1018,88 +1234,23 @@ export function PlatziModule() {
                   rows={2}
                   value={planCaracteristicas}
                   onChange={(e) => setPlanCaracteristicas(e.target.value)}
-                  placeholder="Ej. Acceso completo a rutas y cursos por 5 meses..."
+                  placeholder="Ej. Acceso completo a rutas de aprendizaje y eventos..."
                   className="w-full px-3 py-2 rounded-xl bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30 resize-none"
                 />
               </div>
 
-              {/* Sección Convenio / Oferta Especial */}
-              <div className="p-3 rounded-xl bg-black/[0.02] border border-black/[0.06] space-y-3">
+              {/* Switches de Vigencia y Pago Anticipado */}
+              <div className="space-y-2 pt-1 border-t border-black/[0.06]">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="planEsOfertaEspecialCheck"
-                    checked={planEsOfertaEspecial}
-                    onChange={(e) => setPlanEsOfertaEspecial(e.target.checked)}
-                    className="rounded border-black/20 text-black focus:ring-0 cursor-pointer"
-                  />
-                  <label
-                    htmlFor="planEsOfertaEspecialCheck"
-                    className="text-xs font-sans text-black/90 font-medium cursor-pointer flex items-center gap-1"
-                  >
-                    <span>⭐ Marcar como Oferta Especial / Convenio Preferencial</span>
-                  </label>
-                </div>
-
-                {planEsOfertaEspecial && (
-                  <div className="space-y-3 pt-2 border-t border-black/[0.04]">
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div className="space-y-1">
-                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
-                          CÓDIGO OFERTA *
-                        </label>
-                        <input
-                          type="text"
-                          required={planEsOfertaEspecial}
-                          value={planCodigoOferta}
-                          onChange={(e) => setPlanCodigoOferta(e.target.value.toUpperCase())}
-                          placeholder="Ej. UNAL2026"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono font-bold text-[#111] outline-none focus:border-black/30"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
-                          CUPOS MÁXIMOS
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={planCuposMaximos}
-                          onChange={(e) => setPlanCuposMaximos(e.target.value)}
-                          placeholder="Sin límite"
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-mono text-[#111] outline-none focus:border-black/30"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-black/70">
-                        INSTITUCIÓN O EMPRESA ALIADA
-                      </label>
-                      <input
-                        type="text"
-                        value={planInstitucionEmpresa}
-                        onChange={(e) => setPlanInstitucionEmpresa(e.target.value)}
-                        placeholder="Ej. Universidad Nacional de Colombia"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#F5F4F0] border border-black/[0.08] text-xs font-sans text-[#111] outline-none focus:border-black/30"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="planVigenteCheck"
+                    id="planVigenteCheckModal"
                     checked={planVigente}
                     onChange={(e) => setPlanVigente(e.target.checked)}
                     className="rounded border-black/20 text-black focus:ring-0 cursor-pointer"
                   />
                   <label
-                    htmlFor="planVigenteCheck"
+                    htmlFor="planVigenteCheckModal"
                     className="text-xs font-sans text-black/80 font-medium cursor-pointer"
                   >
                     Plan Vigente (mostrar en catálogo ofertado)
@@ -1109,25 +1260,26 @@ export function PlatziModule() {
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="planPagoAnticipadoCheck"
+                    id="planPagoAnticipadoCheckModal"
                     checked={planPagoAnticipado}
                     onChange={(e) => setPlanPagoAnticipado(e.target.checked)}
                     className="rounded border-amber-400 text-amber-600 focus:ring-0 cursor-pointer"
                   />
                   <label
-                    htmlFor="planPagoAnticipadoCheck"
+                    htmlFor="planPagoAnticipadoCheckModal"
                     className="text-xs font-sans text-amber-900 font-medium cursor-pointer flex items-center gap-1"
                   >
-                    <span>⚡ Requiere Pago Anticipado (Cobrar antes de activar cuenta)</span>
+                    <span>⚡ Requiere Pago Anticipado (Garantizar pago antes de enviar activación)</span>
                   </label>
                 </div>
               </div>
 
+              {/* Botones de acción */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-black/[0.06]">
                 <button
                   type="button"
                   onClick={() => setIsPlanModalOpen(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-sans text-black/60 hover:text-black transition-colors"
+                  className="px-3.5 py-2 rounded-xl text-xs font-sans text-black/60 hover:text-black transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

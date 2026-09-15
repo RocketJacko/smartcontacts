@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const PlanSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.string().optional().nullable(),
   nombre_plan: z.string().min(2, 'Nombre de plan requerido'),
   meses_cubrimiento: z.number().int().min(1, 'Al menos 1 mes'),
   precio: z.number().min(0, 'Precio debe ser positivo'),
@@ -46,7 +46,7 @@ async function verificarSuperAdmin() {
 }
 
 /**
- * GET: Listar planes de Platzi
+ * GET: Listar catálogo unificado de planes de Platzi (Planes Estándar + Ofertas Especiales)
  */
 export async function GET() {
   try {
@@ -55,19 +55,84 @@ export async function GET() {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
     }
 
-    const { data, error } = await authCheck.supabase!.rpc('admin_obtener_planes_platzi')
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const supabase = authCheck.supabase!
+
+    // 1. Obtener planes estándar desde platzi.planes
+    const { data: planesEstandar, error: errorPlanes } = await supabase.rpc('admin_obtener_planes_platzi')
+
+    // 2. Obtener ofertas especiales desde referidos.ofertas_especiales
+    const { data: ofertasEspeciales, error: errorOfertas } = await supabase.rpc('admin_listar_ofertas')
+
+    const planesMapeados: any[] = []
+
+    // Mapear planes estándar
+    if (Array.isArray(planesEstandar)) {
+      planesEstandar.forEach((p: any) => {
+        planesMapeados.push({
+          id: p.id,
+          nombre_plan: p.nombre_plan,
+          meses_cubrimiento: Number(p.meses_cubrimiento) || 6,
+          precio: Number(p.precio) || 0,
+          moneda: p.moneda || 'COP',
+          vigente: Boolean(p.vigente),
+          caracteristicas: p.caracteristicas || '',
+          total_disponibles: p.total_disponibles ?? null,
+          tipo_pago: 'pago_unico',
+          numero_cuotas: 1,
+          admite_cuotas: false,
+          max_cuotas: 1,
+          pago_anticipado: false,
+          es_oferta_especial: false,
+          codigo_oferta: null,
+          institucion_empresa: null,
+          cupos_maximos: null,
+          cupos_usados: 0,
+          created_at: p.created_at || new Date().toISOString(),
+        })
+      })
     }
 
-    return NextResponse.json({ success: true, planes: data || [] }, { status: 200 })
+    // Mapear ofertas especiales como planes unificados
+    if (Array.isArray(ofertasEspeciales)) {
+      ofertasEspeciales.forEach((o: any) => {
+        planesMapeados.push({
+          id: o.id,
+          nombre_plan: o.titulo,
+          meses_cubrimiento: Number(o.meses_cubrimiento) || 12,
+          precio: Number(o.precio_cop) || 0,
+          moneda: 'COP',
+          vigente: Boolean(o.activo),
+          caracteristicas: o.descripcion || '',
+          total_disponibles: o.cupos_maximos ?? null,
+          tipo_pago: 'pago_unico',
+          numero_cuotas: 1,
+          admite_cuotas: false,
+          max_cuotas: 1,
+          pago_anticipado: true,
+          es_oferta_especial: true,
+          codigo_oferta: o.codigo_oferta,
+          institucion_empresa: o.institucion_empresa,
+          cupos_maximos: o.cupos_maximos ?? null,
+          cupos_usados: o.cupos_usados || 0,
+          created_at: o.creado_en || new Date().toISOString(),
+        })
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      planes: planesMapeados,
+      total: planesMapeados.length,
+      total_estandar: Array.isArray(planesEstandar) ? planesEstandar.length : 0,
+      total_ofertas: Array.isArray(ofertasEspeciales) ? ofertasEspeciales.length : 0,
+    }, { status: 200 })
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message || 'Error al obtener planes' }, { status: 500 })
+    return NextResponse.json({ success: false, error: err?.message || 'Error al obtener planes unificados' }, { status: 500 })
   }
 }
 
 /**
- * POST: Crear o actualizar plan de Platzi
+ * POST: Crear o actualizar plan de Platzi u oferta especial unificada
  */
 export async function POST(request: Request) {
   try {
@@ -76,6 +141,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
     }
 
+    const supabase = authCheck.supabase!
     const body = await request.json()
     const parsed = PlanSchema.safeParse(body)
 
@@ -87,7 +153,74 @@ export async function POST(request: Request) {
     }
 
     const val = parsed.data
-    const { data, error } = await authCheck.supabase!.rpc('admin_guardar_plan_platzi', {
+
+    // ── Caso A: Es Oferta Especial / Convenio ──────────────────────────────────
+    if (val.es_oferta_especial) {
+      const cleanCode = (val.codigo_oferta || '').trim().toUpperCase()
+      if (!cleanCode) {
+        return NextResponse.json({
+          success: false,
+          error: 'Las ofertas especiales requieren un código de oferta (ej. PYTHONCODE).',
+        }, { status: 400 })
+      }
+
+      if (val.id) {
+        // Actualizar oferta existente
+        const { data, error } = await supabase.rpc('admin_actualizar_oferta', {
+          p_id: val.id,
+          p_titulo: val.nombre_plan,
+          p_descripcion: val.caracteristicas || '',
+          p_institucion_empresa: val.institucion_empresa || '',
+          p_precio_cop: val.precio,
+          p_precio_usd: Math.round(val.precio / 4000) || 24,
+          p_meses_cubrimiento: val.meses_cubrimiento,
+          p_caracteristicas: [],
+          p_afiliado_id: null,
+          p_fecha_fin: null,
+          p_cupos_maximos: val.cupos_maximos ?? null,
+        })
+
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+
+        // Asegurar vigencia
+        await supabase.rpc('admin_toggle_oferta', {
+          p_id: val.id,
+          p_activo: val.vigente,
+        })
+
+        return NextResponse.json({ success: true, id: val.id, es_oferta_especial: true }, { status: 200 })
+      } else {
+        // Crear nueva oferta
+        const { data, error } = await supabase.rpc('admin_crear_oferta', {
+          p_codigo_oferta: cleanCode,
+          p_titulo: val.nombre_plan,
+          p_descripcion: val.caracteristicas || '',
+          p_institucion_empresa: val.institucion_empresa || '',
+          p_precio_cop: val.precio,
+          p_precio_usd: Math.round(val.precio / 4000) || 24,
+          p_meses_cubrimiento: val.meses_cubrimiento,
+          p_caracteristicas: [],
+          p_afiliado_id: null,
+          p_fecha_fin: null,
+          p_cupos_maximos: val.cupos_maximos ?? null,
+        })
+
+        if (error) {
+          return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+        }
+
+        if (data && data.success === false) {
+          return NextResponse.json({ success: false, error: data.error }, { status: 400 })
+        }
+
+        return NextResponse.json({ success: true, data, es_oferta_especial: true }, { status: 200 })
+      }
+    }
+
+    // ── Caso B: Es Plan Estándar en platzi.planes ──────────────────────────────
+    const { data, error } = await supabase.rpc('admin_guardar_plan_platzi', {
       p_id: val.id || null,
       p_nombre_plan: val.nombre_plan,
       p_meses_cubrimiento: val.meses_cubrimiento,
@@ -99,20 +232,95 @@ export async function POST(request: Request) {
       p_vigente: val.vigente,
       p_caracteristicas: val.caracteristicas || null,
       p_total_disponibles: val.total_disponibles ?? null,
-      p_es_oferta_especial: Boolean(val.es_oferta_especial),
-      p_codigo_oferta: val.codigo_oferta || null,
-      p_institucion_empresa: val.institucion_empresa || null,
-      p_admite_cuotas: Boolean(val.admite_cuotas || val.tipo_pago === 'cuotas'),
-      p_max_cuotas: val.max_cuotas || val.numero_cuotas || 1,
-      p_cupos_maximos: val.cupos_maximos ?? null,
     })
 
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data }, { status: 200 })
+    return NextResponse.json({ success: true, data, es_oferta_especial: false }, { status: 200 })
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err?.message || 'Error al guardar plan' }, { status: 500 })
   }
 }
+
+/**
+ * PATCH: Alternar vigencia de un plan u oferta especial
+ */
+export async function PATCH(request: Request) {
+  try {
+    const authCheck = await verificarSuperAdmin()
+    if (!authCheck.authorized) {
+      return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
+    }
+
+    const supabase = authCheck.supabase!
+    const body = await request.json()
+    const { id, vigente, es_oferta_especial } = body
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID requerido' }, { status: 400 })
+    }
+
+    if (es_oferta_especial) {
+      const { data, error } = await supabase.rpc('admin_toggle_oferta', {
+        p_id: id,
+        p_activo: Boolean(vigente),
+      })
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, data }, { status: 200 })
+    } else {
+      const { error } = await supabase
+        .from('planes')
+        .update({ vigente: Boolean(vigente), updated_at: new Date().toISOString() })
+        .eq('id', id)
+
+      if (error) {
+        // Fallback a SQL si el schema no está expuesto directamente
+        const { error: rpcError } = await supabase.rpc('admin_guardar_plan_platzi', {
+          p_id: id,
+          p_vigente: Boolean(vigente),
+        })
+        if (rpcError) return NextResponse.json({ success: false, error: rpcError.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, id, vigente: Boolean(vigente) }, { status: 200 })
+    }
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err?.message || 'Error al cambiar vigencia' }, { status: 500 })
+  }
+}
+
+/**
+ * DELETE: Eliminar plan u oferta especial
+ */
+export async function DELETE(request: Request) {
+  try {
+    const authCheck = await verificarSuperAdmin()
+    if (!authCheck.authorized) {
+      return NextResponse.json({ success: false, error: authCheck.error }, { status: authCheck.status })
+    }
+
+    const supabase = authCheck.supabase!
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    const isOffer = searchParams.get('es_oferta_especial') === 'true'
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID requerido' }, { status: 400 })
+    }
+
+    if (isOffer) {
+      const { data, error } = await supabase.rpc('admin_eliminar_oferta', { p_id: id })
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true, data }, { status: 200 })
+    } else {
+      const { error } = await supabase.from('planes').delete().eq('id', id)
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      return NextResponse.json({ success: true }, { status: 200 })
+    }
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err?.message || 'Error al eliminar plan' }, { status: 500 })
+  }
+}
+
