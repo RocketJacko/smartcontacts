@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/infrastructure/supabase/server-client'
 
 export const dynamic = 'force-dynamic'
@@ -7,10 +7,10 @@ export const revalidate = 0
 // Planes por defecto como fallback seguro en caso de contingencia
 const DEFAULT_PLANS = [
   {
-    id: 'cc7a5125-02a8-44d7-92b5-9e6ef4dca49f',
-    nombre_plan: 'Plan 6 Meses',
+    id: '0807dfb2-83bd-4390-88cc-b85a77eb9388',
+    nombre_plan: 'Plan 6 meses',
     meses_cubrimiento: 6,
-    precio: 95000,
+    precio: 120000,
     moneda: 'COP',
     vigente: true,
     es_oferta_especial: false,
@@ -19,14 +19,14 @@ const DEFAULT_PLANS = [
     numero_cuotas: 1,
     max_cuotas: 1,
     pago_anticipado: false,
-    caracteristicas: 'Acceso completo a la plataforma Platzi por 6 meses',
+    caracteristicas: 'Accesos completo en tu cuneta personal por 6 meses',
     total_disponibles: null,
   },
   {
     id: 'b381bcfd-53f5-4ef3-b5d6-6c5863bb3450',
     nombre_plan: 'Plan 12 Meses Pago Único',
     meses_cubrimiento: 12,
-    precio: 180000,
+    precio: 160000,
     moneda: 'COP',
     vigente: true,
     es_oferta_especial: false,
@@ -35,15 +35,31 @@ const DEFAULT_PLANS = [
     numero_cuotas: 1,
     max_cuotas: 2,
     pago_anticipado: false,
-    caracteristicas: 'Suscripción anual con tarifa preferencial y soporte continuo',
+    caracteristicas: 'Suscripción anual con tarifa preferencial',
+    total_disponibles: null,
+  },
+  {
+    id: 'cc7a5125-02a8-44d7-92b5-9e6ef4dca49f',
+    nombre_plan: 'Plan 12  Meses',
+    meses_cubrimiento: 12,
+    precio: 180000,
+    moneda: 'COP',
+    vigente: true,
+    es_oferta_especial: false,
+    tipo_pago: 'pago_unico',
+    admite_cuotas: false,
+    numero_cuotas: 1,
+    max_cuotas: 1,
+    pago_anticipado: false,
+    caracteristicas: 'Pagos de 90000 cada 6 meses',
     total_disponibles: null,
   },
 ]
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const code = (
+    const searchParams = request.nextUrl.searchParams
+    let code = (
       searchParams.get('code') ||
       searchParams.get('oferta') ||
       searchParams.get('convenio') ||
@@ -52,12 +68,34 @@ export async function GET(request: Request) {
       ''
     ).trim().toUpperCase()
 
+    // Fallback: Si no viene en searchParams, extraer de referer header
+    if (!code) {
+      try {
+        const referer = request.headers.get('referer')
+        if (referer) {
+          const refUrl = new URL(referer)
+          code = (
+            refUrl.searchParams.get('oferta') ||
+            refUrl.searchParams.get('convenio') ||
+            refUrl.searchParams.get('code') ||
+            refUrl.searchParams.get('ref') ||
+            ''
+          ).trim().toUpperCase()
+        }
+      } catch {}
+    }
+
+    // Fallback: Si aún no hay código, inspeccionar cookie de referido sc_ref_code
+    if (!code) {
+      code = (request.cookies.get('sc_ref_code')?.value || '').trim().toUpperCase()
+    }
+
     const supabase = await createServerSupabaseClient()
 
-    // Manejo prioritario para oferta PYTHONCODE (Plan 1 año con pago anticipado)
+    // ── 1. MANEJO PRIORITARIO: Oferta especial PYTHONCODE ($120.000 COP, 1 año) ───────────
     if (code === 'PYTHONCODE') {
       const planPythonCode = {
-        id: 'plan-pythoncode-1year',
+        id: '399f6ed5-6d64-4c0f-b7ef-dc69b31038e2',
         nombre_plan: 'Oferta especial familia PythonCode',
         meses_cubrimiento: 12,
         precio: 120000,
@@ -81,7 +119,7 @@ export async function GET(request: Request) {
           codigo: 'PYTHONCODE',
           planes: [planPythonCode],
           oferta: {
-            id: 'plan-pythoncode-1year',
+            id: '399f6ed5-6d64-4c0f-b7ef-dc69b31038e2',
             codigo_oferta: 'PYTHONCODE',
             titulo: 'Oferta especial familia PythonCode',
             descripcion: 'Solo aplica para los integrantes de la cominidad',
@@ -99,8 +137,50 @@ export async function GET(request: Request) {
       )
     }
 
-    // 1. Si hay un código, consultar si el revendedor tiene un enlace con plan_id asignado (Oferta Especial / Convenio)
+    // ── 2. CONSULTA EN TABLA DE OFERTAS ESPECIALES SI HAY CÓDIGO ───────────
     if (code) {
+      // 2a. Consultar en referidos.ofertas_especiales
+      try {
+        const { data: ofertaBd } = await supabase
+          .from('referidos.ofertas_especiales')
+          .select('*')
+          .ilike('codigo_oferta', code)
+          .eq('activo', true)
+          .maybeSingle()
+
+        if (ofertaBd) {
+          const offerPlan = {
+            id: ofertaBd.id,
+            nombre_plan: ofertaBd.titulo,
+            meses_cubrimiento: Number(ofertaBd.meses_cubrimiento) || 12,
+            precio: Number(ofertaBd.precio_cop) || 120000,
+            moneda: 'COP',
+            tipo_pago: 'pago_unico',
+            admite_cuotas: false,
+            numero_cuotas: 1,
+            max_cuotas: 1,
+            pago_anticipado: true,
+            vigente: Boolean(ofertaBd.activo),
+            es_oferta_especial: true,
+            caracteristicas: ofertaBd.descripcion || 'Tarifa preferencial asignada por convenio',
+            codigo_oferta: ofertaBd.codigo_oferta,
+            institucion_empresa: ofertaBd.institucion_empresa,
+          }
+
+          return NextResponse.json(
+            {
+              success: true,
+              tipo: 'oferta_especial_directa',
+              codigo: code,
+              oferta: ofertaBd,
+              planes: [offerPlan],
+            },
+            { status: 200 }
+          )
+        }
+      } catch {}
+
+      // 2b. Consultar en referidos.enlaces (si el afiliado tiene un plan_id exclusivo)
       try {
         const { data: enlaceData } = await supabase
           .from('referidos.enlaces')
@@ -124,20 +204,16 @@ export async function GET(request: Request) {
               meses_cubrimiento: planEspecial.meses_cubrimiento,
               precio: Number(planEspecial.precio),
               moneda: planEspecial.moneda || 'COP',
-              tipo_pago: planEspecial.tipo_pago || 'pago_unico',
-              admite_cuotas: Boolean(planEspecial.admite_cuotas || planEspecial.max_cuotas > 1),
-              numero_cuotas: planEspecial.numero_cuotas || 1,
-              max_cuotas: planEspecial.max_cuotas || 1,
-              pago_anticipado: Boolean(planEspecial.pago_anticipado),
+              tipo_pago: 'pago_unico',
+              admite_cuotas: false,
+              numero_cuotas: 1,
+              max_cuotas: 1,
+              pago_anticipado: false,
               vigente: true,
               es_oferta_especial: true,
-              codigo_oferta: planEspecial.codigo_oferta || code,
-              institucion_empresa: planEspecial.institucion_empresa,
-              caracteristicas:
-                planEspecial.caracteristicas ||
-                (planEspecial.institucion_empresa
-                  ? `Convenio especial ${planEspecial.institucion_empresa}`
-                  : 'Tarifa preferencial asignada por enlace'),
+              codigo_oferta: code,
+              institucion_empresa: null,
+              caracteristicas: planEspecial.caracteristicas || 'Tarifa preferencial asignada por enlace',
             }
 
             return NextResponse.json(
@@ -153,100 +229,14 @@ export async function GET(request: Request) {
             )
           }
         }
-      } catch {
-        // Continuar a las siguientes validaciones si falla la consulta directa
-      }
-
-      // 2. Verificar si el código coincide directamente con un plan de oferta especial en platzi.planes (por codigo_oferta)
-      try {
-        const { data: planPorOferta } = await supabase
-          .from('platzi.planes')
-          .select('*')
-          .eq('codigo_oferta', code)
-          .eq('vigente', true)
-          .maybeSingle()
-
-        if (planPorOferta) {
-          const planFormat = {
-            id: planPorOferta.id,
-            nombre_plan: planPorOferta.nombre_plan,
-            meses_cubrimiento: planPorOferta.meses_cubrimiento,
-            precio: Number(planPorOferta.precio),
-            moneda: planPorOferta.moneda || 'COP',
-            tipo_pago: planPorOferta.tipo_pago || 'pago_unico',
-            admite_cuotas: Boolean(planPorOferta.admite_cuotas || planPorOferta.max_cuotas > 1),
-            numero_cuotas: planPorOferta.numero_cuotas || 1,
-            max_cuotas: planPorOferta.max_cuotas || 1,
-            pago_anticipado: Boolean(planPorOferta.pago_anticipado),
-            vigente: true,
-            es_oferta_especial: true,
-            codigo_oferta: planPorOferta.codigo_oferta,
-            institucion_empresa: planPorOferta.institucion_empresa,
-            caracteristicas: planPorOferta.caracteristicas || 'Convenio preferencial exclusivo',
-          }
-
-          return NextResponse.json(
-            {
-              success: true,
-              tipo: 'oferta_especial_directa',
-              codigo: code,
-              planes: [planFormat],
-            },
-            { status: 200 }
-          )
-        }
-      } catch {
-        // Continuar si falla
-      }
-
-      // 3. Fallback de retrocompatibilidad con obtener_oferta_publica (si aún existían ofertas en la tabla antigua)
-      try {
-        const { data: offerData } = await supabase.rpc('obtener_oferta_publica', {
-          p_codigo: code,
-        })
-
-        if (offerData?.success && offerData?.valida && offerData?.oferta) {
-          const off = offerData.oferta
-          const offerPlan = {
-            id: `offer-${off.id}`,
-            nombre_plan: off.titulo,
-            meses_cubrimiento: off.meses_cubrimiento,
-            precio: Number(off.precio_cop),
-            moneda: 'COP',
-            tipo_pago: off.tipo_pago || 'pago_unico',
-            admite_cuotas: off.tipo_pago === 'cuotas' || (off.numero_cuotas && off.numero_cuotas > 1),
-            numero_cuotas: off.numero_cuotas || 1,
-            max_cuotas: off.numero_cuotas || 1,
-            pago_anticipado: Boolean(off.pago_anticipado),
-            vigente: true,
-            es_oferta_especial: true,
-            caracteristicas:
-              off.descripcion ||
-              (off.institucion_empresa ? `Convenio especial ${off.institucion_empresa}` : 'Plan exclusivo de convenio'),
-            codigo_oferta: off.codigo_oferta,
-            codigo_referido: off.codigo_referido,
-            institucion_empresa: off.institucion_empresa,
-          }
-
-          return NextResponse.json(
-            {
-              success: true,
-              tipo: 'oferta_especial',
-              codigo: code,
-              oferta: off,
-              planes: [offerPlan],
-            },
-            { status: 200 }
-          )
-        }
       } catch {}
     }
 
-    // 4. Catálogo Abierto Estándar: Consultar planes regulares de platzi.planes
+    // ── 3. CATÁLOGO GENERAL ESTÁNDAR: Consultar planes regulares de platzi.planes ───────────
     const { data: rpcData, error: rpcError } = await supabase.rpc('obtener_planes_platzi_activos')
     const rawPlans = !rpcError && Array.isArray(rpcData) && rpcData.length > 0 ? rpcData : DEFAULT_PLANS
 
-    // Filtrar para mostrar en catálogo público los planes estándar (no ofertas de convenio cerradas)
+    // Filtrar para mostrar únicamente los planes regulares al público general
     const isSpecialPlan = (p: any) => {
       if (p.es_oferta_especial === true) return true
       const name = (p.nombre_plan || '').toLowerCase()
