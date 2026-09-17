@@ -600,6 +600,23 @@ export const translations = {
       adminBadge: "Administrador",
       userBadge: "Usuario",
     },
+    benefitCatalog: {
+      tag: "CATÁLOGO DE BENEFICIOS",
+      badge: "OFERTA EXCLUSIVA",
+      changeCurrency: "Cambiar moneda (COP / USD)",
+      periodLabel: "Pago único por el período completo de 1 año",
+      step1Notice: "1° PASO: Activamos primero el beneficio sobre la cuenta que indiques.",
+      includedFeatures: "SERVICIOS E INCLUSIONES DEL PLAN:",
+      activateCta: "ACTIVAR BENEFICIO PLATZI",
+      platziSubtitle: "Para 1 estudiante — Contenido profesional y acceso a los beneficios incluidos en el plan.",
+      features: [
+        "Contenido profesional actualizado con certificados digitales",
+        "Certificados físicos para las rutas de aprendizaje profesional",
+        "Acceso a las escuelas de Startups, Inglés y Liderazgo",
+        "Eventos exclusivos como Platzi Conf",
+        "Descarga de contenido en la aplicación móvil",
+      ],
+    },
   },
   en: {
     nav: {
@@ -1198,6 +1215,23 @@ export const translations = {
       superAdminBadge: "Super Admin",
       adminBadge: "Administrator",
       userBadge: "User",
+    },
+    benefitCatalog: {
+      tag: "BENEFITS CATALOG",
+      badge: "EXCLUSIVE OFFER",
+      changeCurrency: "Change currency (COP / USD)",
+      periodLabel: "Single payment for the full 1-year period",
+      step1Notice: "STEP 1: We first activate the benefit on your specified account.",
+      includedFeatures: "INCLUDED PLAN FEATURES:",
+      activateCta: "ACTIVATE PLATZI BENEFIT",
+      platziSubtitle: "For 1 student — Professional content and access to all plan benefits included.",
+      features: [
+        "Updated professional content with digital certificates",
+        "Physical certificates for professional learning paths",
+        "Access to Startups, English, and Leadership schools",
+        "Exclusive events such as Platzi Conf",
+        "Offline content download in mobile application",
+      ],
     },
   },
 } as const

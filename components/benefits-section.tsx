@@ -39,9 +39,25 @@ const BENEFITS_LIST: BenefitItem[] = [
 ]
 
 export function BenefitsSection() {
-  const { language } = useLanguage()
+  const { t } = useLanguage()
   const { formattedPlatziPrice, userCurrency, countryName, flagUrl, toggleCurrency } = useGeoLocation()
   const [activeModalId, setActiveModalId] = useState<string | null>(null)
+
+  const catalog = t.benefitCatalog
+
+  const benefitsList: BenefitItem[] = [
+    {
+      id: "platzi",
+      title: "Platzi (Plan Basic)",
+      subtitle: catalog.platziSubtitle,
+      image: "https://cdn.sanity.io/images/vr0czzef/production/0332c01ab74e4d12d723d11c8b4cd7815bebe373-1200x1200.png?w=3840&h=3840&fm=webp&q=80&fit=crop&auto=format",
+      period: "1 año",
+      periodLabel: catalog.periodLabel,
+      features: [...catalog.features],
+      ctaText: catalog.activateCta,
+      badge: catalog.badge,
+    },
+  ]
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -58,7 +74,7 @@ export function BenefitsSection() {
   return (
     <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-12">
       <div className="grid grid-cols-1 gap-8 lg:gap-10">
-        {BENEFITS_LIST.map((benefit) => (
+        {benefitsList.map((benefit) => (
           <div
             key={benefit.id}
             className="group relative rounded-3xl border border-black/[0.08] bg-white p-6 sm:p-10 lg:p-12 shadow-sm flex flex-col lg:flex-row gap-8 lg:gap-12 items-stretch hover:border-black/20 transition-all duration-300"
@@ -87,7 +103,7 @@ export function BenefitsSection() {
                     type="button"
                     onClick={toggleCurrency}
                     className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/[0.05] hover:bg-black/10 border border-black/10 text-[10px] font-mono font-bold text-black transition-colors cursor-pointer"
-                    title="Cambiar moneda (COP / USD)"
+                    title={catalog.changeCurrency}
                   >
                     <RefreshCw className="w-2.5 h-2.5 text-black/50" />
                     <span>{userCurrency}</span>
@@ -115,7 +131,7 @@ export function BenefitsSection() {
                 <div className="border-b border-black/[0.08] pb-4 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-mono uppercase tracking-widest text-black/40 font-semibold block mb-1">
-                      {language === "es" ? "CATÁLOGO DE BENEFICIOS" : "BENEFITS CATALOG"}
+                      {catalog.tag}
                     </span>
                     <h3 className="text-3xl sm:text-4xl font-medium text-[#111] tracking-tight">
                       {benefit.title}
@@ -134,13 +150,13 @@ export function BenefitsSection() {
                 {/* Step 1 Activation Indicator */}
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-900 font-semibold">
                   <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>1° PASO: Activamos primero el beneficio sobre la cuenta que indiques.</span>
+                  <span>{catalog.step1Notice}</span>
                 </div>
 
                 {/* Features List */}
                 <div className="pt-2 space-y-3">
                   <span className="text-xs font-mono uppercase tracking-wider text-black/50 font-semibold block">
-                    {language === "es" ? "SERVICIOS E INCLUSIONES DEL PLAN:" : "INCLUDED PLAN FEATURES:"}
+                    {catalog.includedFeatures}
                   </span>
                   <ul className="space-y-3">
                     {benefit.features.map((feature, idx) => (
