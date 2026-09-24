@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer"
 import { RevealText } from "@/components/reveal-text"
 import { useLanguage } from "@/lib/language-context"
 import Link from "next/link"
-import { ArrowLeft, Cookie } from "lucide-react"
+import { ArrowLeft, Cookie, Mail, ShieldCheck } from "lucide-react"
 
 export default function CookiesPage() {
   const { language } = useLanguage()
@@ -35,6 +35,10 @@ export default function CookiesPage() {
           <RevealText className="text-3xl sm:text-5xl font-medium tracking-tight text-[#111]">
             {language === "es" ? "Política de Cookies y Almacenamiento" : "Cookie & Storage Policy"}
           </RevealText>
+
+          <p className="text-xs font-mono text-black/50">
+            {language === "es" ? "Última actualización: Agosto 2026 | Medellín, Antioquia, Colombia" : "Last updated: August 2026 | Medellín, Antioquia, Colombia"}
+          </p>
         </div>
 
         {/* Body */}
@@ -43,23 +47,27 @@ export default function CookiesPage() {
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
             <h2 className="text-lg sm:text-xl font-medium text-[#111]">1. Uso de Cookies en SmartContacts</h2>
             <p>
-              SmartContacts utiliza cookies técnicas esenciales y tecnologías de almacenamiento local para garantizar la velocidad de carga, recordar tus preferencias de idioma (Español/Inglés) y analizar métricas de rendimiento anónimas.
+              SmartContacts utiliza cookies técnicas esenciales y tecnologías de almacenamiento local (*localStorage*) para garantizar el correcto funcionamiento del sitio, recordar las preferencias de idioma (Español e Inglés) y registrar de forma transparente la aceptación del consentimiento de cookies.
             </p>
           </section>
 
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
-            <h2 className="text-lg sm:text-xl font-medium text-[#111]">2. Tipos de Cookies Implementadas</h2>
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">2. Tipos de Cookies e Integraciones Implementadas</h2>
             <ul className="list-disc pl-5 space-y-2 text-black/75">
-              <li><strong>Cookies Necesarias y de Sesión</strong>: Permiten recordar la navegación y la preferencia de idioma seleccionada mediante el contexto de usuario.</li>
-              <li><strong>Cookies de Métricas y Rendimiento</strong>: Integradas a través de <em>Vercel Analytics</em> y <em>Speed Insights</em> para evaluar tiempos de carga en milisegundos y optimizar la experiencia móvil. No almacenan información de identificación personal.</li>
+              <li><strong>Cookies Técnicas Esenciales</strong>: Permiten recordar la preferencia de idioma seleccionada (`sc_language`) y el estado de aceptación del banner legal (`sc_cookie_consent`).</li>
+              <li><strong>Métricas de Rendimiento y Analítica Anónima</strong>: Utilizadas a través de la infraestructura del servidor para medir tiempos de carga en milisegundos sin recolectar ni almacenar datos de identificación personal (PII).</li>
             </ul>
           </section>
 
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
-            <h2 className="text-lg sm:text-xl font-medium text-[#111]">3. Control y Desactivación</h2>
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">3. Control, Desactivación y Revocación</h2>
             <p>
-              Puedes restringir, bloquear o borrar las cookies de este sitio en cualquier momento modificando la configuración de tu navegador web (Chrome, Safari, Firefox o Edge). Ten en cuenta que deshabilitar cookies técnicas puede afectar funciones menores de interfaz.
+              Puedes restringir, borrar o revocar el consentimiento de almacenamiento en cualquier momento desde la configuración de tu navegador (Google Chrome, Mozilla Firefox, Apple Safari o Microsoft Edge). Asimismo, puedes reiniciar tus preferencias haciendo clic en el botón de aceptación o escribiendo a nuestro correo oficial.
             </p>
+            <div className="pt-2 text-xs font-mono text-black/70 border-t border-black/[0.06] mt-3 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-emerald-600" />
+              <span>Contacto oficial sobre cookies: <strong>activaciones@smartcontacts.cloud</strong></span>
+            </div>
           </section>
 
         </div>

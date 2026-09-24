@@ -197,6 +197,7 @@ const jsonLd = {
 import { Suspense } from 'react'
 import { FloatingWhatsApp } from '@/components/floating-whatsapp'
 import { ReferralTracker } from '@/components/referral-tracker'
+import { CookieBanner } from '@/components/cookie-banner'
 
 export default function RootLayout({
   children,
@@ -223,6 +224,7 @@ export default function RootLayout({
             {children}
           </main>
           <FloatingWhatsApp />
+          <CookieBanner />
         </LanguageProvider>
       </body>
     </html>

@@ -62,7 +62,7 @@ export default function DirectLandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formState.name,
-          email: formState.email || "no-provided@smartcontacts.co",
+          email: formState.email || "no-provided@smartcontacts.cloud",
           phone: formState.phone,
           company: `${formState.company} (${formState.sector})`,
           service: "Landing Campaign Lead",
@@ -289,6 +289,29 @@ export default function DirectLandingPage() {
                       <option value="otro">Otro Sector</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Habeas Data Legal Consent Checkbox */}
+                <div className="p-3 rounded-xl bg-black/[0.02] border border-black/10 flex items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="landingHabeasConsent"
+                    required
+                    defaultChecked
+                    aria-label="Autorización de Tratamiento de Datos"
+                    className="w-4 h-4 mt-0.5 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer shrink-0"
+                  />
+                  <label htmlFor="landingHabeasConsent" className="text-[10px] text-black/70 leading-relaxed font-sans cursor-pointer select-none">
+                    {language === "es" ? (
+                      <>
+                        Autorizo el tratamiento de mis datos personales según la <strong>Ley 1581 de 2012</strong> y acepto la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a> y los <a href="/terminos" target="_blank" className="underline hover:text-black">Términos</a>.
+                      </>
+                    ) : (
+                      <>
+                        I authorize personal data processing pursuant to <strong>Law 1581 of 2012</strong> and accept the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a> and <a href="/terminos" target="_blank" className="underline hover:text-black">Terms</a>.
+                      </>
+                    )}
+                  </label>
                 </div>
 
                 {/* Submit button */}

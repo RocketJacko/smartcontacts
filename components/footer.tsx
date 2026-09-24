@@ -57,8 +57,8 @@ export function Footer() {
               </a>
             </p>
             <p>
-              <a href="mailto:codificandoandoacces@gmail.com" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4 break-all">
-                codificandoandoacces@gmail.com
+              <a href="mailto:activaciones@smartcontacts.cloud" className="hover:text-black transition-colors font-medium underline decoration-black/20 underline-offset-4 break-all">
+                activaciones@smartcontacts.cloud
               </a>
             </p>
             <p className="text-black/60">Medellín, Antioquia, Colombia</p>
@@ -80,6 +80,7 @@ export function Footer() {
             <Link href="/privacidad" className="text-black/70 hover:text-black transition-colors font-medium">Privacidad (Ley 1581)</Link>
             <Link href="/cookies" className="text-black/70 hover:text-black transition-colors font-medium">Política de Cookies</Link>
             <Link href="/terminos" className="text-black/70 hover:text-black transition-colors font-medium">Términos y Condiciones</Link>
+            <Link href="/reembolso" className="text-black/70 hover:text-black transition-colors font-medium">Política de Reembolso</Link>
             <Link href="/legal" className="text-black/70 hover:text-black transition-colors font-medium">Marco Legal Colombia</Link>
           </div>
         </div>

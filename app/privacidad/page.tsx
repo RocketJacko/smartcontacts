@@ -51,7 +51,7 @@ export default function PrivacidadPage() {
             </p>
             <div className="pt-2 text-xs font-mono text-black/70 space-y-1 border-t border-black/[0.06] mt-4">
               <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> Directo / WhatsApp: +57 312 752 9629</p>
-              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Correo Oficial: codificandoandoacces@gmail.com</p>
+              <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Correo Oficial: activaciones@smartcontacts.cloud</p>
               <p className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> Ubicación: Medellín, Antioquia, Colombia</p>
             </div>
           </section>
@@ -68,7 +68,19 @@ export default function PrivacidadPage() {
           </section>
 
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
-            <h2 className="text-lg sm:text-xl font-medium text-[#111]">3. Derechos del Titular (Derechos ARCO)</h2>
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">3. Integraciones y Proveedores de Servicios de Terceros</h2>
+            <p>
+              Para garantizar la seguridad y operatividad agéntica, los datos procesados interactúan con infraestructuras de confianza estrictamente configuradas:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-black/75">
+              <li><strong>Supabase Inc.</strong>: Almacenamiento y encriptación de datos bajo esquemas aislados por módulo.</li>
+              <li><strong>Google Workspace & Calendar API</strong>: Coordinación automatizada de sesiones agendadas y salas de videoconferencia Google Meet.</li>
+              <li><strong>Infraestructura Dokploy / Vercel</strong>: Alojamiento seguro y análisis de métricas de rendimiento del servidor.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">4. Derechos del Titular (Derechos ARCO)</h2>
             <p>De conformidad con la Ley 1581 de 2012, el titular de la información tiene derecho a:</p>
             <ul className="list-disc pl-5 space-y-1.5 text-black/75">
               <li>Conocer, actualizar y rectificar sus datos personales frente a SmartContacts.</li>
@@ -80,9 +92,9 @@ export default function PrivacidadPage() {
           </section>
 
           <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
-            <h2 className="text-lg sm:text-xl font-medium text-[#111]">4. Procedimiento para el Ejercicio de Derechos</h2>
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">5. Procedimiento para el Ejercicio de Derechos</h2>
             <p>
-              Para radicar una solicitud de consulta, actualización o supresión de datos, puede escribir directamente a nuestro correo electrónico oficial <strong>codificandoandoacces@gmail.com</strong> o comunicarse vía WhatsApp al <strong>+57 312 752 9629</strong>. Las consultas serán atendidas en un término máximo de diez (10) días hábiles.
+              Para radicar una solicitud de consulta, actualización o supresión de datos, puede escribir directamente a nuestro correo electrónico oficial <strong>activaciones@smartcontacts.cloud</strong> o comunicarse vía WhatsApp al <strong>+57 312 752 9629</strong>. Las consultas serán atendidas en un término máximo de diez (10) días hábiles.
             </p>
           </section>
 

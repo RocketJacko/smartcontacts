@@ -176,6 +176,9 @@ function LoginFormContent() {
             >
               {t.auth?.registerLink || "Regístrate aquí"}
             </Link>
+            <div className="pt-2 text-[10px] text-black/40 font-mono">
+              Al ingresar aceptas la <Link href="/privacidad" className="underline hover:text-black">Privacidad</Link> y <Link href="/terminos" className="underline hover:text-black">Términos</Link>.
+            </div>
           </div>
         </div>
 

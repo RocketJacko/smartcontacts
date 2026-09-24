@@ -754,11 +754,11 @@ export function BookingSection() {
                     <label htmlFor="habeasDataConsent" className="text-[11px] text-black/75 leading-relaxed font-sans cursor-pointer select-none">
                       {language === "es" ? (
                         <>
-                          Autorizo a <strong>Smartcontacts</strong> para el tratamiento de mis datos personales y el envío de confirmaciones y comunicaciones relativas a esta reserva según la <strong>Ley 1581 de 2012 (Habeas Data)</strong> y la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a>.
+                          Autorizo a <strong>Smartcontacts</strong> para el tratamiento de mis datos personales según la <strong>Ley 1581 de 2012 (Habeas Data)</strong> y acepto la <a href="/privacidad" target="_blank" className="underline hover:text-black">Política de Privacidad</a>, los <a href="/terminos" target="_blank" className="underline hover:text-black">Términos y Condiciones</a> y la <a href="/reembolso" target="_blank" className="underline hover:text-black">Política de Reembolso</a>.
                         </>
                       ) : (
                         <>
-                          I authorize <strong>Smartcontacts</strong> to process my personal data and send confirmations and communications regarding this reservation pursuant to <strong>Law 1581 of 2012 (Habeas Data)</strong> and the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a>.
+                          I authorize <strong>Smartcontacts</strong> to process my personal data pursuant to <strong>Law 1581 of 2012 (Habeas Data)</strong> and accept the <a href="/privacidad" target="_blank" className="underline hover:text-black">Privacy Policy</a>, <a href="/terminos" target="_blank" className="underline hover:text-black">Terms of Service</a>, and <a href="/reembolso" target="_blank" className="underline hover:text-black">Refund Policy</a>.
                         </>
                       )}
                     </label>

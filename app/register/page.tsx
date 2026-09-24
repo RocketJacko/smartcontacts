@@ -195,6 +195,29 @@ export default function RegisterPage() {
               </div>
             )}
 
+            {/* Consentimiento de Tratamiento de Datos Personales */}
+            <div className="p-3 rounded-xl bg-black/[0.02] border border-black/10 flex items-start gap-2.5">
+              <input
+                type="checkbox"
+                id="registerHabeasConsent"
+                required
+                defaultChecked
+                aria-label="Autorización de Tratamiento de Datos"
+                className="w-4 h-4 mt-0.5 rounded border-black/20 text-[#111] focus:ring-0 cursor-pointer shrink-0"
+              />
+              <label htmlFor="registerHabeasConsent" className="text-[10px] text-black/70 leading-relaxed font-sans cursor-pointer select-none">
+                {language === "es" ? (
+                  <>
+                    Acepto el tratamiento de mis datos personales (<strong>Ley 1581 de 2012</strong>), los <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Términos y Condiciones</a> y la <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Política de Privacidad</a>.
+                  </>
+                ) : (
+                  <>
+                    I accept personal data processing (<strong>Law 1581 of 2012</strong>), the <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Terms of Service</a>, and <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Privacy Policy</a>.
+                  </>
+                )}
+              </label>
+            </div>
+
             {/* Botón de Submit */}
             <button
               type="submit"
