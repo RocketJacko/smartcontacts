@@ -141,17 +141,23 @@ export function KageSalesIndicator() {
         </div>
       </div>
 
-      {/* Bottom Subtext */}
+      {/* Bottom Subtext & Disclaimer */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t border-black/[0.06] text-[11px] text-black/50 font-mono">
         <span>{language === "es" ? "Arrastra la barra para calcular proyección comercial" : "Drag slider to calculate commercial projection"}</span>
         <button
           type="button"
           onClick={() => setIsAuto(!isAuto)}
-          className="text-black/80 hover:text-black font-semibold underline shrink-0"
+          className="text-black/80 hover:text-black font-semibold underline shrink-0 cursor-pointer"
         >
           {isAuto ? (language === "es" ? "Pausar Animación" : "Pause Auto") : (language === "es" ? "Reproducir Proyección" : "Play Auto")}
         </button>
       </div>
+
+      <p className="text-[10px] text-black/40 font-mono text-center sm:text-left leading-normal pt-1">
+        {language === "es"
+          ? "* Estimación matemática ilustrativa basada en capacidad operativa agéntica y modelos predictivos. Los resultados finales de conversión pueden variar según el sector de la empresa, madurez de la oferta comercial y respuesta del mercado."
+          : "* Illustrative mathematical estimation based on agentic operational capacity and predictive models. Final conversion results may vary depending on business sector, offer maturity, and market response."}
+      </p>
 
     </div>
   )

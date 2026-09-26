@@ -18,7 +18,7 @@ export function AboutSection() {
               <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl border border-black/10 bg-[#F5F4F0] p-1.5 shadow-sm overflow-hidden flex items-center justify-center">
                 <img
                   src="/images/jesus-carmona.png"
-                  alt="Jesús Carmona"
+                  alt="Jesús Carmona — Especialista en Agentes de Inteligencia Artificial y Crecimiento Comercial B2B"
                   className="w-full h-full object-cover object-center rounded-xl"
                 />
               </div>

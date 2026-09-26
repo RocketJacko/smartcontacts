@@ -208,11 +208,11 @@ export default function RegisterPage() {
               <label htmlFor="registerHabeasConsent" className="text-[10px] text-black/70 leading-relaxed font-sans cursor-pointer select-none">
                 {language === "es" ? (
                   <>
-                    Acepto el tratamiento de mis datos personales (<strong>Ley 1581 de 2012</strong>), los <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Términos y Condiciones</a> y la <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Política de Privacidad</a>.
+                    Acepto el tratamiento de mis datos personales (<strong>Ley 1581 de 2012</strong>), los <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Términos y Condiciones</a>, la <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Política de Privacidad</a> y la <a href="/reembolso" target="_blank" className="underline hover:text-black font-semibold">Política de Reembolso</a>.
                   </>
                 ) : (
                   <>
-                    I accept personal data processing (<strong>Law 1581 of 2012</strong>), the <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Terms of Service</a>, and <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Privacy Policy</a>.
+                    I accept personal data processing (<strong>Law 1581 of 2012</strong>), the <a href="/terminos" target="_blank" className="underline hover:text-black font-semibold">Terms of Service</a>, <a href="/privacidad" target="_blank" className="underline hover:text-black font-semibold">Privacy Policy</a>, and <a href="/reembolso" target="_blank" className="underline hover:text-black font-semibold">Refund Policy</a>.
                   </>
                 )}
               </label>

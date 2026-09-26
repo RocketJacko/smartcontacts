@@ -74,6 +74,19 @@ export default function LegalPage() {
             </p>
           </section>
 
+          <section className="space-y-3 p-6 rounded-2xl bg-white border border-black/[0.08] shadow-2xs">
+            <h2 className="text-lg sm:text-xl font-medium text-[#111]">4. Datos de Contacto y Atención de Requerimientos Legales</h2>
+            <p>
+              Para notificaciones judiciales, requerimientos regulatorios de la Superintendencia de Industria y Comercio (SIC) o peticiones ciudadanas:
+            </p>
+            <div className="pt-2 text-xs font-mono text-black/75 space-y-1.5 border-t border-black/[0.06] mt-3">
+              <p><strong>Razón / Nombre Comercial</strong>: SmartContacts — Unidad de Crecimiento & Agentes de IA</p>
+              <p><strong>Ubicación Corporativa</strong>: Medellín, Antioquia, Colombia</p>
+              <p><strong>Línea de Atención / WhatsApp</strong>: +57 312 752 9629</p>
+              <p><strong>Correo Electrónico Oficial</strong>: <a href="mailto:activaciones@smartcontacts.cloud" className="underline font-semibold text-[#111]">activaciones@smartcontacts.cloud</a></p>
+            </div>
+          </section>
+
         </div>
 
       </main>
